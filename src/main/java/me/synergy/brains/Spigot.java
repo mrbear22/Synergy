@@ -29,13 +29,14 @@ import me.synergy.commands.SynergyCommand;
 import me.synergy.commands.ThemeCommand;
 import me.synergy.commands.VoteCommand;
 import me.synergy.discord.Discord;
+import me.synergy.discord.RolesHandler;
 import me.synergy.events.SynergyEvent;
 import me.synergy.handlers.ChatHandler;
-import me.synergy.handlers.LocalesListener;
+import me.synergy.handlers.LocalesHandler;
+import me.synergy.handlers.PlayerSpigotHandler;
 import me.synergy.handlers.ResourcePackHandler;
-import me.synergy.handlers.ServerListPingListener;
-import me.synergy.handlers.SpigotPlayerListener;
-import me.synergy.handlers.VoteListener;
+import me.synergy.handlers.ServerListPingHandler;
+import me.synergy.handlers.VoteHandler;
 import me.synergy.integrations.EssentialsAPI;
 import me.synergy.integrations.PlaceholdersAPI;
 import me.synergy.integrations.PlanAPI;
@@ -77,19 +78,19 @@ public class Spigot extends JavaPlugin implements PluginMessageListener {
         new DiscordCommand().initialize();
         new ChatHandler().initialize();
         new Discord().initialize();
-        new ServerListPingListener().initialize();
-        new SpigotPlayerListener().initialize();
+        new ServerListPingHandler().initialize();
+        new PlayerSpigotHandler().initialize();
         new WebServer().initialize();
         new ResourcePackHandler().initialize();
         new ThemeCommand().initialize();
 
 		if (Synergy.isDependencyAvailable("ProtocolLib")) {
 			PROTOCOLMANAGER = ProtocolLibrary.getProtocolManager();
-	        new LocalesListener().initialize();
+	        new LocalesHandler().initialize();
 		}
         
 		if (Synergy.isDependencyAvailable("Votifier")) {
-			new VoteListener().initialize();
+			new VoteHandler().initialize();
 		}
         
 		if (Synergy.isDependencyAvailable("Essentials")) {
@@ -101,6 +102,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener {
 	        setupEconomy();
 	        setupPermissions();
 	        //setupChat();
+	        new RolesHandler().initialize();
 		}
 
 		if (Synergy.isDependencyAvailable("Plan")) {

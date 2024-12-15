@@ -15,11 +15,7 @@ import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
 import me.synergy.utils.Translation;
 
-public class VoteListener implements Listener, SynergyListener {
-
-    public VoteListener() {
-
-    }
+public class VoteHandler implements Listener, SynergyListener {
 
     public void initialize() {
         if (!Synergy.getConfig().getBoolean("votifier.enabled")) {

@@ -17,7 +17,7 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
 
-public class LocalesListener {
+public class LocalesHandler {
 
 	public void initialize() {
 		try {
@@ -162,6 +162,7 @@ public class LocalesListener {
 			        }
 			    }
 			);
+
 			Synergy.getLogger().info(this.getClass().getSimpleName()+" module has been initialized!");
 		} catch (Exception c) {
 			Synergy.getLogger().error(this.getClass().getSimpleName()+" module failed to initialize:");

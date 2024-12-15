@@ -11,7 +11,7 @@ import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
-public class ProxyPlayerListener implements Listener {
+public class PlayerProxyHandler implements Listener {
 
 	public void initialize() {
 		Bungee.getInstance().getProxy().getPluginManager().registerListener(Bungee.getInstance(), this);

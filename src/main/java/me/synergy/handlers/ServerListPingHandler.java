@@ -8,7 +8,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
 import me.synergy.utils.Color;
 
-public class ServerListPingListener implements Listener {
+public class ServerListPingHandler implements Listener {
 
     public void initialize() {
         Synergy.getSpigot().getServer().getPluginManager().registerEvents(this, Synergy.getSpigot());

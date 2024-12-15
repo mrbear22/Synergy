@@ -8,8 +8,9 @@ import com.google.common.io.ByteStreams;
 
 import me.synergy.commands.SynergyProxyCommand;
 import me.synergy.discord.Discord;
+import me.synergy.discord.RolesHandler;
 import me.synergy.events.SynergyEvent;
-import me.synergy.handlers.ProxyPlayerListener;
+import me.synergy.handlers.PlayerProxyHandler;
 import me.synergy.integrations.PlanAPI;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
@@ -35,10 +36,11 @@ public class Bungee extends Plugin implements Listener {
 	    new DataManager().initialize();
         new LocalesManager().initialize();
 	    new Discord().initialize();
-	    new ProxyPlayerListener().initialize();
+	    new PlayerProxyHandler().initialize();
 	    new SynergyProxyCommand().initialize();
 	    new WebServer().initialize();
         new PlanAPI().initialize();
+        new RolesHandler().initialize();
 
 	    getProxy().getPluginManager().registerListener(this, this);
 	    

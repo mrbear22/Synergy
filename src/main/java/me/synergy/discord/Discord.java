@@ -49,12 +49,12 @@ public class Discord {
 
             JDABuilder bot = botBuilder();
             
-            bot.addEventListeners(new ListDiscordCommand());
-            bot.addEventListeners(new LinkDiscordCommand());
-            bot.addEventListeners(new VoteDiscordCommand());
-            bot.addEventListeners(new RolesDiscordListener());
-            bot.addEventListeners(new ChatDiscordListener());
-            bot.addEventListeners(new EmbedDiscordCommand());
+            bot.addEventListeners(new ListCommand());
+            bot.addEventListeners(new LinkCommand());
+            bot.addEventListeners(new VoteCommand());
+            bot.addEventListeners(new RolesHandler());
+            bot.addEventListeners(new ChatHandler());
+            bot.addEventListeners(new EmbedCommand());
       
             JDA = bot.build();
             

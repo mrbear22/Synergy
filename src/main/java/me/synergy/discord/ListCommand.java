@@ -11,9 +11,9 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-public class ListDiscordCommand extends ListenerAdapter {
+public class ListCommand extends ListenerAdapter {
 
-	public ListDiscordCommand() {
+	public ListCommand() {
         try {
 	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
 	            return;

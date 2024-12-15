@@ -16,9 +16,9 @@ import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 
-public class EmbedDiscordCommand extends ListenerAdapter {
+public class EmbedCommand extends ListenerAdapter {
 
-	public EmbedDiscordCommand() {
+	public EmbedCommand() {
         if (!Synergy.getConfig().getBoolean("discord.enabled")) {
             return;
         }

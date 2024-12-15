@@ -54,16 +54,6 @@ public class Config {
             addDefault("discord.channels.broadcast", "00000000000000000");
             addDefault("discord.channels.log", "00000000000000000");
             addDefault("discord.channels.merge-similar-embeds", false);
-            addDefault("discord.synchronization.sync-roles-from-discord-to-mc", false);
-            addDefault("discord.synchronization.sync-roles-form-mc-to-discord", false);
-            addDefault("discord.synchronization.use-vault", true);
-            addDefault("discord.synchronization.custom-command-remove", "lp user %PLAYER% parent remove %GROUP%");
-            addDefault("discord.synchronization.custom-command-add", "lp user %PLAYER% parent add %GROUP%");
-            addDefault("discord.synchronization.roles.owner", "00000000000000000");
-            addDefault("discord.synchronization.roles.admin", "00000000000000000");
-            addDefault("discord.synchronization.roles.moder", "00000000000000000");
-            addDefault("discord.synchronization.roles.default", "00000000000000000");
-            addDefault("discord.synchronization.verified-role", "00000000000000000");
             addDefault("discord.gpt-bot.enabled", false);
             addDefault("discord.gpt-bot.name", "Stepan");
             addDefault("discord.gpt-bot.personality", "Act as a cat. Answer this question in a cat style: %MESSAGE%");
@@ -97,7 +87,16 @@ public class Config {
                 addDefault("localizations.color-themes.default.danger", "<#e74c3c>");
                 
                 addDefault("localizations.pronouns", true);
-            	
+
+                addDefault("discord-roles-sync.enabled", false);
+                addDefault("discord-roles-sync.sync-roles-from-discord-to-mc", false);
+                addDefault("discord-roles-sync.sync-roles-form-mc-to-discord", false);
+                addDefault("discord-roles-sync.custom-command-remove", "lp user %PLAYER% parent remove %GROUP%");
+                addDefault("discord-roles-sync.custom-command-add", "lp user %PLAYER% parent add %GROUP%");
+                addDefault("discord-roles-sync.roles.admin", "00000000000000000");
+                addDefault("discord-roles-sync.roles.default", "00000000000000000");
+                addDefault("discord-roles-sync.verified-role", "00000000000000000");
+                
                 addDefault("synergy-plugin-messaging.enabled", false);
                 addDefault("synergy-plugin-messaging.servername", "SomeFabulousServer");
                 addDefault("synergy-plugin-messaging.token", "Copy plugin-messaging-token from config.yml of Synergy in your Proxy folder");
@@ -107,7 +106,6 @@ public class Config {
                 addDefault("chat-manager.chat-filter.blocked-words", new String[] {"fuck", "bitch"});
                 addDefault("chat-manager.chat-filter.ignored-words", new String[] {"чіпідрос", "книга"});
                 addDefault("chat-manager.chat-filter.blocked-words-tolerance-percentage", 38.5);
-                addDefault("chat-manager.play-sound-on-chat", false);
                 
                 addDefault("chat-manager.use-interactive-tags", false);
                 addDefault("chat-manager.warn-if-nobody-in-chat", true);

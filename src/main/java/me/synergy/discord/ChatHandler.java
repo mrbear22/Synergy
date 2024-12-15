@@ -19,9 +19,9 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-public class ChatDiscordListener extends ListenerAdapter implements SynergyListener {
+public class ChatHandler extends ListenerAdapter implements SynergyListener {
 
-	public ChatDiscordListener() {
+	public ChatHandler() {
         try {
 	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
 	            return;

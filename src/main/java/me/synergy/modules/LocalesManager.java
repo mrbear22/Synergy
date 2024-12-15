@@ -112,7 +112,7 @@ public class LocalesManager {
 	private int addTranslationsFromList(String key, String language, List<String> translations) {
 	    StringBuilder sb = new StringBuilder();
 	    for (String translation : translations) {
-	        sb.append(translation).append("\n");
+	        sb.append(translation).append(System.lineSeparator());
 	    }
 	    if (sb.length() > 0) {
 	        sb.setLength(sb.length() - 1);

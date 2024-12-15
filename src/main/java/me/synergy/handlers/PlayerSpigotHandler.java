@@ -11,13 +11,11 @@ import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import me.synergy.brains.Synergy;
-import me.synergy.discord.Discord;
-import me.synergy.discord.RolesDiscordListener;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Chat;
 import me.synergy.utils.Translation;
 
-public class SpigotPlayerListener implements Listener {
+public class PlayerSpigotHandler implements Listener {
 
     public void initialize() {
         Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
@@ -30,7 +28,7 @@ public class SpigotPlayerListener implements Listener {
         BreadMaker bread = Synergy.getBread(uuid);
         String channel = new Chat("global").getDiscord().getChannel();
         
-    	event.setQuitMessage("<lang>synergy-player-quit-message<arg>"+event.getPlayer().getName()+"</arg></lang>");
+    	event.setQuitMessage("<lang>synergy-player-quit-message<arg>"+event.getPlayer().getName()+"</arg></lang></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
     	
     	bread.clearCache();
     	
@@ -55,7 +53,7 @@ public class SpigotPlayerListener implements Listener {
         String channel = new Chat("global").getDiscord().getChannel();
     	bread.clearCache();
         bread.setData("name", event.getPlayer().getName());
-    	event.setJoinMessage("<lang>synergy-player-join-message<arg>"+event.getPlayer().getName()+"</arg></lang>");
+    	event.setJoinMessage("<lang>synergy-player-join-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
     	
     	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has joined with IP "+event.getPlayer().getAddress()+" ```");
     	
@@ -67,15 +65,7 @@ public class SpigotPlayerListener implements Listener {
 					        			.setEndings(bread.getPronoun())
 					        			.getStripped()).fireEvent();
     	}
-    	if (Discord.getDiscordIdByUniqueId(uuid) != null) {
-	    	RolesDiscordListener.addVerifiedRole(Discord.getDiscordIdByUniqueId(uuid));
-	        if (Synergy.getConfig().getBoolean("discord.synchronization.sync-roles-form-mc-to-discord")) {
-	            Synergy.createSynergyEvent("sync-roles-from-mc-to-discord").setPlayerUniqueId(event.getPlayer().getUniqueId()).setOption("group", Synergy.getSpigot().getPermissions().getPrimaryGroup(event.getPlayer())).send();
-	        }
-	        if (Synergy.getConfig().getBoolean("discord.synchronization.sync-roles-from-discord-to-mc")) {
-	            Synergy.createSynergyEvent("sync-roles-from-discord-to-mc").setPlayerUniqueId(event.getPlayer().getUniqueId()).send();
-	        }
-        }
+
     }
     
 	@EventHandler

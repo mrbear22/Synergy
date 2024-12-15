@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 public class Endings {
 
     public enum Pronoun {
-        HE, SHE, THEY
+        HE, SHE
     }
     
     public static Pronoun getPronoun(String pronoun) {
@@ -32,6 +32,15 @@ public class Endings {
     }
     
     public static String processEndings(String input, Pronoun pronoun) {
+    	
+        Matcher pronounMatcher = Pattern.compile("<pronoun>(?i)(he|she)</pronoun>").matcher(input);
+        if (pronounMatcher.find()) {
+            String detectedPronoun = pronounMatcher.group(1);
+            pronoun = "he".equalsIgnoreCase(detectedPronoun) ? Pronoun.HE : Pronoun.SHE;
+        }
+        
+        input = removePronounTags(input);
+    	
         Pattern pattern = Pattern.compile("<ending>(.*?)</ending>");
         Matcher matcher = pattern.matcher(input);
         StringBuffer result = new StringBuffer();
@@ -54,16 +63,6 @@ public class Endings {
                         replacement = heMatcher.group(1);
                     }
                 }
-            } else if (pronoun == Pronoun.THEY) {
-                Matcher theyMatcher = Pattern.compile("<they>(.*?)</they>").matcher(groupContent);
-                if (theyMatcher.find()) {
-                    replacement = theyMatcher.group(1);
-                } else {
-                    Matcher heMatcher = Pattern.compile("<he>(.*?)</he>").matcher(groupContent);
-                    if (heMatcher.find()) {
-                        replacement = heMatcher.group(1);
-                    }
-                }
             }
             matcher.appendReplacement(result, replacement);
         }
@@ -71,9 +70,12 @@ public class Endings {
         return result.toString();
     }
 
- 
     public static String removeEndingTags(String string) {
     	return string.replaceAll("<ending>(.*?)</ending>", "");
+    }
+    
+    public static String removePronounTags(String string) {
+    	return string.replaceAll("<pronoun>(.*?)</pronoun>", "");
     }
 
 }

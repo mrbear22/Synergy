@@ -21,7 +21,7 @@ public class DataObject {
 	}
 
 	public Boolean getAsBoolean() {
-		return data != null ? (Boolean) data : null;
+		return data != null && (data.equals("true") || data.equals("false")) ? Boolean.parseBoolean((String) data) : null;
 	}
 
 	public UUID getAsUUID() {

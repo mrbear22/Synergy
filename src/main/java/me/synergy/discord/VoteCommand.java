@@ -10,9 +10,9 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
-public class VoteDiscordCommand extends ListenerAdapter {
+public class VoteCommand extends ListenerAdapter {
 
-	public VoteDiscordCommand() {
+	public VoteCommand() {
 		try {
 	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
 	            return;

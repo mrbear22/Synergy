@@ -28,9 +28,9 @@ import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
 
-public class LinkDiscordCommand extends ListenerAdapter implements SynergyListener {
+public class LinkCommand extends ListenerAdapter implements SynergyListener {
 
-	public LinkDiscordCommand() {
+	public LinkCommand() {
         try {
 	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
 	            return;
@@ -158,7 +158,7 @@ public class LinkDiscordCommand extends ListenerAdapter implements SynergyListen
     	bread.setData("discord", discordId);
 		String account = Synergy.getDiscord().getUserById(Discord.getDiscordIdByUniqueId(uuid)).getEffectiveName();
     	bread.sendMessage(Translation.translate("<lang>synergy-discord-link-success</lang>", bread.getLanguage()).replace("%ACCOUNT%", account));
-    	RolesDiscordListener.addVerifiedRole(discordId);
+    //	RolesDiscordListener.addVerifiedRole(discordId);
     }
 
     public void confirmDiscordLink(UUID uuid) {

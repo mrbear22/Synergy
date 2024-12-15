@@ -307,9 +307,9 @@ public class Utils {
 
     public static String extractText(String json) {
         try {
-            json = json.replaceAll("(?<=\\S)[\\n\\r]+", "\\\\n")
-                       .replaceAll("(?<=\\S)[\\r]+", "\\\\r")
-                       .replaceAll("[\\t]+", "\\\\t");
+        //    json = json.replaceAll("(?<=\\S)[\\n\\r]+", "\\\\n")
+        //              .replaceAll("(?<=\\S)[\\r]+", "\\\\r")
+        //              .replaceAll("[\\t]+", "\\\\t");
 
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(json);

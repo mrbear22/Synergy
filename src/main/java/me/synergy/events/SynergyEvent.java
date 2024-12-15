@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -44,6 +45,12 @@ public class SynergyEvent {
         return new DataObject(options.get(option));
     }
 
+    public Set<Entry<String, DataObject>> getOptions() {
+    	Map<String, DataObject> newoptions = new HashMap<>();
+    	options.entrySet().forEach(option->newoptions.put(option.getKey(), new DataObject(option.getValue())));
+        return newoptions.entrySet();
+    }
+    
 	public UUID getPlayerUniqueId() {
 		return uuid;
 	}
@@ -56,7 +63,7 @@ public class SynergyEvent {
 		return getPlayerUniqueId() == null ? null : Bukkit.getOfflinePlayer(getPlayerUniqueId());
 	}
 	
-	public String getOptionsAsJson() {
+	private String getOptionsAsJson() {
         Gson gson = new Gson();
         return gson.toJson(options);
     }
@@ -68,7 +75,7 @@ public class SynergyEvent {
     }
 	
     public SynergyEvent setOption(String option, String value) {
-        this.options.put(option, value);
+        this.options.put(option,value);
         return this;
     }
 
