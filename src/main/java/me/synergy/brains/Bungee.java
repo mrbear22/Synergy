@@ -39,9 +39,12 @@ public class Bungee extends Plugin implements Listener {
 	    new PlayerProxyHandler().initialize();
 	    new SynergyProxyCommand().initialize();
 	    new WebServer().initialize();
-        new PlanAPI().initialize();
         new RolesHandler().initialize();
 
+    	if (Synergy.isDependencyAvailable("Plan")) {
+    		new PlanAPI().initialize();
+    	}
+        
 	    getProxy().getPluginManager().registerListener(this, this);
 	    
 	    getProxy().registerChannel("net:synergy");

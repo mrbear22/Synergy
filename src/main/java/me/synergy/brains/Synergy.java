@@ -84,7 +84,13 @@ public class Synergy {
     }
 
     public static boolean isDependencyAvailable(String plugin) {
-        return isRunningSpigot() ? getSpigot().getServer().getPluginManager().isPluginEnabled(plugin) : false;
+        if (isRunningSpigot()) {
+        	return getSpigot().getServer().getPluginManager().isPluginEnabled(plugin);
+        }
+        if (isRunningBungee() || isRunningVelocity()) {
+        	return getBungee().getProxy().getPluginManager().getPlugin(plugin) != null;
+        }
+        return false;
     }
 
 	public static DataManager getDataManager() {

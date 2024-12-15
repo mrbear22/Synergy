@@ -21,13 +21,15 @@ public class PlanAPI implements DataExtension {
             ExtensionService.getInstance().register(this);
             Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
         } catch (IllegalStateException planIsNotEnabled) {
+            Synergy.getLogger().error("Plan API is not active.");
         } catch (IllegalArgumentException dataExtensionImplementationIsInvalid) {
+            Synergy.getLogger().error(dataExtensionImplementationIsInvalid.getMessage());
         }
 	}
 	
 	@Override
 	public CallEvents[] callExtensionMethodsOn() {
-	    return new CallEvents[]{CallEvents.PLAYER_JOIN, CallEvents.PLAYER_LEAVE};
+	    return new CallEvents[]{CallEvents.PLAYER_JOIN, CallEvents.PLAYER_LEAVE, CallEvents.SERVER_PERIODICAL};
 	}
 	
 	@StringProvider(

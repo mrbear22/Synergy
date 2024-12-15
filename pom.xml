@@ -14,8 +14,8 @@
 	<distributionManagement>
 		<repository>
 			<id>github</id>
-			<name>GitHub mrbear21 Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/mrbear21/Synergy</url>
+			<name>GitHub mrbear22 Apache Maven Packages</name>
+			<url>https://maven.pkg.github.com/mrbear22/Synergy</url>
 		</repository>
 	</distributionManagement>
 	<build>
