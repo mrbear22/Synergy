@@ -46,6 +46,7 @@ import me.synergy.modules.DataManager;
 import me.synergy.modules.LocalesManager;
 import me.synergy.objects.BreadMaker;
 import me.synergy.utils.ToastMessage;
+import me.synergy.utils.UpdateChecker;
 import me.synergy.web.WebServer;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
@@ -112,6 +113,8 @@ public class Spigot extends JavaPlugin implements PluginMessageListener {
 		if (Synergy.isDependencyAvailable("PlaceholderAPI")) {
 	        new PlaceholdersAPI().initialize();
 		}
+		
+		new UpdateChecker("mrbear22", "Synergy").checkForUpdates();
 		
         getLogger().info("Synergy is ready to be helpful for the all BreadMakers!");
     }
