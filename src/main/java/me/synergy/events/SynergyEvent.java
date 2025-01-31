@@ -98,7 +98,9 @@ public class SynergyEvent {
             }
             if (Synergy.isRunningBungee()) {
 	            for (Entry<String, ServerInfo> server : Bungee.getInstance().getProxy().getServers().entrySet()) {
-	            	server.getValue().sendData("net:synergy", out.toByteArray());
+	            	if (!server.getValue().getPlayers().isEmpty()) {
+	            		server.getValue().sendData("net:synergy", out.toByteArray());
+	            	}
 	            } 
             }
             //Synergy.getLogger().info("ПІСЛАВ: "+getIdentifier()+"/"+String.valueOf(getPlayerUniqueId())+"/"+getOptionsAsJson());

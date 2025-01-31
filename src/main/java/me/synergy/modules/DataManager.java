@@ -6,17 +6,16 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import me.synergy.brains.Synergy;
+import me.synergy.objects.Cache;
 import me.synergy.objects.DataObject;
+import me.synergy.utils.Timings;
 
 public class DataManager {
 
     private static Connection connection;
-    private static Map<UUID, CachedData> cachedData = new ConcurrentHashMap<>();
     
     public void initialize() {
         try {
@@ -59,35 +58,22 @@ public class DataManager {
         }
     }
 
-    static class CachedData {
-        private static final String NULL = "";
-        private final Map<String, String> options = new ConcurrentHashMap<>();
-
-        public boolean hasOption(String option) {
-            return options.containsKey(option);
-        }
-        
-        public String getOption(String option) {
-        	String value = options.get(option);
-            return hasOption(option) && !value.equals(NULL) ? value : null;
-        }
-        
-        public void setOption(String option, String value) {
-    		options.put(option, value != null ? value : NULL);
-        }
-    }
-
-    public String getData(UUID uuid, String option) throws SQLException {
+    public DataObject getData(UUID uuid, String option) throws SQLException {
     	return getData(uuid, option, true);
     }
     
-    public String getData(UUID uuid, String option, boolean cache) throws SQLException {
-    	if (cache) {
-	    	CachedData entry = cachedData.get(uuid);
-	        if (entry != null && entry.hasOption(option)) {
-	        	return entry.getOption(option);
-	        }
+    public DataObject getData(UUID uuid, String option, boolean useCache) throws SQLException {
+    	 	
+    	Timings timing = new Timings();
+    	timing.startTiming("Data-Get");
+    	
+		Cache cache = new Cache(uuid);
+    	
+    	if (useCache && !cache.isExpired(option)) {
+        	timing.endTiming("Data-Get");
+        	return cache.get(option);
     	}
+    	
     	establishConnection();
         String sql = "SELECT value FROM synergy WHERE uuid = ? AND option = ?";
         String value = null;
@@ -98,13 +84,16 @@ public class DataManager {
             if (rs.next()) {
             	value = rs.getString("value");
             }
-            cachedData.computeIfAbsent(uuid, k -> new CachedData())
-                      .setOption(option, value);
+            cache.add(option, value, 600);
         }
-        return value;
+
+    	timing.endTiming("Data-Get");
+        return new DataObject(value);
     }
     
     public void setData(UUID uuid, String option, String value) throws SQLException {
+    	Timings timing = new Timings();
+    	timing.startTiming("Data-Set");
     	establishConnection();
         String sql = value == null ? "DELETE FROM synergy WHERE uuid = ? AND option = ?"
         						   : "REPLACE INTO synergy (uuid, option, value) VALUES (?, ?, ?)";
@@ -115,9 +104,9 @@ public class DataManager {
                 pstmt.setString(3, value);
             }
             pstmt.executeUpdate();
-            cachedData.computeIfAbsent(uuid, k -> new CachedData())
-                      .setOption(option, value);
+            new Cache(uuid).add(option, value, 600);
         }
+    	timing.endTiming("Data-Set");
     }
     
     public UUID findUserUUID(String option, String value) throws SQLException {
@@ -135,14 +124,9 @@ public class DataManager {
         }
     }
     
-    public void clearCache(UUID uuid) {
-    	cachedData.remove(uuid);
-    }
-
     public void close() throws SQLException {
         if (connection != null && !connection.isClosed()) {
             connection.close();
         }
     }
-    
 }

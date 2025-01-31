@@ -28,9 +28,9 @@ public class PlayerSpigotHandler implements Listener {
         BreadMaker bread = Synergy.getBread(uuid);
         String channel = new Chat("global").getDiscord().getChannel();
         
-    	event.setQuitMessage("<lang>synergy-player-quit-message<arg>"+event.getPlayer().getName()+"</arg></lang></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
+    	event.setQuitMessage("<lang>synergy-player-quit-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
     	
-    	bread.clearCache();
+    	bread.getCache().clear();
     	
     	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has left ```");
     	
@@ -51,7 +51,7 @@ public class PlayerSpigotHandler implements Listener {
         UUID uuid = event.getPlayer().getUniqueId();
         BreadMaker bread = Synergy.getBread(uuid);
         String channel = new Chat("global").getDiscord().getChannel();
-    	bread.clearCache();
+        bread.getCache().clear();
         bread.setData("name", event.getPlayer().getName());
     	event.setJoinMessage("<lang>synergy-player-join-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
     	

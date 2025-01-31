@@ -16,6 +16,7 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
+import me.synergy.utils.Timings;
 
 public class LocalesHandler {
 
@@ -34,6 +35,10 @@ public class LocalesHandler {
 			    new PacketAdapter(Synergy.getSpigot(), ListenerPriority.HIGH, PacketType.Play.Server.SYSTEM_CHAT) {
 			        @Override
 			        public void onPacketSending(PacketEvent event) {
+			        	
+			        	Timings timing = new Timings();
+			        	timing.startTiming("Chat");
+			        	
 			            PacketContainer packet = event.getPacket();
 			            BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
 			            List<WrappedChatComponent> components = packet.getChatComponents().getValues();
@@ -43,7 +48,7 @@ public class LocalesHandler {
 			                try {
 			                    component.setJson(Synergy.translate(json, bread.getLanguage())
 				                    .setPlaceholders(bread)
-			                        .setEndings(bread.getPronoun())
+			                        .setEndings(null)
 			                        .setExecuteInteractive(bread)
 			                        .getColored(bread.getTheme()));
 				                if (component.getJson().contains("<cancel_message>")) {
@@ -60,6 +65,8 @@ public class LocalesHandler {
 			                    Synergy.getLogger().error("Error while processing chat message: " + e.getMessage());
 			                }
 			            }
+			            
+			        	timing.endTiming("Chat");
 			        }
 			    }
 			);

@@ -3,18 +3,23 @@ package me.synergy.discord;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.utils.Timings;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -57,57 +62,102 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
 		}
     }
 	
-	public static class PlayerListener implements Listener {
-		
-		public void initialize() {
-			if (!Synergy.getConfig().getBoolean("discord-roles-sync.enabled")) {
-				return;
-			}
-			Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
-	        new BukkitRunnable() {
-	            @Override
-	            public void run() {
-	                Bukkit.getOnlinePlayers().forEach(player -> handle(player));
-	            }
-	        }.runTaskTimer(Synergy.getSpigot(), 0, 20 * 60);
-		}
-		
-		private void handle(Player player) {
-	        if (!Synergy.getBread(player.getUniqueId()).getData("discord").isSet()) {
-	        	return;
-	        }
-	        
-	        if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-form-mc-to-discord")) {
-	        	SynergyEvent event = Synergy.createSynergyEvent("sync-roles").setPlayerUniqueId(player.getUniqueId());
-	        	Set<Entry<String, Object>> roles = Synergy.getConfig().getConfigurationSection("discord-roles-sync.roles").entrySet();
-	        	String[] groups = Synergy.getSpigot().getPermissions().getPlayerGroups(player);
-	        	
-	        	roles.forEach(role -> {
-    				event.setOption(String.valueOf(role.getValue()), String.valueOf(Arrays.asList(groups).contains(role.getKey())));
-	        	});
-	        	
-	        	event.send();
-	        }
+    public static class PlayerListener implements Listener {
 
-	        if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc")) {
-	            Synergy.createSynergyEvent("sync-roles-from-discord-to-mc").setPlayerUniqueId(player.getUniqueId()).setOption("default", Synergy.getConfig().getString("discord-roles-sync.roles.default")).send();
-	        }
-		}
+        public void initialize() {
+            if (!Synergy.getConfig().getBoolean("discord-roles-sync.enabled")) {
+                return;
+            }
+            Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    Bukkit.getOnlinePlayers().forEach(player -> Bukkit.getScheduler().runTaskAsynchronously(Synergy.getSpigot(),
+                    		() -> handle(player))
+                    );
+                }
+            }.runTaskTimer(Synergy.getSpigot(), 20, 20 * 60);
+        }
 
-	}
+        private void handle(Player player) {
+        	
+            if (!Synergy.getConfig().getBoolean("discord-roles-sync.enabled")
+                    || !Synergy.getBread(player.getUniqueId()).getData("discord").isSet()) {
+                return;
+            }
+        	
+        	Timings timing = new Timings();
+        	timing.startTiming("Discord Roles Sync");
+
+            if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-form-mc-to-discord")) {
+                Bukkit.getScheduler().runTaskAsynchronously(Synergy.getSpigot(), () -> {
+                    SynergyEvent event = Synergy.createSynergyEvent("sync-roles").setPlayerUniqueId(player.getUniqueId());
+                    Set<Entry<String, Object>> roles = Synergy.getConfig().getConfigurationSection("discord-roles-sync.roles").entrySet();
+                	String[] groups = Synergy.getSpigot().getPermissions().getPlayerGroups(player);
+                    roles.forEach(role -> event.setOption(
+                            String.valueOf(role.getValue()),
+                            String.valueOf(Arrays.asList(groups).contains(role.getKey()))
+                    ));
+                    event.send();
+                });
+            }
+
+            if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc")) {
+                Bukkit.getScheduler().runTaskAsynchronously(Synergy.getSpigot(), () -> {
+                    Synergy.createSynergyEvent("sync-roles-from-discord-to-mc")
+                            .setPlayerUniqueId(player.getUniqueId())
+                            .setOption("default", Synergy.getConfig().getString("discord-roles-sync.roles.default"))
+                            .send();
+                });
+            }
+            
+        	timing.endTiming("Discord Roles Sync");
+        }
+
+        @EventHandler
+        public void onJoin(PlayerJoinEvent event) {
+            Bukkit.getScheduler().runTaskAsynchronously(Synergy.getSpigot(), () -> handle(event.getPlayer()));
+        }
+
+        @EventHandler
+        public void onQuit(PlayerQuitEvent event) {
+        	//
+        }
+    }
 	
 	@SynergyHandler
     public void onSynergyEvent(SynergyEvent event) {
 		
 		if (event.getIdentifier().equals("sync-roles-from-discord-to-mc") && Synergy.getConfig().getBoolean("discord.enabled")) {
-			Guild guild = event.getOption("guild").isSet() ? Synergy.getDiscord().getGuildById(event.getOption("guild").getAsString())
-					: Synergy.getDiscord().getRoleById(event.getOption("default").getAsString()).getGuild();
-			Member member = guild.getMemberById(Discord.getDiscordIdByUniqueId(event.getPlayerUniqueId()));
-			SynergyEvent synergyEvent = Synergy.createSynergyEvent("sync-groups").setPlayerUniqueId(event.getPlayerUniqueId());
 			
-			member.getRoles().forEach(r -> {
-        		synergyEvent.setOption(r.getId(), "true");
-			});
+			if (Synergy.getDiscord() == null) {
+			    Synergy.getLogger().warning("Discord bot is unavailable.");
+				return;
+			}
+			
+			Guild guild = event.getOption("guild").isSet()
+			        ? Synergy.getDiscord().getGuildById(event.getOption("guild").getAsString())
+			        : Optional.ofNullable(Synergy.getDiscord().getRoleById(event.getOption("default").getAsString()))
+			                  .map(Role::getGuild)
+			                  .orElse(null);
+
+			if (guild == null) {
+			    Synergy.getLogger().warning("Discord guild is not found.");
+			    return;
+			}
+
+			String discordId = Discord.getDiscordIdByUniqueId(event.getPlayerUniqueId());
+			Member member = guild.getMemberById(discordId);
+
+			if (member == null) {
+			    Synergy.getLogger().warning("Member with Discord ID " + discordId + " is not found.");
+			    return;
+			}
+
+			SynergyEvent synergyEvent = Synergy.createSynergyEvent("sync-groups")
+			        .setPlayerUniqueId(event.getPlayerUniqueId());
+
+			member.getRoles().forEach(role -> synergyEvent.setOption(role.getId(), "true"));
 
 			synergyEvent.send();
 		}

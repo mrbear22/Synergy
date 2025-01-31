@@ -44,7 +44,7 @@ public class BreadMaker {
 
 	public DataObject getData(String option) {
 		try {
-			return new DataObject(Synergy.getDataManager().getData(getUniqueId(), option));
+			return Synergy.getDataManager().getData(getUniqueId(), option);
 		} catch (SQLException e) {
 			return new DataObject(null);
 		}
@@ -93,8 +93,8 @@ public class BreadMaker {
 		return Pronoun.HE;
 	}
 
-	public void clearCache() {
-		Synergy.getDataManager().clearCache(getUniqueId());
+	public Cache getCache() {
+		return new Cache(getUniqueId());
 	}
 	
 }

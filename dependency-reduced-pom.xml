@@ -4,7 +4,7 @@
   <groupId>archi.quest</groupId>
   <artifactId>synergy</artifactId>
   <name>Synergy</name>
-  <version>0.0.4-SNAPSHOT</version>
+  <version>1.1</version>
   <description>Basic tools and server messaging plugin</description>
   <build>
     <sourceDirectory>src/main/resources</sourceDirectory>
@@ -252,14 +252,6 @@
         </exclusion>
         <exclusion>
           <artifactId>nuvotifier-sponge</artifactId>
-          <groupId>com.github.NuVotifier.NuVotifier</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>nuvotifier-universal</artifactId>
-          <groupId>com.github.NuVotifier.NuVotifier</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>nuvotifier-velocity</artifactId>
           <groupId>com.github.NuVotifier.NuVotifier</groupId>
         </exclusion>
       </exclusions>

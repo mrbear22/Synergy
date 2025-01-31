@@ -38,6 +38,7 @@ public class Translation {
         		if (Utils.isValidJson(string)) {
         			string = Utils.convertToJson(Utils.extractText(string));
         		}
+        		string = Endings.processEndings(string, null);
         		string = Translation.processLangTags(string, language);
         	//	return translate(string, language);
         	}
@@ -58,6 +59,7 @@ public class Translation {
         		if (Utils.isValidJson(string)) {
         			string = Utils.convertToJson(Utils.extractText(string));
         		}
+        		string = Endings.processEndings(string, null);
         		string = Translation.processTranslationTags(string, language);
         	//	return translate(string, language);
         	}

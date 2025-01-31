@@ -1,6 +1,6 @@
 name: Synergy
 main: me.synergy.brains.Spigot
-version: 0.0.4
+version: 1.1
 api-version: 1.16
 author: mrbear22
 softdepend: [Authme, PlaceholderAPI, ProtocolLib, Votifier, Essentials, Vault, Plan, Factions]

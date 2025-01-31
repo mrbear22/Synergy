@@ -71,6 +71,10 @@ public class Interactive {
             dividedExtra.add(obj);
         } else {
             int endIndex = text.indexOf("</interactive>");
+            if (endIndex == -1) {
+            	Synergy.getLogger().warning("Closing tag </interactive> is not found.");
+                return;
+            }
             String firstPart = text.substring(0, startIndex);
             String interactivePart = text.substring(startIndex + "<interactive>".length(), endIndex);
             String lastPart = text.substring(endIndex + "</interactive>".length());

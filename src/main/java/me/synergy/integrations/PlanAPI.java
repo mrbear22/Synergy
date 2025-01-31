@@ -55,7 +55,7 @@ public class PlanAPI implements DataExtension {
 	@StringProvider(
 	        text = "Discord",
 	    	description = "Player's discord tag.",
-	        iconName = "discord",
+	        iconName = "user",
 	        iconColor = Color.PURPLE
 	)
 	public String Discord(UUID playerUUID) {

@@ -1,6 +1,6 @@
 name: Synergy
 main: me.synergy.brains.Bungee
-version: 0.0.3
+version: 1.1
 author: mrbear22
 softDepends: [Plan]
 description: Basic tools and server messaging plugin

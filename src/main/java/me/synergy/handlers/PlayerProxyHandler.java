@@ -20,7 +20,8 @@ public class PlayerProxyHandler implements Listener {
 	
 	@EventHandler
 	public void onServerConect(ServerConnectEvent event) {
-		Synergy.getDataManager().clearCache(event.getPlayer().getUniqueId());
+        BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
+        bread.getCache().clear();
 	}
 	
     @EventHandler
@@ -48,7 +49,7 @@ public class PlayerProxyHandler implements Listener {
         }
     	ProxiedPlayer player = event.getPlayer();
         BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
-        bread.clearCache();
+        bread.getCache().clear();
 		
     	Synergy.createSynergyEvent("discord-embed").setPlayerUniqueId(player.getUniqueId())
     	.setOption("chat", "global")
