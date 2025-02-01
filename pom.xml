@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>archi.quest</groupId>
 	<artifactId>synergy</artifactId>
-	<version>1.2</version>
+	<version>1.4.0</version>
 	<name>Synergy</name>
 	<description>Basic tools and server messaging plugin</description>
 	<properties>
@@ -18,7 +18,7 @@
 	</distributionManagement>
 	<build>
 		<finalName>Synergy</finalName>
-		<sourceDirectory>src/main/resources</sourceDirectory>
+		<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
 			<resource>
 				<targetPath>.</targetPath>
@@ -59,6 +59,19 @@
 					<target>8</target>
 				</configuration>
 			</plugin>
+	        <plugin>
+	            <artifactId>maven-resources-plugin</artifactId>
+	            <version>3.3.1</version>
+	            <executions>
+	                <execution>
+	                    <id>filter-resources</id>
+	                    <phase>process-resources</phase>
+	                    <goals>
+	                        <goal>resources</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+	        </plugin>
 		</plugins>
 	</build>
 	<repositories>
@@ -83,10 +96,6 @@
 			<url>https://jitpack.io</url>
 		</repository>
 		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-		<repository>
 			<id>essentials-releases</id>
 			<url>https://repo.essentialsx.net/releases/</url>
 		</repository>
@@ -97,10 +106,6 @@
 		<repository>
 			<id>codemc-repo</id>
 			<url>https://repo.codemc.org/repository/maven-public/</url>
-		</repository>
-		<repository>
-			<id>paper-repo</id>
-			<url>https://papermc.io/repo/repository/maven-public/</url>
 		</repository>
 		<repository>
 			<id>bungeecord-repo</id>

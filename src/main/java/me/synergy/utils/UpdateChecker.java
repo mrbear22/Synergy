@@ -3,6 +3,7 @@ package me.synergy.utils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 
 import com.google.gson.JsonObject;
@@ -23,11 +24,13 @@ public class UpdateChecker {
     public void checkForUpdates() {
         new Thread(() -> {
             try {
-                URL url = new URL("https://api.github.com/repos/" + repoOwner + "/" + repoName + "/releases/latest");
+                URI uri = new URI("https", "api.github.com", "/repos/" + repoOwner + "/" + repoName + "/releases/latest", null);
+                URL url = uri.toURL();
+                
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-                
+
                 BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 StringBuilder response = new StringBuilder();
                 String line;
@@ -35,19 +38,23 @@ public class UpdateChecker {
                     response.append(line);
                 }
                 reader.close();
-                
+
                 JsonObject jsonResponse = JsonParser.parseString(response.toString()).getAsJsonObject();
                 String latestVersion = jsonResponse.get("tag_name").getAsString();
                 String currentVersion = Synergy.getSpigot().getDescription().getVersion();
-                
-				if (!latestVersion.equalsIgnoreCase(currentVersion)) {
-					Synergy.getLogger().warning("New update available: " + latestVersion + "! Current version: " + currentVersion);
-				} else {
-					Synergy.getLogger().info("Your plugin has been updated to the latest version!");
-				}
-			} catch (Exception e) {
-				Synergy.getLogger().error("Unable to check for updates: " + e.getMessage());
-			}
+                String downloadUrl = jsonResponse.getAsJsonArray("assets").size() > 0 
+                    ? jsonResponse.getAsJsonArray("assets").get(0).getAsJsonObject().get("browser_download_url").getAsString() 
+                    : jsonResponse.get("html_url").getAsString();
+
+                if (!latestVersion.equalsIgnoreCase(currentVersion)) {
+                    Synergy.getLogger().warning("New update available: " + latestVersion + "! Current version: " + currentVersion);
+                    Synergy.getLogger().warning("Download it here: " + downloadUrl);
+                } else {
+                    Synergy.getLogger().info("Your plugin is updated to the latest version!");
+                }
+            } catch (Exception e) {
+                Synergy.getLogger().error("Unable to check for updates: " + e.getMessage());
+            }
         }).start();
     }
 }

@@ -26,15 +26,15 @@ public class PlayerSpigotHandler implements Listener {
     	Player player = event.getPlayer();
         UUID uuid = event.getPlayer().getUniqueId();
         BreadMaker bread = Synergy.getBread(uuid);
-        String channel = new Chat("global").getDiscord().getChannel();
+        bread.setData("name", event.getPlayer().getName());
+    	bread.getCache().clear();
         
     	event.setQuitMessage("<lang>synergy-player-quit-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
-    	
-    	bread.getCache().clear();
-    	
+
     	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has left ```");
-    	
-    	if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages") && channel.length( )== 19) {
+
+        String channel = new Chat("global").getDiscord().getChannel();
+    	if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages") && channel.length() == 19) {
     		Synergy.createSynergyEvent("discord-embed")
 				   .setPlayerUniqueId(player.getUniqueId())
 				   .setOption("chat", "global")
@@ -50,14 +50,15 @@ public class PlayerSpigotHandler implements Listener {
     	Player player = event.getPlayer();
         UUID uuid = event.getPlayer().getUniqueId();
         BreadMaker bread = Synergy.getBread(uuid);
-        String channel = new Chat("global").getDiscord().getChannel();
         bread.getCache().clear();
         bread.setData("name", event.getPlayer().getName());
+        
     	event.setJoinMessage("<lang>synergy-player-join-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
     	
     	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has joined with IP "+event.getPlayer().getAddress()+" ```");
-    	
-    	if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages") && channel.length( )== 19) {
+
+        String channel = new Chat("global").getDiscord().getChannel();
+    	if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages") && channel.length() == 19) {
         	Synergy.createSynergyEvent("discord-embed").setPlayerUniqueId(player.getUniqueId())
 		           .setOption("channel", channel)
 		           .setOption("color", "#81ecec")

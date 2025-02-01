@@ -62,6 +62,10 @@ public class PlaceholdersAPI {
         @Override
         public String onPlaceholderRequest(Player player, String identifier) {
 	
+        	if (player == null) {
+        		return identifier;
+        	}
+        	
         	Cache cache = new Cache(player.getUniqueId());
 
             if (!cache.isExpired("placeholder:"+identifier)) {
@@ -112,6 +116,10 @@ public class PlaceholdersAPI {
         @Override
         public String onPlaceholderRequest(Player player, String identifier) {
 
+        	if (player == null) {
+        		return identifier;
+        	}
+        	
             Cache cache = new Cache(player.getUniqueId());
             
             if (!cache.isExpired("placeholder:"+identifier)) {
