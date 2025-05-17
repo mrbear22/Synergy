@@ -1,7 +1,9 @@
 package me.synergy.discord;
 
 import java.awt.Color;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -20,7 +22,11 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Guild.Ban;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.exceptions.PermissionException;
 import net.dv8tion.jda.api.interactions.commands.DefaultMemberPermissions;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -36,7 +42,9 @@ public class Discord {
     private static JDA JDA;
     ScheduledExecutorService REPEATING_TASK = Executors.newSingleThreadScheduledExecutor();
     public static Set<String> USERS_TAGS_CACHE = new CopyOnWriteArraySet<>();
-
+    private static long LAST_CACHE_UPDATE = 0;
+    private static long CACHE_UPDATE_INTERVAL = 60000;
+    
     private static final GatewayIntent[] INTENTS = new GatewayIntent[] {
         GatewayIntent.SCHEDULED_EVENTS, GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES
     };
@@ -55,6 +63,7 @@ public class Discord {
             bot.addEventListeners(new RolesHandler());
             bot.addEventListeners(new ChatHandler());
             bot.addEventListeners(new EmbedCommand());
+            bot.addEventListeners(new MembersHandler());
       
             JDA = bot.build();
             
@@ -171,10 +180,22 @@ public class Discord {
         }
     }
     
-    private static long LAST_CACHE_UPDATE = 0;
-    private static long CACHE_UPDATE_INTERVAL = 60000;
+    public static Guild getGuild() {
+    	return JDA.getGuildById(Synergy.getConfig().getString("discord.guild-id"));
+    }
     
-
+    public static Member getMember(BreadMaker bread) {
+        if (!bread.getData("discord").isSet()) {
+            return null;
+        }
+        try {
+            return getGuild().getMemberById(bread.getData("discord").getAsString());
+        } catch (Exception e) {
+            Synergy.getLogger().warning("Error while receiving a user: " + e.getMessage());
+            return null;
+        }
+    }
+    
     public static Set<String> getUsersTagsCache() {
         if (System.currentTimeMillis() - LAST_CACHE_UPDATE >= CACHE_UPDATE_INTERVAL) {
         	LAST_CACHE_UPDATE = System.currentTimeMillis();
@@ -209,6 +230,44 @@ public class Discord {
     	embed.setColor(Color.decode("#f39c12"));
     	embed.setTitle(message);
     	return embed.build();
+    }
+    
+    public static boolean isBanned(BreadMaker bread) {
+        if (!bread.getData("discord").isSet()) {
+            return false;
+        }
+        try {
+            List<Ban> bans = getGuild().retrieveBanList().complete();
+            String userId = bread.getData("discord").getAsString();
+            return bans.stream().anyMatch(ban -> ban.getUser().getId().equals(userId));
+        } catch (PermissionException e) {
+            Synergy.getLogger().warning("Insufficient privileges to receive the ban list: " + e.getMessage());
+        } catch (Exception e) {
+            Synergy.getLogger().warning("Error during ban check: " + e.getMessage());
+        }
+        return false;
+    }
+
+    public static boolean isMissing(BreadMaker bread) {
+        if (!bread.getData("discord").isSet()) {
+            return false;
+        }
+        Member member = getMember(bread);
+        return member == null;
+    }
+
+    public static boolean isMuted(BreadMaker bread) {
+        Member member = getMember(bread);
+        if (member == null) return false;
+        try {
+            OffsetDateTime timeoutEnd = member.getTimeOutEnd();
+            return timeoutEnd != null && timeoutEnd.isAfter(OffsetDateTime.now());
+        } catch (PermissionException e) {
+            Synergy.getLogger().warning("Insufficient rights to check mute: " + e.getMessage());
+        } catch (Exception e) {
+            Synergy.getLogger().warning("Error during mute check: " + e.getMessage());
+        }
+        return false;
     }
     
     public JDA getJda() {

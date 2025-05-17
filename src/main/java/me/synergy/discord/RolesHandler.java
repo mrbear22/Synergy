@@ -3,7 +3,6 @@ package me.synergy.discord;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -81,8 +80,7 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
 
         private void handle(Player player) {
         	
-            if (!Synergy.getConfig().getBoolean("discord-roles-sync.enabled")
-                    || !Synergy.getBread(player.getUniqueId()).getData("discord").isSet()) {
+            if (!Synergy.getConfig().getBoolean("discord-roles-sync.enabled")) {
                 return;
             }
         	
@@ -103,12 +101,10 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
             }
 
             if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc")) {
-                Bukkit.getScheduler().runTaskAsynchronously(Synergy.getSpigot(), () -> {
-                    Synergy.createSynergyEvent("sync-roles-from-discord-to-mc")
-                            .setPlayerUniqueId(player.getUniqueId())
-                            .setOption("default", Synergy.getConfig().getString("discord-roles-sync.roles.default"))
-                            .send();
-                });
+                Synergy.createSynergyEvent("sync-roles-from-discord-to-mc")
+                        .setPlayerUniqueId(player.getUniqueId())
+                        .send();
+             
             }
             
         	timing.endTiming("Discord Roles Sync");
@@ -135,18 +131,21 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
 				return;
 			}
 			
-			Guild guild = event.getOption("guild").isSet()
-			        ? Synergy.getDiscord().getGuildById(event.getOption("guild").getAsString())
-			        : Optional.ofNullable(Synergy.getDiscord().getRoleById(event.getOption("default").getAsString()))
-			                  .map(Role::getGuild)
-			                  .orElse(null);
+			String discordId = Discord.getDiscordIdByUniqueId(event.getPlayerUniqueId());
+			
+			if (discordId == null) {
+				Synergy.createSynergyEvent("sync-groups").setPlayerUniqueId(event.getPlayerUniqueId()).send();
+				return;
+			}
+			
+			Guild guild = Discord.getGuild();
 
 			if (guild == null) {
 			    Synergy.getLogger().warning("Discord guild is not found.");
 			    return;
 			}
 
-			String discordId = Discord.getDiscordIdByUniqueId(event.getPlayerUniqueId());
+			
 			Member member = guild.getMemberById(discordId);
 
 			if (member == null) {
@@ -163,25 +162,34 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
 		}
 		
 		if (event.getIdentifier().equals("sync-groups") && Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc")) {
-			List<String> groups = Arrays.asList(Synergy.getSpigot().getPermissions().getPlayerGroups(Bukkit.getPlayer(event.getPlayerUniqueId())));
-			event.getOptions().forEach(role -> {
-				String group = getGroupByRoleId(role.getKey());
-				if (group != null && !groups.contains(group)) {
-					String command = Synergy.getConfig().getString("discord-roles-sync.custom-command-add")
-									.replace("%PLAYER%", event.getBread().getName()).replace("%GROUP%", group);
-		        	Synergy.dispatchCommand(command);
-				}
-			});
-			
-			groups.forEach(group -> {
-			    String role = getRoleIdByGroup(group);
-			    if (role != null && !event.getOption(role).isSet()) {
-					String command = Synergy.getConfig().getString("discord-roles-sync.custom-command-remove")
-									.replace("%PLAYER%", event.getBread().getName()).replace("%GROUP%", group);
-		        	Synergy.dispatchCommand(command);
-			    }
-			});
+
+		    Player player = Bukkit.getPlayer(event.getPlayerUniqueId());
+		    if (player == null) return;
+
+		    List<String> groups = Arrays.asList(Synergy.getSpigot().getPermissions().getPlayerGroups(player));
+
+		    event.getOptions().forEach(role -> {
+		        String group = getGroupByRoleId(role.getKey());
+		        if (group != null && !groups.contains(group)) {
+		            String command = Synergy.getConfig().getString("discord-roles-sync.custom-command-add")
+		                            .replace("%PLAYER%", event.getBread().getName())
+		                            .replace("%GROUP%", group);
+		            Synergy.dispatchCommand(command);
+		        }
+		    });
+
+		    for (String group : groups) {
+		        String role = getRoleIdByGroup(group);
+		        if (role != null && role.length() == 19 && !event.getOption(role).isSet()) {
+		            String command = Synergy.getConfig().getString("discord-roles-sync.custom-command-remove")
+		                            .replace("%PLAYER%", event.getBread().getName())
+		                            .replace("%GROUP%", group);
+		            Synergy.dispatchCommand(command);
+		        }
+		    }
+
 		}
+
 
 		if (event.getIdentifier().equals("sync-roles") && Synergy.getConfig().getBoolean("discord.enabled")) {
 		    String userId = Discord.getDiscordIdByUniqueId(event.getPlayerUniqueId());

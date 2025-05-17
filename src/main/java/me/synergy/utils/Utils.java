@@ -132,21 +132,22 @@ public class Utils {
 
     public static String censorBlockedWords(String sentence) {
         double tolerance = Synergy.getConfig().getDouble("chat-manager.chat-filter.blocked-words-tolerance-percentage");
+        
         for (String blockedWord : getBlockedWorlds()) {
             String match = "";
             int start = 0, end = 0;
+            
             for (int i = 0; i < removeColorCodes(sentence).length(); i++) {
                 if (Character.isAlphabetic(removeColorCodes(sentence).charAt(i))) {
-
                     boolean isFirstLetterMatches = blockedWord.charAt(0) == removeColorCodes(sentence).charAt(i);
-                    boolean isWordStartsWithBadWord = blockedWord.startsWith(String.valueOf(match) + removeColorCodes(sentence).charAt(i));
-                    boolean isWordWithoutDuplicatesStartsWithBadWord = blockedWord.startsWith(removeConsecutiveDuplicates(String.valueOf(match) + removeColorCodes(sentence).charAt(i)));
+                    boolean isWordStartsWithBadWord = blockedWord.startsWith(match + removeColorCodes(sentence).charAt(i));
+                    boolean isWordWithoutDuplicatesStartsWithBadWord = blockedWord.startsWith(removeConsecutiveDuplicates(match + removeColorCodes(sentence).charAt(i)));
 
                     if (isFirstLetterMatches || isWordStartsWithBadWord || isWordWithoutDuplicatesStartsWithBadWord) {
                         if (match.isEmpty()) {
-							start = i;
-						}
-                        match = String.valueOf(match) + Utils.removeColorCodes(sentence).charAt(i);
+                            start = i;
+                        }
+                        match += removeColorCodes(sentence).charAt(i);
                         end = i;
                     } else {
                         match = "";
@@ -154,10 +155,15 @@ public class Utils {
 
                     if (blockedWord.equals(match) || blockedWord.equals(removeConsecutiveDuplicates(match))) {
                         String word = findWordInRange(removeColorCodes(sentence), start, end);
+
+                        if (getIgnoredWorlds().contains(word)) {
+                            continue;
+                        }
+
                         double percentage = (double) match.length() / (double) word.length() * 100;
-                        if ((tolerance < percentage || !word.contains(blockedWord)) && !getIgnoredWorlds().contains(word)) {
-							sentence = censorPartOfSentence(sentence, start, end);
-						}
+                        if (tolerance < percentage || !word.contains(blockedWord)) {
+                            sentence = censorPartOfSentence(sentence, start, end);
+                        }
                     }
                 }
             }
@@ -165,6 +171,34 @@ public class Utils {
         return sentence;
     }
 
+    public static String findWordInRange(String sentence, int start, int end) {
+        String[] words = sentence.split("\\s+");
+        
+        for (String word : words) {
+            int wordStart = sentence.indexOf(word, start - 5 >= 0 ? start - 5 : 0);
+            int wordEnd = wordStart + word.length() - 1;
+
+            if (start >= wordStart && end <= wordEnd) {
+                return word;
+            }
+        }
+        return sentence.substring(start, Math.min(end + 1, sentence.length()));
+    }
+
+    public static String censorPartOfSentence(String sentence, int start, int end) {
+        if (end - start < 2) {
+            return sentence;
+        }
+        
+        char[] charArray = sentence.toCharArray();
+        for (int i = start + 1; i < end; i++) { // Міняємо тільки символи між start і end
+            if (Character.isAlphabetic(sentence.charAt(i))) {
+                charArray[i] = '*';
+            }
+        }
+        return new String(charArray);
+    }
+    
 	public static String translateSmiles(String string) {
 		for (Entry<String, Object> e : Synergy.getConfig().getConfigurationSection("chat-manager.custom-emojis").entrySet()) {
 			string = string.replace(e.getKey(), Synergy.getConfig().getString("chat-manager.custom-emojis."+e.getKey()));
@@ -190,44 +224,6 @@ public class Utils {
             }
         }
         return result.toString();
-    }
-
-    public static String findWordInRange(String sentence, int start, int end) {
-        String[] words = sentence.split("\\s+");
-        for (String word : words) {
-            int wordStart = sentence.indexOf(word);
-            int wordEnd = wordStart + word.length() - 1;
-
-            if (start >= wordStart && end <= wordEnd) {
-                return word;
-            }
-        }
-        return sentence.substring(start, end);
-    }
-
-    public static String censorWord(String word) {
-        if (word.length() <= 2) {
-            return word;
-        }
-        char[] charArray = word.toCharArray();
-        for (int i = 1; i < charArray.length - 1; i++) {
-            charArray[i] = '*';
-        }
-        return new String(charArray);
-    }
-
-
-    public static String censorPartOfSentence(String sentence, int start, int end) {
-        if (end-start < 2) {
-            return sentence;
-        }
-        char[] charArray = sentence.toCharArray();
-        for (int i = 1; i < charArray.length - 1; i++) {
-        	if (i > start && i < end && Character.isAlphabetic(sentence.charAt(i))) {
-        		charArray[i] = '*';
-        	}
-        }
-        return new String(charArray);
     }
 
     private static String applyGradientToText(String text, ChatColor startColor, ChatColor endColor) {

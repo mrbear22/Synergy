@@ -8,18 +8,22 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.UUID;
 
+import me.synergy.anotations.SynergyHandler;
+import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
+import me.synergy.events.SynergyEvent;
 import me.synergy.objects.Cache;
 import me.synergy.objects.DataObject;
 import me.synergy.utils.Timings;
 
-public class DataManager {
+public class DataManager implements SynergyListener {
 
     private static Connection connection;
     
     public void initialize() {
         try {
         	establishConnection();
+        	Synergy.getEventManager().registerEvents(this);
 	        Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
         } catch (Exception c) {
 	        Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
@@ -27,8 +31,8 @@ public class DataManager {
     }
 
     private void establishConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-        	Config config = Synergy.getConfig();
+        if (connection == null || connection.isClosed() || !connection.isValid(2)) {
+            Config config = Synergy.getConfig();
             String dbType = config.getString("storage.type");
             String host = config.getString("storage.host");
             String database = config.getString("storage.database");
@@ -39,7 +43,9 @@ public class DataManager {
             if (dbType.equalsIgnoreCase("sqlite")) {
                 connection = DriverManager.getConnection("jdbc:sqlite:" + host);
             } else if (dbType.equalsIgnoreCase("mysql")) {
-                connection = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + database, user, password);
+                String url = "jdbc:mysql://" + host + ":" + port + "/" + database +
+                             "?useSSL=false&serverTimezone=UTC";
+                connection = DriverManager.getConnection(url, user, password);
             }
 
             createTable();
@@ -106,7 +112,18 @@ public class DataManager {
             pstmt.executeUpdate();
             new Cache(uuid).add(option, value, 600);
         }
+        Synergy.createSynergyEvent("update-bread-cache").setPlayerUniqueId(uuid).setOption("option", option).setOption("value", value).send();
     	timing.endTiming("Data-Set");
+    }
+    
+    @SynergyHandler
+    public void onSynergyEvent(SynergyEvent event) {
+    	if (!event.getIdentifier().equals("update-bread-cache")) {
+    		return;
+    	}
+    	String option = event.getOption("option").getAsString();
+    	String value = event.getOption("value").isSet() ? event.getOption("value").getAsString() : null;
+    	new Cache(event.getPlayerUniqueId()).add(option, value, 600);
     }
     
     public UUID findUserUUID(String option, String value) throws SQLException {

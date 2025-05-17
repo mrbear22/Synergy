@@ -50,7 +50,7 @@ public class UpdateChecker {
                     Synergy.getLogger().warning("New update available: " + latestVersion + "! Current version: " + currentVersion);
                     Synergy.getLogger().warning("Download it here: " + downloadUrl);
                 } else {
-                    Synergy.getLogger().info("Your plugin is updated to the latest version!");
+                    Synergy.getLogger().info("Synergy is updated to the latest version!");
                 }
             } catch (Exception e) {
                 Synergy.getLogger().error("Unable to check for updates: " + e.getMessage());

@@ -64,7 +64,7 @@ public class Color {
     	json = processColorReplace(json, "default");
         Pattern pattern = Pattern.compile("<#[A-Fa-f0-9]{6}>");
         Matcher matcher = pattern.matcher(json);
-        return ChatColor.stripColor(matcher.replaceAll(""));
+        return ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', matcher.replaceAll("")));
     }
 
     public static String processThemeTags(String input, String theme) {
@@ -131,9 +131,13 @@ public class Color {
     }
 
     public static String customColorCodes(String sentence) {
-        Set<String> codes = Synergy.getSpigot().getConfig().getConfigurationSection("chat-manager.custom-color-tags").getKeys(false);
-        for (String c : codes) {
-            sentence = sentence.replace(c, Synergy.getSpigot().getConfig().getString("chat-manager.custom-color-tags." + c));
+        try {
+	        Set<Entry<String, Object>> codes = Synergy.getConfig().getConfigurationSection("chat-manager.custom-color-tags").entrySet();
+	        for (Entry<String, Object> c : codes) {
+	            sentence = sentence.replace(c.getKey(), String.valueOf(c.getValue()));
+	        }
+        } catch (Exception e) {
+        	Synergy.getLogger().error("Error while processing custom color code replace: " + e.getLocalizedMessage());
         }
         return sentence;
     }

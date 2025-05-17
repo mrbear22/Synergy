@@ -17,6 +17,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
+import me.synergy.utils.BookMessage;
 import me.synergy.utils.Translation;
 
 public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, SynergyListener {
@@ -63,7 +64,11 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
     		return true;
     	}
         if (args.length == 0) {
-        	bread.sendMessage(Translation.processLangTags("<lang>synergy-discord-invite</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
+        	
+            StringBuilder build = new StringBuilder(Translation.translate("<lang>synergy-discord-invite</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
+            BookMessage.sendFakeBook((Player) sender, "Discord", build.toString());
+        	
+        	//bread.sendMessage(Translation.processLangTags("<lang>synergy-discord-invite</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
             return true;
         }
         switch (args[0]) {

@@ -3,7 +3,10 @@ package me.synergy.objects;
 import java.sql.SQLException;
 import java.util.UUID;
 
+import me.synergy.brains.Bungee;
+import me.synergy.brains.Spigot;
 import me.synergy.brains.Synergy;
+import me.synergy.brains.Velocity;
 import me.synergy.integrations.AuthmeAPI;
 import me.synergy.integrations.EssentialsAPI;
 import me.synergy.utils.Endings.Pronoun;
@@ -50,6 +53,14 @@ public class BreadMaker {
 		}
 	}
 
+	public DataObject getData(String option, boolean useCache) {
+		try {
+			return Synergy.getDataManager().getData(getUniqueId(), option, useCache);
+		} catch (SQLException e) {
+			return new DataObject(null);
+		}
+	}
+	
 	public void setData(String option, String value) {
 		 try {
 			Synergy.getDataManager().setData(getUniqueId(), option, value);
@@ -95,6 +106,22 @@ public class BreadMaker {
 
 	public Cache getCache() {
 		return new Cache(getUniqueId());
+	}
+
+	public void kick(String reason) {
+		try {
+		    if (Synergy.isRunningSpigot()) {
+		      Spigot.kick(getUniqueId(), reason);
+		    }
+		    if (Synergy.isRunningVelocity()) {
+		    	Velocity.kick(getUniqueId(), reason);
+		    }
+		    if (Synergy.isRunningBungee()) {
+			  Bungee.kick(getUniqueId(), reason);
+			}
+		} catch (Exception c) {
+			System.out.print(c.getLocalizedMessage());
+		}
 	}
 	
 }

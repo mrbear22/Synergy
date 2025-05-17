@@ -4,7 +4,7 @@
   <groupId>archi.quest</groupId>
   <artifactId>synergy</artifactId>
   <name>Synergy</name>
-  <version>1.3.0</version>
+  <version>1.4.0</version>
   <description>Basic tools and server messaging plugin</description>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>

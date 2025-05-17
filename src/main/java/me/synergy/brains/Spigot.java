@@ -21,6 +21,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import me.synergy.anotations.SynergyHandler;
+import me.synergy.anotations.SynergyListener;
 import me.synergy.commands.ChatCommand;
 import me.synergy.commands.DiscordCommand;
 import me.synergy.commands.LanguageCommand;
@@ -52,7 +54,7 @@ import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.permission.Permission;
 
-public class Spigot extends JavaPlugin implements PluginMessageListener {
+public class Spigot extends JavaPlugin implements PluginMessageListener, SynergyListener {
 
     private static Spigot INSTANCE;
     private ProtocolManager PROTOCOLMANAGER;
@@ -113,6 +115,8 @@ public class Spigot extends JavaPlugin implements PluginMessageListener {
 		if (Synergy.isDependencyAvailable("PlaceholderAPI")) {
 	        new PlaceholdersAPI().initialize();
 		}
+		
+        Synergy.getEventManager().registerEvents(this);
 		
 		new UpdateChecker("mrbear22", "Synergy").checkForUpdates();
 		
@@ -253,6 +257,14 @@ public class Spigot extends JavaPlugin implements PluginMessageListener {
 		return getPlayerByUniqueId(uniqueId) == null ? false : getPlayerByUniqueId(uniqueId).hasPermission(node);
 	}
 
+	@SynergyHandler
+	public void synergyEvent(SynergyEvent event) {
+		if (!event.getIdentifier().equals("dispatch-command")) {
+			return;
+		}
+		dispatchCommand(event.getOption("command").getAsString());
+	}
+	
 	public void dispatchCommand(String string) {
 	    Bukkit.getScheduler().runTask(this, new Runnable() {
 	        @Override
@@ -313,5 +325,9 @@ public class Spigot extends JavaPlugin implements PluginMessageListener {
             }
         }.runTaskTimerAsynchronously(this, 0L, WebServer.MONITOR_INTERVAL_SECONDS * 20L);
     }
+
+	public static void kick(UUID uniqueId, String reason) {
+		Bukkit.getPlayer(uniqueId).kickPlayer(reason);
+	}
 
 }

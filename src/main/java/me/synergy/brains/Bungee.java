@@ -15,8 +15,10 @@ import me.synergy.integrations.PlanAPI;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
 import me.synergy.modules.LocalesManager;
+import me.synergy.objects.BreadMaker;
 import me.synergy.web.WebServer;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -101,5 +103,15 @@ public class Bungee extends Plugin implements Listener {
            }
 	   }, 0L, WebServer.MONITOR_INTERVAL_SECONDS, TimeUnit.SECONDS);
    }
+
+    @SuppressWarnings("deprecation")
+    public static void kick(UUID uniqueId, String reason) {
+        BreadMaker bread = Synergy.getBread(uniqueId);
+        ProxiedPlayer player = getInstance().getProxy().getPlayer(uniqueId);
+        if (player != null) {
+            player.disconnect(Synergy.translate(reason, bread.getLanguage()).getColored(bread.getTheme()));
+        }
+    }
+
 	
 }

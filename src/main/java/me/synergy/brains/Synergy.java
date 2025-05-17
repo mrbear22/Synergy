@@ -1,6 +1,7 @@
 package me.synergy.brains;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -97,14 +98,8 @@ public class Synergy {
 		return new DataManager();
 	}
 
-	public static UUID getUniqueIdFromName(String username) {
-		if (isRunningBungee()) {
-			return getBungee().getProxy().getPlayer(username).getUniqueId();
-		}
-		if (isRunningSpigot()) {
-			return getSpigot().getUniqueIdFromName(username);
-		}
-		return null;
+	public static UUID getOfflineUniqueId(String username) {
+	    return UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(StandardCharsets.UTF_8));
 	}
 
 	public static void debug(String string) {
@@ -127,6 +122,8 @@ public class Synergy {
 	public static void dispatchCommand(String command) {
 		if (isRunningSpigot()) {
 			getSpigot().dispatchCommand(command);
+		} else {
+			createSynergyEvent("dispatch-command").setOption("command", command).send();
 		}
 	}
 	

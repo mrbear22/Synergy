@@ -47,6 +47,13 @@ public class Config {
 
             addDefault("discord.enabled", false);
             addDefault("discord.bot-token", "token");
+            addDefault("discord.guild-id", "00000000000000000");
+            addDefault("discord.kick-player.if-muted.enabled", false);
+            addDefault("discord.kick-player.if-muted.message", "You have been kicked due to an active timeout on Discord.");
+            addDefault("discord.kick-player.if-banned.enabled", false);
+            addDefault("discord.kick-player.if-banned.message", "You have been kicked due to an active ban on Discord.");
+            addDefault("discord.kick-player.if-missing.enabled", false);
+            addDefault("discord.kick-player.if-missing.message", "You have been kicked because you're not currently on our Discord server.");
             addDefault("discord.player-join-leave-messages", true);
             addDefault("discord.invite-link", "https://discord.gg/example");
             addDefault("discord.activities", new String[] {"Activity Example", "Another Activity Example"});
