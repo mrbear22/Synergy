@@ -5,10 +5,16 @@ Basic tools and server messaging plugin for minecraft servers. The plugin can be
 
 # Maven Dependency
 ```
+<repositories>
+	<repository>
+	    <id>jitpack.io</id>
+	    <url>https://jitpack.io</url>
+	</repository>
+</repositories>
 <dependency>
-  <groupId>archi.quest</groupId>
-  <artifactId>synergy</artifactId>
-  <version>0.0.4-SNAPSHOT</version>
+	<groupId>archi.quest</groupId>
+	<artifactId>synergy</artifactId>
+	<version>0.4.2</version>
 </dependency>
 ```
 
