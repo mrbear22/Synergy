@@ -14,7 +14,7 @@ Basic tools and server messaging plugin for minecraft servers. The plugin can be
 <dependency>
 	<groupId>archi.quest</groupId>
 	<artifactId>synergy</artifactId>
-	<version>0.4.2</version>
+	<version>1.4.3</version>
 </dependency>
 ```
 
