@@ -1,39 +1,60 @@
 package me.synergy.objects;
 
 import java.util.UUID;
-
 import me.synergy.utils.Endings.Pronoun;
 
 public class DataObject {
 
-	private Object data;
+    private final Object data;
 
-	public DataObject(Object data) {
-		this.data = data;
-	}
+    public DataObject(Object data) {
+        this.data = data;
+    }
 
-	public String getAsString() {
-		return data != null ? (String) data : null;
-	}
+    public String getAsString() {
+        return data != null ? data.toString() : null;
+    }
 
-	public Integer getAsInteger() {
-		return data != null ? (Integer) data : null;
-	}
+    public Integer getAsInteger() {
+        try {
+            return data != null ? Integer.parseInt(data.toString()) : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 
-	public Boolean getAsBoolean() {
-		return data != null && (data.equals("true") || data.equals("false")) ? Boolean.parseBoolean((String) data) : null;
-	}
+    public Long getAsLong() {
+        try {
+            return data != null ? Long.parseLong(data.toString()) : null;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
 
-	public UUID getAsUUID() {
-		return data != null ? UUID.fromString(getAsString()) : null;
-	}
+    public Boolean getAsBoolean() {
+        String str = getAsString();
+        return (str != null && (str.equalsIgnoreCase("true") || str.equalsIgnoreCase("false")))
+                ? Boolean.parseBoolean(str)
+                : null;
+    }
 
-	public Pronoun getAsPronoun() {
-		return data != null ? Pronoun.valueOf(data.toString().toUpperCase()) : null;
-	}
-	
-	public boolean isSet() {
-		return data != null;
-	}
+    public UUID getAsUUID() {
+        try {
+            return data != null ? UUID.fromString(data.toString()) : null;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 
+    public Pronoun getAsPronoun() {
+        try {
+            return data != null ? Pronoun.valueOf(data.toString().toUpperCase()) : null;
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public boolean isSet() {
+        return data != null;
+    }
 }

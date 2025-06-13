@@ -52,6 +52,14 @@ public class BreadMaker {
 			return new DataObject(null);
 		}
 	}
+	
+	public DataObject getDataOrDefault(String option, Object defaultValue) {
+		try {
+			return Synergy.getDataManager().getDataOrDefault(getUniqueId(), option, defaultValue);
+		} catch (SQLException e) {
+			return new DataObject(null);
+		}
+	}
 
 	public DataObject getData(String option, boolean useCache) {
 		try {
@@ -61,7 +69,15 @@ public class BreadMaker {
 		}
 	}
 	
-	public void setData(String option, String value) {
+	public DataObject getDataOrDefault(String option, Object defaultValue, boolean useCache) {
+		try {
+			return Synergy.getDataManager().getDataOrDefault(getUniqueId(), option, defaultValue, useCache);
+		} catch (SQLException e) {
+			return new DataObject(null);
+		}
+	}
+	
+	public void setData(String option, Object value) {
 		 try {
 			Synergy.getDataManager().setData(getUniqueId(), option, value);
 		} catch (SQLException e) {

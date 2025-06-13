@@ -33,11 +33,26 @@ public class PlayerProxyHandler implements Listener {
 	public void onServerConect(ServerConnectEvent event) {
         BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
         bread.getCache().clear();
+	    bread.setData("name", event.getPlayer().getName());
+	    ProxiedPlayer player = event.getPlayer();
+		
+	    if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+	    	return;
+	    }
+	   
+        if (Synergy.getConfig().getBoolean("discord.kick-player.if-banned.enabled")) {
+        	if (Discord.isBanned(bread)) {
+                kickedPlayers.add(player.getUniqueId());
+        		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-banned.message"));
+    	        return;
+        	}
+        }
 	}
 	
 	@EventHandler
 	public void onPlayerLogin(PostLoginEvent event) {
 	    BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
+        bread.getCache().clear();
 	    bread.setData("name", event.getPlayer().getName());
 	    ProxiedPlayer player = event.getPlayer();
 		

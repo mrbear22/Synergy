@@ -54,6 +54,8 @@ public class Config {
             addDefault("discord.kick-player.if-banned.message", "You have been kicked due to an active ban on Discord.");
             addDefault("discord.kick-player.if-missing.enabled", false);
             addDefault("discord.kick-player.if-missing.message", "You have been kicked because you're not currently on our Discord server.");
+            addDefault("discord.kick-player.if-has-no-link.enabled", false);
+            addDefault("discord.kick-player.if-has-no-link.message", "You have to link your Discord to join this server. See more information on our website example.com/info");
             addDefault("discord.player-join-leave-messages", true);
             addDefault("discord.invite-link", "https://discord.gg/example");
             addDefault("discord.activities", new String[] {"Activity Example", "Another Activity Example"});

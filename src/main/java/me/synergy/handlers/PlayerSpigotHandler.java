@@ -71,6 +71,14 @@ public class PlayerSpigotHandler implements Listener {
     		return;
     	}
     			
+        if (Synergy.getConfig().getBoolean("discord.kick-player.if-has-no-link.enabled")) {
+        	if (!bread.getData("discord").isSet() && !bread.getData("confirm-discord").isSet()) {
+                kickedPlayers.add(player.getUniqueId());
+        		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-has-no-link.message"));
+    	        return;
+        	}
+        }
+    	
         if (Synergy.getConfig().getBoolean("discord.kick-player.if-banned.enabled")) {
         	if (Discord.isBanned(bread)) {
                 kickedPlayers.add(player.getUniqueId());

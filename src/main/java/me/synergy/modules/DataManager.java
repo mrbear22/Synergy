@@ -65,39 +65,58 @@ public class DataManager implements SynergyListener {
     }
 
     public DataObject getData(UUID uuid, String option) throws SQLException {
-    	return getData(uuid, option, true);
+    	return getData(uuid, option.toString(), null, true);
     }
     
     public DataObject getData(UUID uuid, String option, boolean useCache) throws SQLException {
-    	 	
-    	Timings timing = new Timings();
-    	timing.startTiming("Data-Get");
-    	
-		Cache cache = new Cache(uuid);
-    	
-    	if (useCache && !cache.isExpired(option)) {
-        	timing.endTiming("Data-Get");
-        	return cache.get(option);
-    	}
-    	
-    	establishConnection();
-        String sql = "SELECT value FROM synergy WHERE uuid = ? AND option = ?";
-        String value = null;
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setString(1, uuid.toString());
-            pstmt.setString(2, option);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-            	value = rs.getString("value");
-            }
-            cache.add(option, value, 600);
-        }
-
-    	timing.endTiming("Data-Get");
-        return new DataObject(value);
+    	return getData(uuid, option.toString(), null, useCache);
     }
     
-    public void setData(UUID uuid, String option, String value) throws SQLException {
+    public DataObject getDataOrDefault(UUID uuid, String option, Object defaultValue) throws SQLException {
+    	return getData(uuid, option.toString(), defaultValue, true);
+    }
+    
+    public DataObject getDataOrDefault(UUID uuid, String option, Object defaultValue, boolean useCache) throws SQLException {
+    	return getData(uuid, option.toString(), defaultValue, useCache);
+    }
+    
+    public DataObject getData(UUID uuid, String option, Object defaultValue, boolean useCache) throws SQLException {
+
+        Timings timing = new Timings();
+        timing.startTiming("Data-Get");
+
+        Cache cache = new Cache(uuid);
+        String key = option;
+
+        if (useCache && !cache.isExpired(key)) {
+            timing.endTiming("Data-Get");
+            return cache.get(key);
+        }
+
+        establishConnection();
+        String sql = "SELECT value FROM synergy WHERE uuid = ? AND option = ?";
+        String value = null;
+
+        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, uuid.toString());
+            pstmt.setString(2, key);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                value = rs.getString("value");
+            }
+        }
+
+        Object data = (value != null) ? value : defaultValue;
+
+        cache.add(key, data, 600);
+
+        timing.endTiming("Data-Get");
+
+        return new DataObject(data);
+    }
+
+    
+    public void setData(UUID uuid, String option, Object value) throws SQLException {
     	Timings timing = new Timings();
     	timing.startTiming("Data-Set");
     	establishConnection();
@@ -107,12 +126,12 @@ public class DataManager implements SynergyListener {
             pstmt.setString(1, uuid.toString());
             pstmt.setString(2, option);
             if (value != null) {
-                pstmt.setString(3, value);
+                pstmt.setString(3, value.toString());
             }
             pstmt.executeUpdate();
             new Cache(uuid).add(option, value, 600);
         }
-        Synergy.createSynergyEvent("update-bread-cache").setPlayerUniqueId(uuid).setOption("option", option).setOption("value", value).send();
+        Synergy.createSynergyEvent("update-bread-cache").setPlayerUniqueId(uuid).setOption("option", option).setOption("value", value.toString()).send();
     	timing.endTiming("Data-Set");
     }
     

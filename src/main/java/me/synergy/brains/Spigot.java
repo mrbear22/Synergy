@@ -286,7 +286,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
 	                if (extraObject.has("soundEvent")) {
 	                    JsonObject soundEvent = extraObject.getAsJsonObject("soundEvent");
 	                    if (soundEvent.has("sound")) {
-	                    	Synergy.getSpigot().getPlayerByUniqueId(bread.getUniqueId()).playSound(Bukkit.getPlayer(bread.getUniqueId()), Sound.valueOf(soundEvent.get("sound").getAsString().toUpperCase()), 1,1);
+	                    //	Synergy.getSpigot().getPlayerByUniqueId(bread.getUniqueId()).playSound(Bukkit.getPlayer(bread.getUniqueId()), Sound.valueOf(soundEvent.get("sound").getAsString().toUpperCase()), 1,1);
 	                    }
 	                }
 	                
