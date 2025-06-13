@@ -80,7 +80,7 @@ public class DataManager implements SynergyListener {
     	return getData(uuid, option.toString(), defaultValue, useCache);
     }
     
-    public DataObject getData(UUID uuid, String option, Object defaultValue, boolean useCache) throws SQLException {
+    private DataObject getData(UUID uuid, String option, Object defaultValue, boolean useCache) throws SQLException {
 
         Timings timing = new Timings();
         timing.startTiming("Data-Get");
