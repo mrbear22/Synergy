@@ -3,19 +3,72 @@ Basic tools and server messaging plugin for minecraft servers. The plugin can be
 
 > The purpose of the plugin is to create synergy between servers and unite them into a solid and seamless project
 
-# Maven Dependency
-```
+# Installation
+
+## Maven
+
+Add repository and dependency to your `pom.xml`:
+
+```xml
 <repositories>
-	<repository>
-	    <id>jitpack.io</id>
-	    <url>https://jitpack.io</url>
-	</repository>
+    <repository>
+        <id>github</id>
+        <name>GitHub mrbear22 Apache Maven Packages</name>
+        <url>https://maven.pkg.github.com/mrbear22/Synergy</url>
+    </repository>
 </repositories>
-<dependency>
-	<groupId>archi.quest</groupId>
-	<artifactId>synergy</artifactId>
-	<version>1.4.3</version>
-</dependency>
+
+<dependencies>
+    <dependency>
+        <groupId>archi.quest</groupId>
+        <artifactId>synergy</artifactId>
+        <version>1.4.4</version>
+    </dependency>
+</dependencies>
+```
+
+## Gradle
+
+Add to your `build.gradle`:
+
+```gradle
+repositories {
+    maven {
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/mrbear22/Synergy")
+        credentials {
+            username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
+            password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
+        }
+    }
+}
+
+dependencies {
+    implementation 'archi.quest:synergy:1.4.4'
+}
+```
+
+## Authentication
+
+Create a [Personal Access Token](https://github.com/settings/tokens) with `read:packages` permission and configure:
+
+**Maven**: Add to `~/.m2/settings.xml`:
+```xml
+<settings>
+    <servers>
+        <server>
+            <id>github</id>
+            <username>YOUR_GITHUB_USERNAME</username>
+            <password>YOUR_PERSONAL_ACCESS_TOKEN</password>
+        </server>
+    </servers>
+</settings>
+```
+
+**Gradle**: Set environment variables `USERNAME` and `TOKEN` or add to `gradle.properties`:
+```properties
+gpr.user=YOUR_GITHUB_USERNAME
+gpr.key=YOUR_PERSONAL_ACCESS_TOKEN
 ```
 
 # Permissions

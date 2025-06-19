@@ -131,7 +131,13 @@ public class DataManager implements SynergyListener {
             pstmt.executeUpdate();
             new Cache(uuid).add(option, value, 600);
         }
-        Synergy.createSynergyEvent("update-bread-cache").setPlayerUniqueId(uuid).setOption("option", option).setOption("value", value.toString()).send();
+        
+        SynergyEvent event = Synergy.createSynergyEvent("update-bread-cache").setPlayerUniqueId(uuid).setOption("option", option);
+        if (value != null) {
+        	event.setOption("value", value.toString());
+        }
+        event.send();
+        
     	timing.endTiming("Data-Set");
     }
     
