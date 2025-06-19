@@ -1,13 +1,31 @@
-# Synergy [Velocity-Bungee-Spigot]
-Basic tools and server messaging plugin for minecraft servers. The plugin can be used both in proxy and standalone servers.
+# 🔗 Synergy
+*Velocity • BungeeCord • Spigot*
 
-> The purpose of the plugin is to create synergy between servers and unite them into a solid and seamless project
+[![Version](https://img.shields.io/badge/version-1.4.4-blue.svg)](https://github.com/mrbear22/Synergy/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Minecraft](https://img.shields.io/badge/minecraft-1.8+-orange.svg)](https://minecraft.net)
+[![Java](https://img.shields.io/badge/java-8+-red.svg)](https://java.com)
 
-# Installation
+> **Create synergy between your Minecraft servers and unite them into a solid, seamless project**
 
-## Maven
+A comprehensive messaging and tooling plugin designed for modern Minecraft server networks. Synergy bridges the gap between proxy servers and individual game servers, providing seamless communication, data synchronization, and localization features.
 
-Add repository and dependency to your `pom.xml`:
+---
+
+## ✨ Features
+
+🌐 **Cross-Server Messaging** - Synchronize events and data across your entire network  
+🗺️ **Multi-Language Support** - Built-in localization system with placeholder support  
+💾 **Player Data Storage** - Convenient API for persistent player data management  
+🔧 **Proxy & Standalone** - Works with Velocity, BungeeCord, and standalone Spigot servers  
+⚡ **Lightweight & Fast** - Optimized performance with minimal resource usage
+
+---
+
+## 📦 Installation
+
+### Maven
+Add the repository and dependency to your `pom.xml`:
 
 ```xml
 <repositories>
@@ -27,8 +45,7 @@ Add repository and dependency to your `pom.xml`:
 </dependencies>
 ```
 
-## Gradle
-
+### Gradle
 Add to your `build.gradle`:
 
 ```gradle
@@ -48,11 +65,11 @@ dependencies {
 }
 ```
 
-## Authentication
+### 🔐 Authentication Setup
 
-Create a [Personal Access Token](https://github.com/settings/tokens) with `read:packages` permission and configure:
+You'll need a [Personal Access Token](https://github.com/settings/tokens) with `read:packages` permission.
 
-**Maven**: Add to `~/.m2/settings.xml`:
+**For Maven users** - Add to `~/.m2/settings.xml`:
 ```xml
 <settings>
     <servers>
@@ -65,78 +82,128 @@ Create a [Personal Access Token](https://github.com/settings/tokens) with `read:
 </settings>
 ```
 
-**Gradle**: Set environment variables `USERNAME` and `TOKEN` or add to `gradle.properties`:
+**For Gradle users** - Set environment variables or add to `gradle.properties`:
 ```properties
 gpr.user=YOUR_GITHUB_USERNAME
 gpr.key=YOUR_PERSONAL_ACCESS_TOKEN
 ```
 
-# Permissions
-https://github.com/mrbear21/Synergy/wiki/Permissions
+---
 
-# Convenient data synchronization between servers
-```
-//The event will be sent to the proxy server
+## 🚀 Quick Start
+
+### Cross-Server Event System
+
+Send events across your network with ease:
+
+```java
+// Trigger an event from any server
 @Override
 public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-	Synergy.createSynergyEvent("broadcast-message").setOption("message", String.join(" ", args)).send();      
-	return true;
+    Synergy.createSynergyEvent("broadcast-message")
+           .setOption("message", String.join(" ", args))
+           .send();      
+    return true;
 }
 
-
-//The proxy server will trigger the event on all servers in the network synchronously
+// Handle the event on all servers
 @EventHandler
 public void onSynergyEvent(SynergyEvent e) {
-	if (!e.getIdentifier().equals("broadcast-message")) {
-		return;
-	}
-	Bukkit.broadcastMessage(e.getOption("message")));
+    if (!e.getIdentifier().equals("broadcast-message")) {
+        return;
+    }
+    Bukkit.broadcastMessage(e.getOption("message"));
 }
 ```
 
-# Convenient localization system (including third-party plugins and system messages)
+### Player Data Management
 
-## Make your own translations in Synergy's locales.yml
+Store and retrieve player data effortlessly:
+
+```java
+BreadMaker bread = Synergy.getBread(uuid);
+
+// Get player data
+int level = bread.getData("level").getAsInt();
+String language = bread.getData("language").getAsString();
+
+// Save data permanently
+bread.setData("level", 25);
+bread.setData("language", "uk");
 ```
+
+---
+
+## 🌍 Localization System
+
+### Setting Up Translations
+
+Create translations in Synergy's `locales.yml`:
+
+```yaml
 login-command-usage:
     en: "&cUsage: /login <password>"
     uk: "&cВикористання: /login <пароль>"
+    
 login-wrong-password:
     en: "&cWrong password!"
     uk: "&cНевірний пароль!"
+    
 localized-unknown-command-message:
     en: "Unknown command. Type '/help' for help."
     uk: "Невідома команда. Введіть '/help' для допомоги"
-	
 ```
-## And replace texts in third-party plugins' messages files with Synergy translation keys
-Authme's messages_en.yml
-```
+
+### Integrating with Third-Party Plugins
+
+Replace static messages with Synergy translation keys:
+
+**AuthMe (`messages_en.yml`)**:
+```yaml
 login:
   command_usage: '<lang>login-command-usage</lang>'
   wrong_password: '<lang>login-wrong-password</lang>'
-...
 ```
-Spigot.yml
-```
+
+**Spigot (`spigot.yml`)**:
+```yaml
 messages:
   unknown-command: '<lang>localized-unknown-command-message</lang>'
 ```
 
-## Placeholders
-```
-%translation_<translation_key>%
-%breadmaker_<option_key>%
-```
-
-# Convenient storage of player data
+### Available Placeholders
 
 ```
-BreadMaker bread = Synergy.getBread(uuid);
-//Get player data
-bread.getData("level").getAsInt()
-bread.getData("language").getAsString()
-
-//Save data permanently
-bread.setData("key", "value");
+%translation_<translation_key>%  - Insert translated text
+%breadmaker_<option_key>%        - Insert player data
 ```
+
+---
+
+## 📚 Documentation
+
+- 📋 **[Permissions](https://github.com/mrbear21/Synergy/wiki/Permissions)** - Complete permissions reference
+- 📖 **[Wiki](https://github.com/mrbear21/Synergy/wiki)** - Detailed documentation and guides
+- 🐛 **[Issues](https://github.com/mrbear21/Synergy/issues)** - Report bugs or request features
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🐛 Issues & Support
+
+Found a bug or have a feature request? Please [create an issue](https://github.com/mrbear21/Synergy/issues) on GitHub.
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the Minecraft community**
+
+[⭐ Star this repository](https://github.com/mrbear21/Synergy) if you find it useful!
+
+</div>
