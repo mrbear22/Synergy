@@ -35,15 +35,13 @@ public class Translation {
 		// Process <lang> tags
 		try {
         	if (string.contains("<lang>")) {
-        		if (Utils.isValidJson(string)) {
-        			string = Utils.convertToJson(Utils.extractText(string));
+        		if (JsonUtils.isValidJson(string)) {
+        			string = JsonUtils.jsonToCustomString(string);
         		}
         		string = Endings.processEndings(string, null);
         		string = Translation.processLangTags(string, language);
-        	//	return translate(string, language);
         	}
 		} catch (Exception c) { Synergy.getLogger().error("Error while processing <lang> tags: " + c.getLocalizedMessage()); }
-
 
 		// Process placeholders
 		try {
@@ -56,12 +54,11 @@ public class Translation {
 		// Process <translation> tags
 		try {
         	if (string.contains("<translation>")) {
-        		if (Utils.isValidJson(string)) {
-        			string = Utils.convertToJson(Utils.extractText(string));
+        		if (JsonUtils.isValidJson(string)) {
+        			string = JsonUtils.jsonToCustomString(string);
         		}
         		string = Endings.processEndings(string, null);
         		string = Translation.processTranslationTags(string, language);
-        	//	return translate(string, language);
         	}
 		} catch (Exception c) { Synergy.getLogger().error("Error while processing <translation> tags: " + c.getLocalizedMessage()); }
 

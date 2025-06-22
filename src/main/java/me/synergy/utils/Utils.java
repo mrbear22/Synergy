@@ -191,7 +191,7 @@ public class Utils {
         }
         
         char[] charArray = sentence.toCharArray();
-        for (int i = start + 1; i < end; i++) { // Міняємо тільки символи між start і end
+        for (int i = start + 1; i < end; i++) {
             if (Character.isAlphabetic(sentence.charAt(i))) {
                 charArray[i] = '*';
             }
@@ -268,93 +268,6 @@ public class Utils {
         return result.toString();
     }
 
-	public static String replaceFirstAndLastQuotes(String input) {
-	    if (input == null || input.isEmpty() || input.length() < 2) {
-	        return input;
-	    }
-	    if (input.charAt(0) == '"') {
-	        input = input.substring(1);
-	    }
-	    int lastIndex = input.length() - 1;
-	    if (input.charAt(lastIndex) == '"') {
-	        input = input.substring(0, lastIndex);
-	    }
-	    return input;
-	}
-
-	public static boolean isValidJson(String input) {
-	    try {
-	        JsonElement jsonElement = JsonParser.parseString(input);
-	        return jsonElement.isJsonObject() || jsonElement.isJsonArray();
-	    } catch (JsonSyntaxException e) {
-	        return false;
-	    }
-	}
-
-    public static String convertToJson(String input) {
-    	input = replaceFirstAndLastQuotes(input);
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("text", "");
-        JsonArray extraArray = new JsonArray();
-        extraArray.add(input);
-        jsonObject.add("extra", extraArray);
-        return jsonObject.toString();
-    }
-
-    public static String extractText(String json) {
-        try {
-        //    json = json.replaceAll("(?<=\\S)[\\n\\r]+", "\\\\n")
-        //              .replaceAll("(?<=\\S)[\\r]+", "\\\\r")
-        //              .replaceAll("[\\t]+", "\\\\t");
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(json);
-            StringBuilder combinedText = new StringBuilder();
-            extractText(rootNode, combinedText);
-            return combinedText.toString();
-        } catch (Exception c) {
-            Synergy.getLogger().warning("Error while extracting text: " + c.getLocalizedMessage());
-            return json;
-        }
-    }
-
-    private static void extractText(JsonNode node, StringBuilder combinedText) {
-        if (node.isObject()) {
-            if (node.has("text")) {
-                JsonNode textNode = node.get("text");
-                if (textNode.isTextual()) {
-                    combinedText.append(textNode.asText());
-                }
-            }
-            if (node.has("extra")) {
-                JsonNode extraNode = node.get("extra");
-                if (extraNode.isArray()) {
-                    for (JsonNode arrayElement : extraNode) {
-                        extractText(arrayElement, combinedText);
-                    }
-                }
-            }
-        } else if (node.isArray()) {
-            for (JsonNode arrayElement : node) {
-                extractText(arrayElement, combinedText);
-            }
-        } else if (node.isTextual()) {
-            combinedText.append(node.asText());
-        }
-    }
-
-    public static JsonArray insertJsonElementIntoArray(int index, JsonElement val, JsonArray currentArray) {
-        JsonArray newArray = new JsonArray();
-        for (int i = 0; i < index; i++) {
-            newArray.add(currentArray.get(i));
-        }
-        newArray.add(val);
-        for (int i = index; i < currentArray.size(); i++) {
-            newArray.add(currentArray.get(i));
-        }
-        return newArray;
-    }
-    
     public static List<String> getPlayers() {
     	List<String> players = new ArrayList<String>();
     	if (Synergy.isRunningSpigot()) {

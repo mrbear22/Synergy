@@ -6,6 +6,7 @@ import me.synergy.utils.Color;
 import me.synergy.utils.Endings;
 import me.synergy.utils.Endings.Pronoun;
 import me.synergy.utils.Interactive;
+import me.synergy.utils.JsonUtils;
 import me.synergy.utils.Translation;
 import me.synergy.utils.Utils;
 
@@ -17,6 +18,9 @@ public class Locale {
 	public Locale(String string, String language) {
 		this.language = language;
 		this.string = Translation.translate(string, language);
+		if (JsonUtils.isValidJson(this.string)) {
+			this.string = JsonUtils.jsonToCustomString(this.string);
+		}
 	}
 
 	public Locale setEndings(Pronoun pronoun) {
@@ -41,6 +45,9 @@ public class Locale {
 	}
 	
 	public String getColored(String theme) {
+		if (!JsonUtils.isValidJson(string)) {
+			string = JsonUtils.convertToJson(string);
+		}
 		string = Interactive.removeInteractiveTags(string);
 		string = Endings.removeEndingTags(string);
 		string = Color.processColors(string, theme);
@@ -48,7 +55,6 @@ public class Locale {
 	}
 
 	public String getLegacyColored(String theme) {
-		string = Utils.isValidJson(string) ? Utils.extractText(string) : string;
 		string = Interactive.removeInteractiveTags(string);
 		string = Endings.removeEndingTags(string);
 		string = Color.processLegacyColors(string, theme);
@@ -57,7 +63,6 @@ public class Locale {
 
 	public String getStripped() {
 		string = Translation.removeAllTags(string);
-		string = Utils.isValidJson(string) ? Utils.extractText(string) : string;
 		string = Color.removeColor(string);
 		string = Interactive.removeInteractiveTags(string);
 		string = Endings.removeEndingTags(string);

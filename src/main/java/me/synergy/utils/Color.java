@@ -1,261 +1,436 @@
 package me.synergy.utils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.*;
 
 import me.synergy.brains.Synergy;
 import net.md_5.bungee.api.ChatColor;
 
 public class Color {
 
-    private static String lastColor = null;
+    private static final String HEX_COLOR_PATTERN = "#[0-9a-fA-F]{6}";
+    private static final String TAG_PATTERN = "<(?:" + HEX_COLOR_PATTERN + "|[a-zA-Z_]+)>";
+    
+    private static final ThreadLocal<FormattingState> currentState = ThreadLocal.withInitial(FormattingState::new);
+    
+    private static final Map<String, String> FORMATTING_TAGS = Map.of(
+        "bold", "§l",
+        "italic", "§o", 
+        "underlined", "§n",
+        "strikethrough", "§m",
+        "obfuscated", "§k",
+        "reset", "§r"
+    );
 
-    public static void main(String[] args) {
-        String dividedJson = processColorTags("");
-        System.out.println(dividedJson);
-    }
+    private static final Set<String> STANDARD_COLORS = Set.of(
+        "black", "dark_blue", "dark_green", "dark_aqua", "dark_red", 
+        "dark_purple", "gold", "gray", "dark_gray", "blue", "green", 
+        "aqua", "red", "light_purple", "yellow", "white"
+    );
+    
+    private static final Map<String, String> LEGACY_COLOR_CODES = Map.ofEntries(
+        Map.entry("black", "§0"),
+        Map.entry("dark_blue", "§1"),
+        Map.entry("dark_green", "§2"),
+        Map.entry("dark_aqua", "§3"),
+        Map.entry("dark_red", "§4"),
+        Map.entry("dark_purple", "§5"),
+        Map.entry("gold", "§6"),
+        Map.entry("gray", "§7"),
+        Map.entry("dark_gray", "§8"),
+        Map.entry("blue", "§9"),
+        Map.entry("green", "§a"),
+        Map.entry("aqua", "§b"),
+        Map.entry("red", "§c"),
+        Map.entry("light_purple", "§d"),
+        Map.entry("yellow", "§e"),
+        Map.entry("white", "§f")
+    );
 
     public static String processColors(String json, String theme) {
         try {
-            json = processThemeTags(json, theme);
-            json = customColorCodes(json);
-            json = processColorReplace(json, theme);
-            
-            if (json.contains("<#")) {
-                if (Utils.isValidJson(json)) {
-                    json = processColorTags(json);
-                } else {
-                    json = processColorTags(Utils.convertToJson(json));
-                }
-            }
-            
+            json = ThemeProcessor.processThemeTags(json, theme);
+            json = CustomTagProcessor.processCustomColorCodes(json);
+            json = ColorReplacer.processColorReplace(json, theme);
+            json = processColorTags(JsonUtils.isValidJson(json) ? json : JsonUtils.convertToJson(json), theme); // Pass theme here
+            json = processLegacyFormattingTags(json);
             json = ChatColor.translateAlternateColorCodes('&', json);
+            
         } catch (Exception e) {
-            Synergy.getLogger().error("Error while processing colors: " + e.getLocalizedMessage());
+            Synergy.getLogger().error("Error processing colors: " + e.getLocalizedMessage());
         }
         return json;
     }
 
-    public static String processLegacyColors(String string, String theme) {
-        string = processThemeTags(string, theme);
-        string = customColorCodes(string);
-        string = processColorCodesReplace(string, theme);
-        
-        Pattern pattern = Pattern.compile("<(#[A-Fa-f0-9]{6})>");
-        Matcher matcher = pattern.matcher(string);
-        while (matcher.find()) {
-            string = string.replace(matcher.group(), "" + ChatColor.of(matcher.group(1)));
-        }
-        
-        string = ChatColor.translateAlternateColorCodes('&', string);
-        return string;
+    public static String processLegacyColors(String text, String theme) {
+        text = ThemeProcessor.processThemeTags(text, theme);
+        text = CustomTagProcessor.processCustomColorCodes(text);
+        text = ColorReplacer.processColorCodesReplace(text, theme);
+        text = processHexColors(text);
+        text = processLegacyFormattingTags(text);
+        return ChatColor.translateAlternateColorCodes('&', text);
     }
 
     public static String removeColor(String json) {
-        json = processThemeTags(json, "default");
-        json = processColorReplace(json, "default");
-        Pattern pattern = Pattern.compile("<#[A-Fa-f0-9]{6}>");
-        Matcher matcher = pattern.matcher(json);
-        return ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', matcher.replaceAll("")));
+        json = ThemeProcessor.processThemeTags(json, "default");
+        json = ColorReplacer.processColorReplace(json, "default");
+        json = removeTags(json, FORMATTING_TAGS.keySet());
+        json = removeTags(json, Collections.singleton(HEX_COLOR_PATTERN));
+        return ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', json));
     }
 
-    public static String processThemeTags(String input, String theme) {
-        for (String t : new String[]{theme, "default"}) {
-            try {
-                for (Entry<String, Object> c : Synergy.getConfig().getConfigurationSection("localizations.color-themes." + t).entrySet()) {
-                    String hexCode = Synergy.getConfig().getString("localizations.color-themes." + t + "." + c.getKey());
-                    input = input.replace("<" + c.getKey() + ">", hexCode);
-                }
-            } catch (Exception e) {
-                Synergy.getLogger().error("Error while processing theme tags: " + e.getLocalizedMessage());
-            }
-        }
-        return input;
-    }
-    
-    private static String processColorCodesReplace(String input, String theme) {
-        try {
-            Map<String, String> colorCodes = new HashMap<>();
-            colorCodes.put("black", "§0");
-            colorCodes.put("dark_blue", "§1");
-            colorCodes.put("dark_green", "§2");
-            colorCodes.put("dark_aqua", "§3");
-            colorCodes.put("dark_red", "§4");
-            colorCodes.put("dark_purple", "§5");
-            colorCodes.put("gold", "§6");
-            colorCodes.put("gray", "§7");
-            colorCodes.put("dark_gray", "§8");
-            colorCodes.put("blue", "§9");
-            colorCodes.put("green", "§a");
-            colorCodes.put("aqua", "§b");
-            colorCodes.put("red", "§c");
-            colorCodes.put("light_purple", "§d");
-            colorCodes.put("yellow", "§e");
-            colorCodes.put("white", "§f");
-            
-            for (Entry<String, Object> c : Synergy.getConfig().getConfigurationSection("localizations.color-replace").entrySet()) {
-                String hexCode = processThemeTags(Synergy.getConfig().getString("localizations.color-replace." + c.getKey()), theme);
-                if (!hexCode.startsWith("<#") || !hexCode.endsWith(">")) {
-                    continue;
-                }
-                String minecraftCode = colorCodes.get(c.getKey().toLowerCase());
-                if (minecraftCode != null) {
-                    input = input.replace(minecraftCode, hexCode);
-                } else {
-                    Synergy.getLogger().warning("Unknown color key: " + c.getKey());
-                }
-            }
-        } catch (Exception e) {
-            Synergy.getLogger().error("Error while processing color replace: " + e.getLocalizedMessage());
-        }
-        return input;
-    }
-
-    private static String processColorReplace(String input, String theme) {
-        try {
-            for (Entry<String, Object> c : Synergy.getConfig().getConfigurationSection("localizations.color-replace").entrySet()) {
-                String hexCode = processThemeTags(Synergy.getConfig().getString("localizations.color-replace." + c.getKey()), theme);
-                input = input.replace("\"" + c.getKey() + "\"", "\"" + hexCode.substring(1, 8) + "\"");
-            }
-        } catch (Exception e) {
-            Synergy.getLogger().error("Error while processing color replace: " + e.getLocalizedMessage());
-        }
-        return input;
-    }
-
-    public static String customColorCodes(String sentence) {
-        try {
-            Set<Entry<String, Object>> codes = Synergy.getConfig().getConfigurationSection("chat-manager.custom-color-tags").entrySet();
-            for (Entry<String, Object> c : codes) {
-                sentence = sentence.replace(c.getKey(), String.valueOf(c.getValue()));
-            }
-        } catch (Exception e) {
-            Synergy.getLogger().error("Error while processing custom color code replace: " + e.getLocalizedMessage());
-        }
-        return sentence;
-    }
-
-    private static String processColorTags(String json) {
+    private static String processColorTags(String json, String theme) {
         try {
             JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-            JsonObject text = new JsonObject();
-            text.addProperty("text", jsonObject.get("text").getAsString());
-            JsonArray extraArray = Utils.insertJsonElementIntoArray(0, text, jsonObject.getAsJsonArray("extra"));
-            JsonArray dividedExtra = new JsonArray();
-            lastColor = null;
+
+            boolean needsProcessing = false;
+
+            if (jsonObject.has("text") && !jsonObject.get("text").getAsString().isEmpty()) {
+                if (containsCustomTags(jsonObject.get("text").getAsString())) {
+                    needsProcessing = true;
+                }
+            }
             
-            for (JsonElement element : extraArray) {
-                if (element instanceof JsonPrimitive && ((JsonPrimitive) element).isString()) {
-                    JsonObject obj = new JsonObject();
-                    obj.addProperty("text", ((JsonPrimitive) element).getAsString());
-                    splitColoredText(obj, dividedExtra);
-                } else if (element instanceof JsonObject) {
-                    JsonObject obj = (JsonObject) element;
-                    if (obj.get("text") != null && obj.get("text").isJsonPrimitive()) {
-                        splitColoredText(obj, dividedExtra);
-                    } else {
-                        dividedExtra.add(element);
+            if (jsonObject.has("extra") && jsonObject.get("extra").isJsonArray()) {
+                JsonArray extraArray = jsonObject.getAsJsonArray("extra");
+                for (JsonElement element : extraArray) {
+                    if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+                        if (containsCustomTags(element.getAsString())) {
+                            needsProcessing = true;
+                            break;
+                        }
+                    } else if (element.isJsonObject() && element.getAsJsonObject().has("text")) {
+                        if (containsCustomTags(element.getAsJsonObject().get("text").getAsString())) {
+                            needsProcessing = true;
+                            break;
+                        }
                     }
                 }
             }
             
-            jsonObject.remove("text");
-            jsonObject.remove("extra");
-            jsonObject.addProperty("text", "");
-            jsonObject.add("extra", dividedExtra);
-            return jsonObject.toString();
-        } catch (Exception e) {
-            Synergy.getLogger().error("Error while processing color tags: " + e.getLocalizedMessage());
-        }
+            if (!needsProcessing) {
+                return json;
+            }
+            
+            JsonArray processedExtra = new JsonArray();
 
-        return removeColorSimple(json);
+            FormattingState state = new FormattingState(theme);
+            currentState.set(state);
+            
+            if (jsonObject.has("text")) {
+                String rootText = jsonObject.get("text").getAsString();
+                if (!rootText.isEmpty()) {
+                    JsonObject textObj = new JsonObject();
+                    textObj.addProperty("text", rootText);
+                    PropertyCopier.copyNonTextProperties(jsonObject, textObj);
+                    processTextElement(textObj, processedExtra);
+                }
+            }
+            
+            if (jsonObject.has("extra") && jsonObject.get("extra").isJsonArray()) {
+                JsonArray extraArray = jsonObject.getAsJsonArray("extra");
+                for (JsonElement element : extraArray) {
+                    processExtraElement(element, processedExtra);
+                }
+            }
+            
+            JsonObject result = new JsonObject();
+            result.addProperty("text", "");
+            result.add("extra", processedExtra);
+            PropertyCopier.copyNonTextProperties(jsonObject, result);
+            
+            return result.toString();
+            
+        } catch (Exception e) {
+            Synergy.getLogger().error("Error processing color tags: " + e.getLocalizedMessage());
+            return removeTagsSimple(json);
+        }
     }
 
-    private static List<String> findSpecialTags(String text) {
-        List<String> specialTags = new ArrayList<>();
-        Pattern pattern = Pattern.compile("<#[0-9a-fA-F]{6}>");
+    private static void processTextElement(JsonObject object, JsonArray output) {
+        String text = object.get("text").getAsString();
+        
+        if (!containsCustomTags(text)) {
+            JsonObject newObj = new JsonObject();
+            newObj.addProperty("text", text);
+            PropertyCopier.copyNonTextProperties(object, newObj);
+            output.add(newObj);
+            return;
+        }
+        
+        List<TextSegment> segments = parseTextSegments(text);
+        
+        for (TextSegment segment : segments) {
+            if (segment.isTag()) {
+                currentState.get().processTag(segment.getContent());
+            } else if (!segment.getContent().isEmpty()) {
+                JsonObject obj = new JsonObject();
+                obj.addProperty("text", segment.getContent());
+                currentState.get().applyTo(obj);
+                PropertyCopier.copyNonTextProperties(object, obj);
+                output.add(obj);
+            }
+        }
+    }
+
+    private static List<TextSegment> parseTextSegments(String text) {
+        List<TextSegment> segments = new ArrayList<>();
+        Pattern tagPattern = Pattern.compile(TAG_PATTERN);
+        Matcher matcher = tagPattern.matcher(text);
+        
+        int lastEnd = 0;
+        
+        while (matcher.find()) {
+            if (matcher.start() > lastEnd) {
+                String textBefore = text.substring(lastEnd, matcher.start());
+                segments.add(new TextSegment(textBefore, false));
+            }
+
+            String tag = matcher.group();
+            segments.add(new TextSegment(tag, true));
+            
+            lastEnd = matcher.end();
+        }
+        
+        if (lastEnd < text.length()) {
+            String remainingText = text.substring(lastEnd);
+            segments.add(new TextSegment(remainingText, false));
+        }
+        
+        return segments;
+    }
+
+    private static void processExtraElement(JsonElement element, JsonArray output) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("text", element.getAsString());
+            processTextElement(obj, output);
+        } else if (element.isJsonObject()) {
+            JsonObject obj = element.getAsJsonObject();
+            if (obj.has("text") && obj.get("text").isJsonPrimitive()) {
+                processTextElement(obj, output);
+            } else {
+                output.add(element);
+            }
+        } else {
+            output.add(element);
+        }
+    }
+
+    private static boolean containsCustomTags(String text) {
+        return text.contains("<#") || text.contains("<reset>") || 
+               FORMATTING_TAGS.keySet().stream().anyMatch(tag -> text.contains("<" + tag + ">")) ||
+               STANDARD_COLORS.stream().anyMatch(color -> text.contains("<" + color + ">"));
+    }
+
+    private static String processHexColors(String text) {
+        Pattern pattern = Pattern.compile("<(" + HEX_COLOR_PATTERN + ")>");
         Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
-            specialTags.add(matcher.group());
+            text = text.replace(matcher.group(), ChatColor.of(matcher.group(1)).toString());
         }
-        return specialTags;
+        return text;
     }
 
-    private static void splitColoredText(JsonObject object, JsonArray dividedExtra) {
-        String text = object.get("text").getAsString();
-        List<String> specialTags = findSpecialTags(text);
+    private static String processLegacyFormattingTags(String input) {
+        for (Map.Entry<String, String> tag : FORMATTING_TAGS.entrySet()) {
+            input = input.replace("<" + tag.getKey() + ">", tag.getValue());
+        }
+        return input;
+    }
+
+    private static String removeTags(String input, Collection<String> tags) {
+        for (String tag : tags) {
+            input = input.replaceAll("<" + tag + ">", "");
+        }
+        return input;
+    }
+
+    private static String removeTagsSimple(String text) {
+        text = text.replaceAll(TAG_PATTERN, "");
+        return text;
+    }
+
+    private static class TextSegment {
+        private final String content;
+        private final boolean isTag;
+
+        public TextSegment(String content, boolean isTag) {
+            this.content = content;
+            this.isTag = isTag;
+        }
+
+        public String getContent() { return content; }
+        public boolean isTag() { return isTag; }
+    }
+
+    private static class FormattingState {
+        private String currentColor;
+        private final Map<String, Boolean> formatting = new HashMap<>();
+        private final String theme;
+
+        public FormattingState() {
+            this("default");
+        }
         
-        if (specialTags.isEmpty()) {
-            JsonObject obj = new JsonObject();
-            obj.addProperty("text", text);
-            if (lastColor != null) {
-                obj.addProperty("color", lastColor.substring(1, lastColor.length() - 1));
+        public FormattingState(String theme) {
+            this.theme = theme != null ? theme : "default";
+        }
+
+        public void reset() {
+            currentColor = null;
+            formatting.clear();
+        }
+
+        public void processTag(String tag) {
+            String tagContent = tag.substring(1, tag.length() - 1);
+
+            if (tagContent.startsWith("#")) {
+                currentColor = tagContent;
+                formatting.clear();
+            } else if (STANDARD_COLORS.contains(tagContent)) {
+                currentColor = tagContent;
+                formatting.clear();
+            } else if (FORMATTING_TAGS.containsKey(tagContent)) {
+                if ("reset".equals(tagContent)) {
+                    reset();
+                } else {
+                    formatting.put(tagContent, true);
+                }
+            } else {
+                if (isValidCustomColorTag(tagContent)) {
+                    currentColor = tagContent;
+                    formatting.clear();
+                }
             }
-            inheritProperties(object, obj);
-            dividedExtra.add(obj);
-        } else {
-            String remainingText = text;
-            
-            for (String colorTag : specialTags) {
-                int colorIndex = remainingText.indexOf(colorTag);
-                
-                if (colorIndex > 0) {
-                    String beforeColor = remainingText.substring(0, colorIndex);
-                    JsonObject obj = new JsonObject();
-                    obj.addProperty("text", beforeColor);
-                    if (lastColor != null) {
-                        obj.addProperty("color", lastColor.substring(1, lastColor.length() - 1));
+        }
+        
+        private boolean isValidCustomColorTag(String tagContent) {
+            for (String themeToCheck : new String[]{theme, "default"}) {
+                try {
+                    Map<String, Object> section = Synergy.getConfig().getConfigurationSection("localizations.color-themes." + themeToCheck);
+                    if (section != null && !section.isEmpty() && section.containsKey(tagContent)) {
+                        return true;
                     }
-                    inheritProperties(object, obj);
-                    dividedExtra.add(obj);
-                }
-                
-                lastColor = colorTag;
-                
-                remainingText = remainingText.substring(colorIndex + colorTag.length());
+                } catch (Exception ignored) {}
             }
+            try {
+                Map<String, Object> section = Synergy.getConfig().getConfigurationSection("localizations.color-replace");
+                if (section != null && !section.isEmpty() && section.containsKey(tagContent)) {
+                    return true;
+                }
+            } catch (Exception ignored) {}
             
-            if (!remainingText.isEmpty()) {
-                JsonObject remains = new JsonObject();
-                remains.addProperty("text", remainingText);
-                if (lastColor != null) {
-                    remains.addProperty("color", lastColor.substring(1, lastColor.length() - 1));
+            return false;
+        }
+
+        public void applyTo(JsonObject obj) {
+            if (currentColor != null) {
+                obj.addProperty("color", currentColor);
+            }
+            for (Map.Entry<String, Boolean> entry : formatting.entrySet()) {
+                if (entry.getValue()) {
+                    obj.addProperty(entry.getKey(), true);
                 }
-                inheritProperties(object, remains);
-                dividedExtra.add(remains);
             }
         }
     }
 
-    private static void inheritProperties(JsonObject source, JsonObject target) {
-        Set<String> formattingProperties = Set.of("bold", "italic", "underlined", "strikethrough", "obfuscated");
-        
-        for (String key : source.keySet()) {
-            if (!key.equals("text") && !key.equals("color") && !formattingProperties.contains(key)) {
-                target.add(key, source.get(key));
+    private static class PropertyCopier {
+        private static final Set<String> EXCLUDED_PROPERTIES = Set.of(
+            "text", "color", "bold", "italic", "underlined", 
+            "strikethrough", "obfuscated", "extra"
+        );
+
+        public static void copyNonTextProperties(JsonObject source, JsonObject target) {
+            for (String key : source.keySet()) {
+                if (!EXCLUDED_PROPERTIES.contains(key)) {
+                    target.add(key, source.get(key));
+                }
             }
         }
     }
+    
+    private static class ThemeProcessor {
+        public static String processThemeTags(String input, String theme) {
+            for (String t : new String[]{theme, "default"}) {
+                try {
+                    var section = Synergy.getConfig().getConfigurationSection("localizations.color-themes." + t);
+                    if (section != null) {
+                        for (var entry : section.entrySet()) {
+                            String hexCode = Synergy.getConfig().getString("localizations.color-themes." + t + "." + entry.getKey());
+                            input = input.replace("<" + entry.getKey() + ">", hexCode);
+                        }
+                    }
+                } catch (Exception e) {
+                    Synergy.getLogger().error("Error processing theme tags: " + e.getLocalizedMessage());
+                }
+            }
+            return input;
+        }
+    }
 
-    private static String removeColorSimple(String text) {
-        Pattern pattern = Pattern.compile("<#[A-Fa-f0-9]{6}>");
-        Matcher matcher = pattern.matcher(text);
-        return ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', matcher.replaceAll("")));
+    private static class CustomTagProcessor {
+        public static String processCustomColorCodes(String sentence) {
+            try {
+                var section = Synergy.getConfig().getConfigurationSection("chat-manager.custom-color-tags");
+                if (section != null) {
+                    for (var entry : section.entrySet()) {
+                        sentence = sentence.replace(entry.getKey(), String.valueOf(entry.getValue()));
+                    }
+                }
+            } catch (Exception e) {
+                Synergy.getLogger().error("Error processing custom color codes: " + e.getLocalizedMessage());
+            }
+            return sentence;
+        }
+    }
+
+    private static class ColorReplacer {
+        public static String processColorReplace(String input, String theme) {
+            try {
+                var section = Synergy.getConfig().getConfigurationSection("localizations.color-replace");
+                if (section != null) {
+                    for (var entry : section.entrySet()) {
+                        String hexCode = ThemeProcessor.processThemeTags(
+                            Synergy.getConfig().getString("localizations.color-replace." + entry.getKey()), theme);
+                        input = input.replace("\"" + entry.getKey() + "\"", "\"" + hexCode.substring(1, 8) + "\"");
+                        input = input.replace("<" + entry.getKey() + ">", hexCode);
+                    }
+                }
+            } catch (Exception e) {
+                Synergy.getLogger().error("Error processing color replace: " + e.getLocalizedMessage());
+            }
+            return input;
+        }
+
+        public static String processColorCodesReplace(String input, String theme) {
+            try {
+                var section = Synergy.getConfig().getConfigurationSection("localizations.color-replace");
+                if (section != null) {
+                    for (var entry : section.entrySet()) {
+                        String hexCode = ThemeProcessor.processThemeTags(
+                            Synergy.getConfig().getString("localizations.color-replace." + entry.getKey()), theme);
+                        if (hexCode.startsWith("<#") && hexCode.endsWith(">")) {
+                            String minecraftCode = LEGACY_COLOR_CODES.get(entry.getKey().toLowerCase());
+                            if (minecraftCode != null) {
+                                input = input.replace(minecraftCode, hexCode);
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Synergy.getLogger().error("Error processing color codes replace: " + e.getLocalizedMessage());
+            }
+            return input;
+        }
     }
 
     public static String getDefaultTheme() {
         return "default";
     }
+
 }

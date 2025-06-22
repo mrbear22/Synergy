@@ -40,7 +40,7 @@ Add the repository and dependency to your `pom.xml`:
     <dependency>
         <groupId>archi.quest</groupId>
         <artifactId>synergy</artifactId>
-        <version>1.4.4</version>
+        <version>1.4.6</version>
     </dependency>
 </dependencies>
 ```

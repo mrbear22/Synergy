@@ -7,9 +7,8 @@ import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Cache;
+import me.synergy.objects.Locale;
 import me.synergy.utils.Color;
-import me.synergy.utils.Endings;
-import me.synergy.utils.Interactive;
 import me.synergy.utils.Translation;
 import me.synergy.utils.Endings.Pronoun;
 import net.md_5.bungee.api.ChatColor;
@@ -130,12 +129,9 @@ public class PlaceholdersAPI {
             String language = (bread == null) ? Translation.getDefaultLanguage() : bread.getLanguage();
             String theme = (bread == null) ? Color.getDefaultTheme() : bread.getTheme();
             Pronoun pronoun = (bread == null) ? Pronoun.HE : bread.getPronoun();
-
-            String result = Translation.translate("<lang>" + identifier + "</lang>", language);
-            result = Endings.processEndings(result, pronoun);
-            result = Interactive.removeInteractiveTags(result);
-            result = Color.processThemeTags(result, theme);
-
+            
+            String result = new Locale("<lang>" + identifier + "</lang>", language).setExecuteInteractive(bread).setEndings(pronoun).getLegacyColored(theme);
+            
             cache.add("placeholder:"+identifier, result, 10);
 
             return result;
