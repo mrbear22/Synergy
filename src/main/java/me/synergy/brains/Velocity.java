@@ -20,7 +20,8 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.commands.SynergyProxyCommand;
 import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
-import me.synergy.handlers.PlayerProxyHandler;
+import me.synergy.handlers.PlayerBungeeHandler;
+import me.synergy.handlers.VoteHandler;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
 import me.synergy.modules.LocalesManager;
@@ -58,8 +59,10 @@ public class Velocity {
 	    new DataManager().initialize();
         new LocalesManager().initialize();
 	    new Discord().initialize();
-	    new PlayerProxyHandler().initialize();
+	    new PlayerBungeeHandler().initialize();
 	    new SynergyProxyCommand().initialize();
+		new VoteHandler().initialize();
+		
     }
 
     @Subscribe

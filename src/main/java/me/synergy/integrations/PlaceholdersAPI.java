@@ -9,8 +9,10 @@ import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Cache;
 import me.synergy.objects.Locale;
 import me.synergy.utils.Color;
+import me.synergy.utils.Endings;
 import me.synergy.utils.Translation;
 import me.synergy.utils.Endings.Pronoun;
+import me.synergy.utils.Interactive;
 import net.md_5.bungee.api.ChatColor;
 
 public class PlaceholdersAPI {
@@ -130,7 +132,12 @@ public class PlaceholdersAPI {
             String theme = (bread == null) ? Color.getDefaultTheme() : bread.getTheme();
             Pronoun pronoun = (bread == null) ? Pronoun.HE : bread.getPronoun();
             
-            String result = new Locale("<lang>" + identifier + "</lang>", language).setExecuteInteractive(bread).setEndings(pronoun).getLegacyColored(theme);
+            //String result = new Locale("<lang>" + identifier + "</lang>", language).setExecuteInteractive(bread).setEndings(pronoun).getLegacyColored(theme);
+           
+            String result = Translation.translate("<lang>" + identifier + "</lang>", language);
+            result = Endings.processEndings(result, pronoun);
+            result = Interactive.removeInteractiveTags(result);
+            result = Color.ThemeProcessor.processThemeTags(result, theme);
             
             cache.add("placeholder:"+identifier, result, 10);
 

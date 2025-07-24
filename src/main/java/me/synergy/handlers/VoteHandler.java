@@ -1,76 +1,42 @@
 package me.synergy.handlers;
 
-import org.bukkit.Bukkit;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-
-import com.vexsoftware.votifier.model.Vote;
-import com.vexsoftware.votifier.model.VotifierEvent;
-
-import me.synergy.anotations.SynergyHandler;
-import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
-import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
 import me.synergy.utils.Translation;
 
-public class VoteHandler implements Listener, SynergyListener {
-
+public class VoteHandler {
+    
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("votifier.enabled")) {
-            return;
+        if (Synergy.isRunningBungee()) {
+        	new VoteProxyHandler.BungeeHandler().initialize();
+        } else if (Synergy.isRunningVelocity()) {
+        	new VoteProxyHandler.VelocityHandler().initialize();
+        } else if (Synergy.isRunningSpigot()) {
+            new VoteSpigotHandler().initialize();
         }
-        if (!Synergy.isDependencyAvailable("Votifier")) {
-            Synergy.getLogger().warning("NuVotifier is required to initialize " + getClass().getSimpleName() + " module!");
-            return;
-        }
-        
-        Synergy.getEventManager().registerEvents(this);
-        Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
-        Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
     }
-
-    @SynergyHandler
-    public void onSynergyPluginMessage(SynergyEvent event) {
-        if (!event.getIdentifier().equals("votifier")) {
-            return;
-        }
-
-        String service = event.getOption("service").getAsString();
-        String username = event.getOption("username").getAsString();
-        BreadMaker bread = Synergy.getBread(Synergy.getSpigot().getUniqueIdFromName(username));
-
-        for (String command : Synergy.getConfig().getStringList("votifier.rewards")) {
-        	Synergy.dispatchCommand(command.replace("%PLAYER%", bread.getName()));
-        }
-        
-        if (bread == null) {
-        	return;
-        }
-        
-        bread.setData("last-voted", String.valueOf(System.currentTimeMillis()));
-        
-        if (bread.isOnline()) {
-        	bread.sendMessage(Translation.processLangTags("<lang>synergy-voted-successfully</lang>", bread.getLanguage()).replace("%SERVICE%", service));
-        }
-
-    	Synergy.broadcastMessage("<lang>synergy-player-voted<arg>"+bread.getName()+"</arg></lang>", bread);
+	
+    public static void processVote(String service, String username) {
     	
-    	Synergy.createSynergyEvent("discord-embed").setPlayerUniqueId(bread.getUniqueId())
-    	.setOption("chat", "global")
-    	.setOption("color", "#55efc4")
-    	.setOption("author", Synergy.translate("<lang>synergy-player-voted<arg>"+username+"</arg></lang>", Translation.getDefaultLanguage())
-            	.setPlaceholders(bread)
-                .setEndings(bread.getPronoun())
-                .getStripped())
-    	.send();
-    	
-    }
+        Synergy.getLogger().info("Player " + username + " voted on " + service);
 
-    @EventHandler(priority = EventPriority.NORMAL)
-    public void onVotifierEvent(VotifierEvent event) {
-        Vote vote = event.getVote();
-        Synergy.createSynergyEvent("votifier").setOption("service", vote.getServiceName()).setOption("username", vote.getUsername()).send();
+        BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
+        
+        Synergy.createSynergyEvent("votifier")
+        	.setPlayerUniqueId(bread.getUniqueId())
+	        .setOption("service", service)
+	        .setOption("username", username)
+	        .send();
+
+        String message = Synergy.getConfig().getString("votifier.announcement").replace("%PLAYER%", username).replace("%SERVICE%", service);
+        
+        Synergy.createSynergyEvent("discord-embed")
+            .setPlayerUniqueId(bread.getUniqueId())
+            .setOption("chat", "global")
+            .setOption("color", "#55efc4")
+            .setOption("author", Synergy.translate(message, Translation.getDefaultLanguage()).setEndings(bread.getPronoun()).getStripped())
+            .fireEvent();
+        
+        bread.setData("last-voted", System.currentTimeMillis());
     }
 }

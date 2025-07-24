@@ -16,7 +16,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import me.synergy.brains.Synergy;
 
-public class WebServer{
+public class WebServer {
 
     private static HttpServer server;
     private static int port = Synergy.getConfig().getInt("web-server.port");
@@ -32,7 +32,7 @@ public class WebServer{
         start();
 
         if (Synergy.isRunningSpigot()) {
-        	Synergy.getSpigot().startSpigotMonitor();
+            Synergy.getSpigot().startSpigotMonitor();
         } else if (Synergy.isRunningBungee()) {
             Synergy.getBungee().startBungeeMonitor();
         }
@@ -45,6 +45,7 @@ public class WebServer{
             server.createContext("/skin", new SkinServer.SkinHandler());
             server.createContext("/head", new SkinServer.HeadHandler());
             server.createContext("/status", new WebServerStatusHandler());
+            server.createContext("/logs", new LogsHandler()); // Використовуємо новий клас
             server.setExecutor(null);
             server.start();
             isRunning = true;
@@ -67,7 +68,7 @@ public class WebServer{
     }
 
     public void restart() {
-    	shutdown();
+        shutdown();
         start();
     }
 
@@ -79,7 +80,7 @@ public class WebServer{
         }
         try {
             @SuppressWarnings("deprecation")
-			URL url = new URL(fullAddress+"/status");
+            URL url = new URL(fullAddress + "/status");
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setConnectTimeout(5000);
@@ -100,7 +101,7 @@ public class WebServer{
         if (!webFolder.exists()) {
             boolean created = webFolder.mkdirs();
             if (!created) {
-            	Synergy.getLogger().warning("Failed to create the 'public_html' folder!");
+                Synergy.getLogger().warning("Failed to create the 'public_html' folder!");
                 return;
             }
             try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream("index.html")) {
@@ -108,25 +109,25 @@ public class WebServer{
                 Files.copy(inputStream, indexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 Synergy.getLogger().info("Copied index.html to the 'public_html' folder.");
             } catch (IOException e) {
-            	Synergy.getLogger().warning("Failed to copy index.html to the 'public_html' folder!");
+                Synergy.getLogger().warning("Failed to copy index.html to the 'public_html' folder!");
                 e.printStackTrace();
             }
         }
     }
-    
+
     private void loadResourcePackFolder() {
         File webFolder = new File("resourcepack");
         if (!webFolder.exists()) {
             boolean created = webFolder.mkdirs();
             if (!created) {
-            	Synergy.getLogger().warning("Failed to create the 'resourcepack' folder!");
+                Synergy.getLogger().warning("Failed to create the 'resourcepack' folder!");
                 return;
             }
         }
     }
 
     public static String getFullAddress() {
-    	return fullAddress;
+        return fullAddress;
     }
 
     private class WebServerStatusHandler implements HttpHandler {
@@ -136,7 +137,7 @@ public class WebServer{
             exchange.sendResponseHeaders(200, response.length());
         }
     }
-    
+
     private class PublicHtmlHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -184,7 +185,4 @@ public class WebServer{
             }
         }
     }
-
-
-
 }

@@ -16,7 +16,8 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.Timings;
+import me.synergy.utils.Color;
+import me.synergy.utils.Interactive;
 
 public class LocalesHandler {
 
@@ -47,15 +48,10 @@ public class LocalesHandler {
         Synergy.getSpigot().getProtocolManager().addPacketListener(
             new PacketAdapter(Synergy.getSpigot(), ListenerPriority.HIGH, PacketType.Play.Server.SYSTEM_CHAT) {
                 @Override
-                public void onPacketSending(PacketEvent event) {
-                    Timings timing = new Timings();
-                    timing.startTiming("Chat");
-                    
+                public void onPacketSending(PacketEvent event) {                    
                     try {
                         processChatComponents(event);
-                        timing.endTiming("Chat");
                     } catch (Exception e) {
-                        timing.endTiming("Chat");
                         Synergy.getLogger().error("Error processing chat: " + e.getMessage());
                     }
                 }
@@ -131,7 +127,7 @@ public class LocalesHandler {
                 
                 @Override
                 public void onPacketSending(PacketEvent event) {
-                    processChatComponents(event);
+                //    processChatComponents(event);
                     processStringComponents(event);
                 }
             }
@@ -144,7 +140,7 @@ public class LocalesHandler {
                 
                 @Override
                 public void onPacketSending(PacketEvent event) {
-                    processStringComponents(event);
+                //    processStringComponents(event);
                 }
             }
         );
@@ -175,6 +171,8 @@ public class LocalesHandler {
                 if (component != null && component.getJson() != null) {
                     String json = component.getJson();
                     
+                    //new Logger().info("before: " +json);
+                    
                     if (json.contains("<cancel_message>")) {
                         event.setCancelled(true);
                         return;
@@ -186,6 +184,8 @@ public class LocalesHandler {
                         event.setCancelled(true);
                         return;
                     }
+                    
+                    //new Logger().info("after: " +translatedJson);
                     
                     component.setJson(translatedJson);
                     packet.getChatComponents().write(i, component);
@@ -207,7 +207,7 @@ public class LocalesHandler {
                 if (original != null && !original.isEmpty()) {
                     String translated = Synergy.translate(original, bread.getLanguage())
                         .setPlaceholders(bread)
-                        .setEndings(bread.getPronoun())
+                        .setEndings(null)
                         .getLegacyColored(bread.getTheme());
                     packet.getStrings().write(i, translated);
                 }
@@ -244,9 +244,12 @@ public class LocalesHandler {
 
     private String processJsonComponent(String json, BreadMaker bread) {
         try {
+        	if (json.contains("translate")) {
+        		return Color.processColors(Interactive.processInteractive(json), bread.getTheme());
+        	}
             return Synergy.translate(json, bread.getLanguage())
                 .setPlaceholders(bread)
-                .setEndings(bread.getPronoun())
+                .setEndings(null)
                 .setExecuteInteractive(bread)
                 .getColored(bread.getTheme());
         } catch (Exception e) {

@@ -98,12 +98,9 @@ public class SynergyEvent {
             }
             if (Synergy.isRunningBungee()) {
 	            for (Entry<String, ServerInfo> server : Bungee.getInstance().getProxy().getServers().entrySet()) {
-	            	if (!server.getValue().getPlayers().isEmpty()) {
-	            		server.getValue().sendData("net:synergy", out.toByteArray());
-	            	}
+	            	server.getValue().sendData("net:synergy", out.toByteArray());
 	            } 
             }
-            //Synergy.getLogger().info("ПІСЛАВ: "+getIdentifier()+"/"+String.valueOf(getPlayerUniqueId())+"/"+getOptionsAsJson());
         } else {
         	fireEvent();
         }
@@ -111,7 +108,6 @@ public class SynergyEvent {
     
 	public void fireEvent() {
     	Synergy.getEventManager().fireEvent(new SynergyEvent(getIdentifier(), getPlayerUniqueId(), getOptionsAsJson()));
-        //Synergy.getLogger().info("ПОЛУЧІВ: "+getIdentifier()+"/"+String.valueOf(getPlayerUniqueId())+"/"+getOptionsAsJson());
 	}
 
 }

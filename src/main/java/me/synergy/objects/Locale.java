@@ -18,11 +18,16 @@ public class Locale {
 	public Locale(String string, String language) {
 		this.language = language;
 		this.string = Translation.translate(string, language);
-		if (JsonUtils.isValidJson(this.string)) {
+		if (JsonUtils.isValidJson(this.string) && Interactive.containsTags(this.string) || Color.containsTags(this.string)) {
 			this.string = JsonUtils.jsonToCustomString(this.string);
+			//new Logger().info("json as string: " +this.string);
 		}
 	}
 
+	public String getString() {
+		return string;
+	}
+	
 	public Locale setEndings(Pronoun pronoun) {
 		string = Endings.processEndings(string, pronoun);
 		return this;
@@ -68,6 +73,5 @@ public class Locale {
 		string = Endings.removeEndingTags(string);
 		return string;
 	}
-
 
 }

@@ -24,15 +24,7 @@ public class JsonUtils {
             FormattingContext context = new FormattingContext();
             StringBuilder result = new StringBuilder();
 
-            if (jsonObject.has("text") && !jsonObject.get("text").getAsString().isEmpty()) {
-                processElement(jsonObject, context, result);
-            }
-            if (jsonObject.has("extra") && jsonObject.get("extra").isJsonArray()) {
-                JsonArray extraArray = jsonObject.getAsJsonArray("extra");
-                for (JsonElement element : extraArray) {
-                    processExtraElement(element, context, result);
-                }
-            }
+            processElement(jsonObject, context, result);
             
             return result.toString();
             
@@ -42,43 +34,76 @@ public class JsonUtils {
         }
     }
 
+    private static void processElement(JsonObject element, FormattingContext context, StringBuilder result) {
+        FormattingContext elementContext = new FormattingContext(context);
+        
+        // Check if this element has interactive components
+        boolean hasInteractive = element.has("clickEvent") || element.has("hoverEvent");
+        
+        if (hasInteractive) {
+            result.append("<interactive>");
+        }
+        
+        processColorChange(element, elementContext, result);
+        processFormattingChanges(element, elementContext, result);
+        
+        if (element.has("text")) {
+            String text = element.get("text").getAsString();
+            result.append(preserveWhitespace(text));
+        }
+        
+        if (element.has("extra") && element.get("extra").isJsonArray()) {
+            JsonArray extraArray = element.getAsJsonArray("extra");
+            for (JsonElement extraElement : extraArray) {
+                processExtraElement(extraElement, elementContext, result);
+            }
+        }
+        
+        if (hasInteractive) {
+            processInteractiveElements(element, result);
+            result.append("</interactive>");
+        }
+        
+        context.updateFrom(elementContext);
+    }
+
     private static void processExtraElement(JsonElement element, FormattingContext context, StringBuilder result) {
         if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
             String text = element.getAsString();
             result.append(preserveWhitespace(text));
         } else if (element.isJsonObject()) {
-            processElement(element.getAsJsonObject(), context, result);
-        }
-    }
-
-    private static void processElement(JsonObject element, FormattingContext context, StringBuilder result) {
-        FormattingContext elementContext = new FormattingContext(context);
-        StringBuilder content = new StringBuilder();
-        boolean hasInteractive = element.has("clickEvent") || element.has("hoverEvent");
-        StringBuilder mainContent = hasInteractive ? new StringBuilder() : content;
-        if (hasInteractive) {
-            mainContent.append("<interactive>");
-        }
-        processColorChange(element, elementContext, mainContent);
-        processFormattingChanges(element, elementContext, mainContent);
-        if (element.has("text")) {
-            String text = element.get("text").getAsString();
-            mainContent.append(preserveWhitespace(text));
-        }
-        if (element.has("extra") && element.get("extra").isJsonArray()) {
-            JsonArray extraArray = element.getAsJsonArray("extra");
-            for (JsonElement extraElement : extraArray) {
-                processExtraElement(extraElement, elementContext, mainContent);
+            JsonObject obj = element.getAsJsonObject();
+            FormattingContext elementContext = new FormattingContext(context);
+            
+            // Check if this extra element has interactive components
+            boolean hasInteractive = obj.has("clickEvent") || obj.has("hoverEvent");
+            
+            if (hasInteractive) {
+                result.append("<interactive>");
             }
+            
+            processColorChange(obj, elementContext, result);
+            processFormattingChanges(obj, elementContext, result);
+            
+            if (obj.has("text")) {
+                String text = obj.get("text").getAsString();
+                result.append(preserveWhitespace(text));
+            }
+            
+            if (obj.has("extra") && obj.get("extra").isJsonArray()) {
+                JsonArray extraArray = obj.getAsJsonArray("extra");
+                for (JsonElement extraElement : extraArray) {
+                    processExtraElement(extraElement, elementContext, result);
+                }
+            }
+            
+            if (hasInteractive) {
+                processInteractiveElements(obj, result);
+                result.append("</interactive>");
+            }
+            
+            context.updateFrom(elementContext);
         }
-        if (hasInteractive) {
-            processInteractiveElements(element, mainContent);
-            mainContent.append("</interactive>");
-            content.append(mainContent);
-        }
-        
-        result.append(content);
-        context.updateFrom(elementContext);
     }
 
     private static String preserveWhitespace(String text) {
@@ -127,7 +152,16 @@ public class JsonUtils {
     private static void processInteractiveElements(JsonObject element, StringBuilder content) {
         if (element.has("hoverEvent")) {
             JsonObject hoverEvent = element.getAsJsonObject("hoverEvent");
-            if (hoverEvent.has("value")) {
+            if (hoverEvent.has("contents")) {
+                content.append("<hover>");
+                JsonElement hoverValue = hoverEvent.get("contents");
+                if (hoverValue.isJsonPrimitive()) {
+                    content.append(preserveWhitespace(hoverValue.getAsString()));
+                } else if (hoverValue.isJsonObject()) {
+                    content.append(jsonToCustomString(hoverValue.toString()));
+                }
+                content.append("</hover>");
+            } else if (hoverEvent.has("value")) {
                 content.append("<hover>");
                 JsonElement hoverValue = hoverEvent.get("value");
                 if (hoverValue.isJsonPrimitive()) {
@@ -138,6 +172,7 @@ public class JsonUtils {
                 content.append("</hover>");
             }
         }
+        
         if (element.has("clickEvent")) {
             JsonObject clickEvent = element.getAsJsonObject("clickEvent");
             String action = clickEvent.get("action").getAsString();
@@ -195,42 +230,42 @@ public class JsonUtils {
         }
     }
 
-	public static boolean isValidJson(String input) {
-	    try {
-	        JsonElement jsonElement = JsonParser.parseString(input);
-	        return jsonElement.isJsonObject() || jsonElement.isJsonArray();
-	    } catch (JsonSyntaxException e) {
-	        return false;
-	    }
-	}
+    public static boolean isValidJson(String input) {
+        try {
+            JsonElement jsonElement = JsonParser.parseString(input);
+            return jsonElement.isJsonObject() || jsonElement.isJsonArray();
+        } catch (JsonSyntaxException e) {
+            return false;
+        }
+    }
 
-	public static String convertToJson(String input) {
-	    input = replaceFirstAndLastQuotes(input);
-	    
-	    input = input.replace("\\n", "\n")
-	                 .replace("\\t", "\t")
-	                 .replace("\\r", "\r");
-	    
-	    JsonObject jsonObject = new JsonObject();
-	    jsonObject.addProperty("text", input);
-	    
-	    return jsonObject.toString();
-	}
+    public static String convertToJson(String input) {
+        input = replaceFirstAndLastQuotes(input);
+        
+        input = input.replace("\\n", "\n")
+                     .replace("\\t", "\t")
+                     .replace("\\r", "\r");
+        
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("text", input);
+        
+        return jsonObject.toString();
+    }
     
-	public static String replaceFirstAndLastQuotes(String input) {
-	    if (input == null || input.isEmpty() || input.length() < 2) {
-	        return input;
-	    }
-	    if (input.charAt(0) == '"') {
-	        input = input.substring(1);
-	    }
-	    int lastIndex = input.length() - 1;
-	    if (input.charAt(lastIndex) == '"') {
-	        input = input.substring(0, lastIndex);
-	    }
-	    return input;
-	}
-	
+    public static String replaceFirstAndLastQuotes(String input) {
+        if (input == null || input.isEmpty() || input.length() < 2) {
+            return input;
+        }
+        if (input.charAt(0) == '"') {
+            input = input.substring(1);
+        }
+        int lastIndex = input.length() - 1;
+        if (input.charAt(lastIndex) == '"') {
+            input = input.substring(0, lastIndex);
+        }
+        return input;
+    }
+    
     private static class FormattingContext {
         private String currentColor;
         private final Map<String, Boolean> formatting = new HashMap<>();
@@ -268,5 +303,4 @@ public class JsonUtils {
             this.formatting.putAll(other.formatting);
         }
     }
-
 }

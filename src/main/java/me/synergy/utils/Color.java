@@ -354,7 +354,7 @@ public class Color {
         }
     }
     
-    private static class ThemeProcessor {
+    public static class ThemeProcessor {
         public static String processThemeTags(String input, String theme) {
             for (String t : new String[]{theme, "default"}) {
                 try {
@@ -433,4 +433,70 @@ public class Color {
         return "default";
     }
 
+    public static boolean containsTags(String string) {
+        if (string == null || string.isEmpty()) {
+            return false;
+        }
+
+        if (string.contains("<#")) {
+            return true;
+        }
+        
+        if (string.contains("<reset>")) {
+            return true;
+        }
+
+        for (String tag : FORMATTING_TAGS.keySet()) {
+            if (string.contains("<" + tag + ">")) {
+                return true;
+            }
+        }
+        
+        for (String color : STANDARD_COLORS) {
+            if (string.contains("<" + color + ">")) {
+                return true;
+            }
+        }
+        
+        try {
+            var themeSection = Synergy.getConfig().getConfigurationSection("localizations.color-themes");
+            if (themeSection != null) {
+                for (var themeEntry : themeSection.entrySet()) {
+                    var colorSection = Synergy.getConfig().getConfigurationSection("localizations.color-themes." + themeEntry.getKey());
+                    if (colorSection != null) {
+                        for (var colorEntry : colorSection.entrySet()) {
+                            if (string.contains("<" + colorEntry.getKey() + ">")) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            var replaceSection = Synergy.getConfig().getConfigurationSection("localizations.color-replace");
+            if (replaceSection != null) {
+                for (var entry : replaceSection.entrySet()) {
+                    if (string.contains("<" + entry.getKey() + ">")) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            var customSection = Synergy.getConfig().getConfigurationSection("chat-manager.custom-color-tags");
+            if (customSection != null) {
+                for (var entry : customSection.entrySet()) {
+                    if (string.contains(entry.getKey())) {
+                        return true;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        
+        return false;
+    }
+    
 }

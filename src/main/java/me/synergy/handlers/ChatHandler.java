@@ -116,6 +116,7 @@ public class ChatHandler implements Listener, SynergyListener {
         
         if (Synergy.getConfig().getBoolean("chat-manager.use-interactive-tags")) {
         	event.getRecipients().stream().forEach(recipient -> recipient.sendMessage(formatMessage(chat, message, player)));
+        	Bukkit.getLogger().info("[CHAT] "+"["+chat.getTag()+"] "+player.getName()+": "+message.getMessage());
         	event.setCancelled(true);
         } else {
         	event.setFormat(formatMessage(chat, message, player));

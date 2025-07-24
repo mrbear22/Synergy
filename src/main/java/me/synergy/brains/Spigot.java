@@ -46,6 +46,7 @@ import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
 import me.synergy.modules.LocalesManager;
 import me.synergy.objects.BreadMaker;
+import me.synergy.utils.RepeatingTask;
 import me.synergy.utils.ToastMessage;
 import me.synergy.utils.UpdateChecker;
 import me.synergy.web.WebServer;
@@ -85,14 +86,11 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
         new WebServer().initialize();
         new ResourcePackHandler().initialize();
         new ThemeCommand().initialize();
+		new VoteHandler().initialize();
 
 		if (Synergy.isDependencyAvailable("ProtocolLib")) {
 			PROTOCOLMANAGER = ProtocolLibrary.getProtocolManager();
 	        new LocalesHandler().initialize();
-		}
-        
-		if (Synergy.isDependencyAvailable("Votifier")) {
-			new VoteHandler().initialize();
 		}
         
 		if (Synergy.isDependencyAvailable("Essentials")) {
@@ -159,6 +157,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
 	public void onDisable() {
         new Discord().shutdown();
         new WebServer().shutdown();
+        new RepeatingTask().shutdown();
         getLogger().info("Synergy has stopped it's service!");
     }
     
@@ -272,7 +271,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
 	        }
 	    });
 	}
-
+	
 	public void executeInteractive(String json, BreadMaker bread) {
     	try {
 	        Gson gson = new Gson();

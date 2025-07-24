@@ -88,8 +88,12 @@ public class Synergy {
         if (isRunningSpigot()) {
         	return getSpigot().getServer().getPluginManager().isPluginEnabled(plugin);
         }
-        if (isRunningBungee() || isRunningVelocity()) {
+        if (isRunningBungee()) {
         	return getBungee().getProxy().getPluginManager().getPlugin(plugin) != null;
+        }
+        if (isRunningVelocity()) {
+        	getVelocity();
+			return Velocity.getProxy().getPluginManager().getPlugin(plugin) != null;
         }
         return false;
     }

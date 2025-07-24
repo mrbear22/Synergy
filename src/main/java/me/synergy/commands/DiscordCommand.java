@@ -18,6 +18,7 @@ import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
 import me.synergy.utils.BookMessage;
+import me.synergy.utils.RepeatingTask;
 import me.synergy.utils.Translation;
 
 public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, SynergyListener {
@@ -84,6 +85,9 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
                 break;
             case "unlink":
             	Synergy.createSynergyEvent("remove-discord-link").setPlayerUniqueId(player.getUniqueId()).send();
+                if (Synergy.getConfig().getBoolean("discord.kick-player.if-has-no-link.enabled")) {
+                	bread.kick(Synergy.getConfig().getString("discord.kick-player.if-has-no-link.message"));
+                }
                 break;
         }
         return true;

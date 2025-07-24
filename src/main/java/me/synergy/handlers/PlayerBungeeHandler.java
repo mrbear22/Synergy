@@ -20,7 +20,7 @@ import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
-public class PlayerProxyHandler implements Listener {
+public class PlayerBungeeHandler implements Listener {
 
     private static Set<UUID> kickedPlayers = new HashSet<>();
     

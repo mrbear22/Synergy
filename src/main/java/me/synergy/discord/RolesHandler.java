@@ -18,7 +18,6 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
-import me.synergy.utils.Timings;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Role;
@@ -84,9 +83,6 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
                 return;
             }
         	
-        	Timings timing = new Timings();
-        	timing.startTiming("Discord Roles Sync");
-
             if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-form-mc-to-discord")) {
                 Bukkit.getScheduler().runTaskAsynchronously(Synergy.getSpigot(), () -> {
                     SynergyEvent event = Synergy.createSynergyEvent("sync-roles").setPlayerUniqueId(player.getUniqueId());
@@ -104,10 +100,7 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
                 Synergy.createSynergyEvent("sync-roles-from-discord-to-mc")
                         .setPlayerUniqueId(player.getUniqueId())
                         .send();
-             
             }
-            
-        	timing.endTiming("Discord Roles Sync");
         }
 
         @EventHandler

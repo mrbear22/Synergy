@@ -227,4 +227,16 @@ public class Interactive {
             }
         }
     }
+    
+    public static boolean containsTags(String string) {
+        if (string == null || string.isEmpty()) {
+            return false;
+        }
+        
+        if (string.contains("<interactive>")) {
+            return true;
+        }
+
+        return false;
+    }
 }

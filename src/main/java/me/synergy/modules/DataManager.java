@@ -82,14 +82,10 @@ public class DataManager implements SynergyListener {
     
     private DataObject getData(UUID uuid, String option, Object defaultValue, boolean useCache) throws SQLException {
 
-        Timings timing = new Timings();
-        timing.startTiming("Data-Get");
-
         Cache cache = new Cache(uuid);
         String key = option;
 
         if (useCache && !cache.isExpired(key)) {
-            timing.endTiming("Data-Get");
             return cache.get(key);
         }
 
@@ -106,19 +102,15 @@ public class DataManager implements SynergyListener {
             }
         }
 
-        Object data = (value != null) ? value : defaultValue;
+        Object data = value != null ? value : defaultValue;
 
         cache.add(key, data, 600);
-
-        timing.endTiming("Data-Get");
 
         return new DataObject(data);
     }
 
     
     public void setData(UUID uuid, String option, Object value) throws SQLException {
-    	Timings timing = new Timings();
-    	timing.startTiming("Data-Set");
     	establishConnection();
         String sql = value == null ? "DELETE FROM synergy WHERE uuid = ? AND option = ?"
         						   : "REPLACE INTO synergy (uuid, option, value) VALUES (?, ?, ?)";
@@ -136,9 +128,7 @@ public class DataManager implements SynergyListener {
         if (value != null) {
         	event.setOption("value", value.toString());
         }
-        event.send();
-        
-    	timing.endTiming("Data-Set");
+        event.send(); 
     }
     
     @SynergyHandler

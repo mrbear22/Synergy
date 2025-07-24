@@ -34,11 +34,3 @@ localizations:
 web-server:
   enabled: false
   port: 8192
-  
-#NuVotifier is required
-votifier:
-  enabled: false
-  monitorings:
-  - https://example.com/vote/example
-  rewards:
-  - eco give %PLAYER% 1

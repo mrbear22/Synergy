@@ -77,11 +77,15 @@ public class Config {
             addDefault("web-server.custom-texturepack-url", "http://example.com:8153/example.zip");
             addDefault("web-server.port", 8153);
 
-            addDefault("votifier.enabled", false);
-            addDefault("votifier.rewards", new String[] {"eco give %PLAYER% 1"});
-            addDefault("votifier.monitorings", new String[] {"https://example.com/vote/example"});
 
+            addDefault("votifier.enabled", false);
+            addDefault("votifier.announcement", "<lang>synergy-player-voted<arg>%PLAYER%</arg></lang>");
+            
             if (Synergy.isRunningSpigot()) {
+
+                addDefault("votifier.message", "<lang>synergy-voted-successfully<arg>%SERVICE%</arg></lang>");
+                addDefault("votifier.rewards", new String[] {"eco give %PLAYER% 1"});
+                addDefault("votifier.monitorings", new String[] {"https://example.com/vote/example"});
 
                 addDefault("motd.enabled", true);
                 addDefault("motd.message", "Message of The Day Example");

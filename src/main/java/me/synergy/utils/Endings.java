@@ -47,21 +47,21 @@ public class Endings {
         if (pronounMatcher.find()) {
             String detectedPronoun = pronounMatcher.group(1);
             pronoun = "he".equalsIgnoreCase(detectedPronoun) ? Pronoun.HE : Pronoun.SHE;
-        }
+        } else {
+            String[] words = input.split("\\s+");
 
-        String[] words = input.split("\\s+");
-
-        for (String word : words) {
-            for (UUID playerUUID : getOnlinePlayerUUIDs()) {
-                String playerName = Synergy.getBread(playerUUID).getName();
-                if (word.contains(playerName)) {
-                    pronoun = Synergy.getBread(playerUUID).getPronoun();
-                    break;
+            for (String word : words) {
+                for (UUID playerUUID : getOnlinePlayerUUIDs()) {
+                    String playerName = Synergy.getBread(playerUUID).getName();
+                    if (word.contains(playerName)) {
+                        pronoun = Synergy.getBread(playerUUID).getPronoun();
+                        break;
+                    }
                 }
+                if (pronoun != null) break;
             }
-            if (pronoun != null) break;
         }
-        
+
         input = removePronounTags(input);
     	
         if (pronoun == null) {

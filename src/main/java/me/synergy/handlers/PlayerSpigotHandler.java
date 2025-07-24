@@ -16,6 +16,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Chat;
+import me.synergy.utils.RepeatingTask;
 import me.synergy.utils.Translation;
 import net.dv8tion.jda.api.entities.User;
 
@@ -63,14 +64,10 @@ public class PlayerSpigotHandler implements Listener {
         bread.getCache().clear();
         bread.setData("name", event.getPlayer().getName());
         
-    	event.setJoinMessage("<lang>synergy-player-join-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
-    	
-    	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has joined with IP "+event.getPlayer().getAddress()+" ```");
+	    event.setJoinMessage("<lang>synergy-player-join-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
         
-    	if (!Synergy.getConfig().getBoolean("discord.enabled")) {
-    		return;
-    	}
-    			
+    	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has joined with IP "+event.getPlayer().getAddress()+" ```");
+        	
         if (Synergy.getConfig().getBoolean("discord.kick-player.if-has-no-link.enabled")) {
         	if (!bread.getData("discord").isSet() && !bread.getData("confirm-discord").isSet()) {
                 kickedPlayers.add(player.getUniqueId());
@@ -79,10 +76,15 @@ public class PlayerSpigotHandler implements Listener {
         	}
         }
     	
+    	if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+    		return;
+    	}
+        
         if (Synergy.getConfig().getBoolean("discord.kick-player.if-banned.enabled")) {
         	if (Discord.isBanned(bread)) {
                 kickedPlayers.add(player.getUniqueId());
         		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-banned.message"));
+        		event.setJoinMessage(null);
     	        return;
         	}
         }
@@ -91,6 +93,7 @@ public class PlayerSpigotHandler implements Listener {
         	if (Discord.isMissing(bread)) {
                 kickedPlayers.add(player.getUniqueId());
         		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-missing.message"));
+        		event.setJoinMessage(null);
     	        return;
         	}
         }
@@ -99,6 +102,7 @@ public class PlayerSpigotHandler implements Listener {
         	if (Discord.isMuted(bread)) {
                 kickedPlayers.add(player.getUniqueId());
         		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-muted.message"));
+        		event.setJoinMessage(null);
     	        return;
         	}
         }
@@ -121,7 +125,8 @@ public class PlayerSpigotHandler implements Listener {
 		        }, 40L);
 		    }
 		}
-    
+		
+
     }
     
 	@EventHandler
