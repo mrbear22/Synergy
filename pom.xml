@@ -101,10 +101,6 @@
 			<url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
 		</repository>
 		<repository>
-			<id>dmulloy2-repo</id>
-			<url>https://repo.dmulloy2.net/repository/public/</url>
-		</repository>
-		<repository>
 			<id>placeholderapi</id>
 			<url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
 		</repository>
@@ -147,10 +143,10 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.comphenix.protocol</groupId>
-			<artifactId>ProtocolLib</artifactId>
-			<version>5.1.0</version>
-			<scope>provided</scope>
+		    <groupId>net.dmulloy2</groupId>
+		    <artifactId>ProtocolLib</artifactId>
+		    <version>5.4.0</version>
+		    <scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.dv8tion</groupId>
