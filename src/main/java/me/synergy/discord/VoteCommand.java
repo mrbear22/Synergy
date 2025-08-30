@@ -32,12 +32,12 @@ public class VoteCommand extends ListenerAdapter {
     	}
     	String language = Discord.getUniqueIdByDiscordId(event.getUser().getId()) != null ? Synergy.getBread(Discord.getUniqueIdByDiscordId(event.getUser().getId())).getLanguage() : Translation.getDefaultLanguage();
     	EmbedBuilder embed = new EmbedBuilder();
-        embed.setTitle(Synergy.translate("<lang>synergy-vote-monitorings</lang>", language).getStripped());
+        embed.setTitle(Synergy.translate("<lang>vote-monitorings</lang>", language).getStripped());
         StringBuilder links = new StringBuilder();
         for (String link : Synergy.getConfig().getStringList("votifier.monitorings")) {
         	try {
             	String domain = new URI(link).getHost();
-        		String format = Synergy.translate("<lang>synergy-vote-monitorings-format-stripped</lang>", language).getStripped().replace("%MONITORING%", domain).replace("%URL%", link) + "\n";
+        		String format = Synergy.translate("<lang>vote-monitorings-format-stripped</lang>", language).getStripped().replace("%MONITORING%", domain).replace("%URL%", link) + "\n";
 				links.append(format);
 			} catch (URISyntaxException e) {e.printStackTrace();}
         }

@@ -101,6 +101,8 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
                         .setPlayerUniqueId(player.getUniqueId())
                         .send();
             }
+            
+
         }
 
         @EventHandler

@@ -16,8 +16,6 @@ import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.Color;
-import me.synergy.utils.Interactive;
 
 public class LocalesHandler {
 
@@ -192,6 +190,7 @@ public class LocalesHandler {
                 }
             }
         } catch (Exception e) {
+        	e.printStackTrace();
             Synergy.getLogger().error("Error processing chat components in " + event.getPacketType() + ": " + e.getMessage());
         }
     }
@@ -244,19 +243,17 @@ public class LocalesHandler {
 
     private String processJsonComponent(String json, BreadMaker bread) {
         try {
-        	if (json.contains("translate")) {
-        		return Color.processColors(Interactive.processInteractive(json), bread.getTheme());
-        	}
+
             return Synergy.translate(json, bread.getLanguage())
-                .setPlaceholders(bread)
-                .setEndings(null)
-                .setExecuteInteractive(bread)
-                .getColored(bread.getTheme());
+                    .setPlaceholders(bread)
+                    .setEndings(null)
+                    .setExecuteInteractive(bread)
+                    .getColored(bread.getTheme());
         } catch (Exception e) {
             return Synergy.translate(json, bread.getLanguage())
-                .setPlaceholders(bread)
-                .setEndings(bread.getPronoun())
-                .getColored(bread.getTheme());
+                    .setPlaceholders(bread)
+                    .setEndings(bread.getPronoun())
+                    .getColored(bread.getTheme());
         }
     }
 

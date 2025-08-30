@@ -4,13 +4,6 @@ import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
-import org.jsoup.nodes.TextNode;
-import org.jsoup.select.Elements;
-
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
 import me.synergy.modules.LocalesManager;
@@ -35,10 +28,6 @@ public class Translation {
 		// Process <lang> tags
 		try {
         	if (string.contains("<lang>")) {
-        		if (JsonUtils.isValidJson(string)) {
-        			string = JsonUtils.jsonToCustomString(string);
-        		}
-        		string = Endings.processEndings(string, null);
         		string = Translation.processLangTags(string, language);
         	}
 		} catch (Exception c) { Synergy.getLogger().error("Error while processing <lang> tags: " + c.getLocalizedMessage()); }
@@ -49,19 +38,6 @@ public class Translation {
 				string = PlaceholdersAPI.processPlaceholders(Synergy.getSpigot().getPlayerByUniqueId(bread.getUniqueId()), string);
 			}
 		} catch (Exception c) { Synergy.getLogger().error("Error while processing placeholders: " + c.getLocalizedMessage()); }
-
-
-		// Process <translation> tags
-		try {
-        	if (string.contains("<translation>")) {
-        		if (JsonUtils.isValidJson(string)) {
-        			string = JsonUtils.jsonToCustomString(string);
-        		}
-        		string = Endings.processEndings(string, null);
-        		string = Translation.processTranslationTags(string, language);
-        	}
-		} catch (Exception c) { Synergy.getLogger().error("Error while processing <translation> tags: " + c.getLocalizedMessage()); }
-
 
 		return string;
 	}
@@ -116,47 +92,6 @@ public class Translation {
 
     public static String removeLangTags(String string) {
     	return string.replaceAll("<lang>(.*?)</lang>", "");
-    }
-
-
-	/*
-	 * <translation> tags processor
-	 */
-
-    public static String processTranslationTags(String input, String languageCode) {
-        Document doc = Jsoup.parse(input);
-        StringBuilder result = new StringBuilder();
-        processNode(doc.body(), languageCode, result);
-        return result.toString().trim().replace("\\", "");
-    }
-
-    private static void processNode(Node node, String languageCode, StringBuilder result) {
-        if (node instanceof TextNode) {
-            result.append(((TextNode) node).text());
-        } else if (node instanceof Element) {
-            Element element = (Element) node;
-            String tagName = element.tagName();
-            if (tagName.equals("translation")) {
-                Elements translations = element.children();
-                for (Element translation : translations) {
-                    if (translation.tagName().equals(languageCode)) {
-                        processNode(translation, languageCode, result);
-                        break;
-                    }
-                }
-            } else {
-            	if (!tagName.equals("body") && !tagName.equals(languageCode)) {
-            		result.append("<").append(tagName).append(">");
-            	}
-                for (Node child : element.childNodes()) {
-                    processNode(child, languageCode, result);
-                }
-            }
-        }
-    }
-
-    public static String removeTranslationTags(String string) {
-    	return string.replaceAll("<translation>(.*?)</translation>", "");
     }
 
     public static String removeAllTags(String input) {

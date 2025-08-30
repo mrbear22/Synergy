@@ -43,7 +43,7 @@ public class ListCommand extends ListenerAdapter {
             language = bread.getLanguage();
         }
 
-        String title = Synergy.translate("<lang>synergy-online-players-list</lang>", language).getStripped();
+        String title = Synergy.translate("<lang>online-players-list</lang>", language).getStripped();
         builder.setTitle(title);
         builder.setColor(Color.decode("#a29bfe"));
 

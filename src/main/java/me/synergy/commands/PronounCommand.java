@@ -1,23 +1,19 @@
 package me.synergy.commands;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
 import me.synergy.utils.Endings;
 
 public class PronounCommand implements CommandExecutor, TabCompleter {
-
 	public PronounCommand() {}
-
+	
     public void initialize() {
     	if (!Synergy.getConfig().getBoolean("localizations.pronouns")) {
 	    	return;
@@ -37,45 +33,41 @@ public class PronounCommand implements CommandExecutor, TabCompleter {
     	}
     	return null;
     }
-
+    
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("<lang>synergy-command-not-player</lang>");
-            return true;
+            sender.sendMessage("<lang>command-not-player</lang>");
+            return false;
         }
         
         Player player = (Player) sender;
         BreadMaker bread = new BreadMaker(player.getUniqueId());
+        Set<String> pronouns = Endings.getPronounsAsStringSet();
+        
         switch (label.toLowerCase()) {
             case "pronoun":
             case "gender":
-                Set<String> pronouns = Endings.getPronounsAsStringSet();
                 if (args.length > 0 && pronouns.contains(args[0].toUpperCase())) {
                     bread.setData("pronoun", args[0].toUpperCase());
                 } else if (args.length == 0) {
-                    sender.sendMessage("<lang>synergy-command-usage</lang> /pronoun " + pronouns);
-                    return true;
+                    return false; // Show usage from plugin.yml
                 } else {
-                    sender.sendMessage("<lang>synergy-invalid-pronoun</lang>"); 
-                    return true;
+                    sender.sendMessage("<lang>invalid-pronoun</lang>"); 
+                    return false;
                 }
                 break;
-
             case "iamgirl":
                 bread.setData("pronoun", "SHE");
                 break;
-
             case "iamboy":
                 bread.setData("pronoun", "HE");
                 break;
-
             default:
-                sender.sendMessage("<lang>synergy-unknown-command</lang>");
-                return true;
+                sender.sendMessage("<lang>unknown-command</lang>");
+                return false;
         }
-        sender.sendMessage("<lang>synergy-your-pronoun<arg>" + bread.getPronoun() + "</arg></lang>");
+        sender.sendMessage("<lang>your-pronoun<arg>" + bread.getPronoun() + "</arg></lang>");
         return true;
     }
-    
 }

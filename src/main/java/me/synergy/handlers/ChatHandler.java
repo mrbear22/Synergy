@@ -26,7 +26,7 @@ import me.synergy.integrations.SaberFactionsAPI;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Chat;
 import me.synergy.objects.DataObject;
-import me.synergy.utils.Color;
+import me.synergy.text.Color;
 import me.synergy.utils.Cooldown;
 import me.synergy.utils.Translation;
 import me.synergy.utils.Utils;
@@ -65,13 +65,13 @@ public class ChatHandler implements Listener, SynergyListener {
         					: "global");
         
         if (message.getMessage().isEmpty()) {
-        	event.getPlayer().sendMessage("<lang>synergy-message-cant-be-empty</lang>");
+        	event.getPlayer().sendMessage("<lang>message-cant-be-empty</lang>");
             event.setCancelled(true);
         	return;
         }
         
         if (cooldown.hasCooldown("chat")) {
-        	event.getPlayer().sendMessage("<lang>synergy-cooldown</lang>");
+        	event.getPlayer().sendMessage("<lang>cooldown</lang>");
             event.setCancelled(true);
         	return;
         }
@@ -85,12 +85,12 @@ public class ChatHandler implements Listener, SynergyListener {
                 break;
             case "plot":
                 if (!Synergy.isDependencyAvailable("PlotSquared")) {
-                	player.sendMessage("<lang>synergy-dependency-not-found<arg>PlotSquared</arg></lang>");
+                	player.sendMessage("<lang>dependency-not-found<arg>PlotSquared</arg></lang>");
 	            	event.setCancelled(true);
 	            	return;
 	            }
         		if (PlotSquaredAPI.getCurrentPlot(player) == null) {
-                	player.sendMessage("<lang>synergy-youre-not-in-plot</lang>");
+                	player.sendMessage("<lang>youre-not-in-plot</lang>");
                 	event.setCancelled(true);
                 	return;
         		}
@@ -98,12 +98,12 @@ public class ChatHandler implements Listener, SynergyListener {
                 break;
             case "faction":
             	if (!Synergy.isDependencyAvailable("Factions")) {
-                	player.sendMessage("<lang>synergy-dependency-not-found<arg>Factions</arg></lang>");
+                	player.sendMessage("<lang>dependency-not-found<arg>Factions</arg></lang>");
                 	event.setCancelled(true);
                 	return;
             	}
         		if (SaberFactionsAPI.getFactionByPlayer(player) == null) {
-                	player.sendMessage("<lang>synergy-youre-not-in-faction</lang>");
+                	player.sendMessage("<lang>youre-not-in-faction</lang>");
                 	event.setCancelled(true);
                 	return;
         		}
@@ -127,7 +127,7 @@ public class ChatHandler implements Listener, SynergyListener {
         sendDiscordMessage(chat, message, player);
         
         if (Synergy.getConfig().getBoolean("chat-manager.warn-if-nobody-in-chat") && event.getRecipients().size() < 2 && !"global".equals(chat.getName())) {
-        	player.sendMessage("<lang>synergy-noone-hears-you</lang>");
+        	player.sendMessage("<lang>noone-hears-you</lang>");
         }
     }
 
@@ -152,6 +152,26 @@ public class ChatHandler implements Listener, SynergyListener {
 	}
     
 	@SynergyHandler
+	public void onTwitchMessage(SynergyEvent event) throws SQLException {
+	    if (!"twitch-chat".equals(event.getIdentifier())) return;
+
+	    String user = event.getOption("player").getAsString();
+	    String channel = event.getOption("twitch-channel").getAsString();
+	    String message = event.getOption("message").getAsString();
+	    	    
+	    Chat chat = new Chat("twitch");
+	    if (!chat.isEnabled()) return;
+
+	    UUID uuid = Synergy.getDataManager().findUserUUID("twitch-username", channel);
+	    if (uuid == null) {
+	        return;
+	    }
+
+	    Synergy.getBread(uuid).sendMessage(formatMessage(chat, new Message(message), user));
+	    Synergy.getLogger().info("[" + channel + "] " + user + ": " + message);
+	}
+	
+	@SynergyHandler
 	public void onDiscordMessage(SynergyEvent event) throws SQLException {
 	    if (!"discord-chat".equals(event.getIdentifier())) return;
 
@@ -171,7 +191,7 @@ public class ChatHandler implements Listener, SynergyListener {
 
 	    UUID uuid = Synergy.getDataManager().findUserUUID("discord", discordUserId);
 	    if (uuid == null) {
-	        sendEmbedMessage(discordChannelId, "<lang>synergy-you-have-to-link-account</lang>");
+	        sendEmbedMessage(discordChannelId, "<lang>you-have-to-link-account</lang>");
 	        return;
 	    }
 
@@ -179,7 +199,7 @@ public class ChatHandler implements Listener, SynergyListener {
 	    Set<Player> recipients = new HashSet<>(Bukkit.getOnlinePlayers());
 
 	    if (Synergy.getBread(uuid).isMuted()) {
-	        sendEmbedMessage(discordChannelId, "<lang>synergy-you-are-muted</lang>");
+	        sendEmbedMessage(discordChannelId, "<lang>you-are-muted</lang>");
 	        return;
 	    }
 
@@ -220,10 +240,28 @@ public class ChatHandler implements Listener, SynergyListener {
         format = format.replace("%MESSAGE%", message.getMessage());
         format = format.replace("%", "%%");
         format = Color.processLegacyColors(format, bread.getTheme());
+        format = Color.processCustomColorCodes(format);
         
         return format;
     }
     
+	private String formatMessage(MessageSource source, Message message, String player) {
+        String format = Synergy.getConfig().getString("chat-manager.format");
+
+        if (Synergy.isDependencyAvailable("PlaceholderAPI")) {
+        	format = Utils.replacePlaceholderOutputs(null, format);
+            format = PlaceholderAPI.setPlaceholders(null, format);
+        }
+        
+        format = format.replace("%CHAT%", source.getTag());
+        format = format.replace("%COLOR%", source.getColor());
+        format = format.replace("%DISPLAYNAME%", player);
+        format = format.replace("%MESSAGE%", message.getMessage());
+        format = format.replace("%", "%%");
+        
+        return format;
+    }
+	
     private void logMessage(Chat chat, Message message, Player player) {
     	Synergy.getLogger().discord("```["+Synergy.getServerName()+"] [" + chat.getTag() + "] " + player.getName() + ": " + message.getMessage() + "```");
     }

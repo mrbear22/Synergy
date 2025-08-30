@@ -20,8 +20,7 @@ import java.util.stream.Collectors;
 public class MojangAPI {
 
     private static String readFromURL(String urlString) throws IOException {
-        @SuppressWarnings("deprecation")
-		URL url = new URL(urlString);
+        URL url = new URL(urlString);
         try (BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream(), StandardCharsets.UTF_8))) {
             return in.lines().collect(Collectors.joining());
         }

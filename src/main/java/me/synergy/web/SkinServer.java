@@ -3,16 +3,19 @@ package me.synergy.web;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.imageio.ImageIO;
 
@@ -24,32 +27,72 @@ import me.synergy.integrations.SkinRestorerAPI;
 
 public class SkinServer {
 
-    private static final long CACHE_TIMEOUT = 10 * 60 * 1000;
-    private static final Map<String, CacheEntry> imageCache = new HashMap<>();
+    private static final long CACHE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+    private static final String CACHE_DIR = "plugins/Synergy/cache";
     private static final ExecutorService executorService = Executors.newFixedThreadPool(10);
     
-    static class CacheEntry {
-        BufferedImage image;
-        long timestamp;
-        Format format;
-
-        CacheEntry(BufferedImage image, long timestamp, Format format) {
-            this.image = image;
-            this.timestamp = timestamp;
-            this.format = format;
+    // Shutdown hook для коректного закриття ExecutorService
+    static {
+        try {
+            Path cacheDir = Paths.get(CACHE_DIR);
+            if (!Files.exists(cacheDir)) {
+                Files.createDirectories(cacheDir);
+            }
+            
+            Files.createDirectories(cacheDir.resolve("heads"));
+            Files.createDirectories(cacheDir.resolve("skins"));
+            
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                shutdown();
+            }));
+            
+        } catch (IOException e) {
+            System.err.println("Помилка створення директорії кешу: " + e.getMessage());
         }
+    }
+    
+    public static void shutdown() {
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+                if (!executorService.awaitTermination(10, TimeUnit.SECONDS)) {
+                    System.err.println("ExecutorService не завершився коректно");
+                }
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 
-        enum Format {
-            HEAD, SKIN
+    enum Format {
+        HEAD("heads"), SKIN("skins");
+        
+        private final String directory;
+        
+        Format(String directory) {
+            this.directory = directory;
+        }
+        
+        public String getDirectory() {
+            return directory;
         }
     }
 
     static abstract class AbstractHandler implements HttpHandler {
-        protected abstract CacheEntry.Format getFormat();
+        protected abstract Format getFormat();
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
+            if (executorService.isShutdown()) {
+                exchange.sendResponseHeaders(503, 0);
+                exchange.close();
+                return;
+            }
+            
             exchange.getResponseHeaders().set("Content-Type", "image/png");
+            exchange.getResponseHeaders().set("Cache-Control", "max-age=600");
             exchange.sendResponseHeaders(200, 0);
 
             String[] segments = exchange.getRequestURI().getPath().split("/");
@@ -60,24 +103,78 @@ public class SkinServer {
                 String cacheKey = (uuid != null) ? uuid.toString() : name;
 
                 executorService.submit(() -> {
+                    HttpURLConnection connection = null;
+                    InputStream skinStream = null;
+                    InputStream defaultStream = null;
+                    
                     try {
-                        CacheEntry cacheEntry = getCachedImage(cacheKey, getFormat());
-                        if (cacheEntry == null) {
-                            String skinUrl = getSkinUrl(uuid, name);
-                            try (InputStream skin = (skinUrl != null) ? getSkinStream(skinUrl) : getDefaultSkin()) {
-                                BufferedImage processedImage = processImage(ImageIO.read(skin != null ? skin : getDefaultSkin()));
-                                cacheImage(cacheKey, processedImage, getFormat());
-                                sendImageResponse(exchange, processedImage);
-                            }
+                        BufferedImage cachedImage = getCachedImage(cacheKey, getFormat());
+                        if (cachedImage != null) {
+                            sendImageResponse(exchange, cachedImage);
                         } else {
-                            sendImageResponse(exchange, cacheEntry.image);
+                            String skinUrl = getSkinUrl(uuid, name);
+                            BufferedImage processedImage;
+                            
+                            if (skinUrl != null) {
+                                connection = (HttpURLConnection) new URL(skinUrl).openConnection();
+                                connection.setRequestMethod("GET");
+                                connection.setConnectTimeout(5000);
+                                connection.setReadTimeout(10000);
+                                
+                                if (connection.getResponseCode() == 200) {
+                                    skinStream = connection.getInputStream();
+                                    BufferedImage skinImage = ImageIO.read(skinStream);
+                                    if (skinImage != null) {
+                                        processedImage = processImage(skinImage);
+                                    } else {
+                                        defaultStream = getDefaultSkin();
+                                        processedImage = processImage(ImageIO.read(defaultStream));
+                                    }
+                                } else {
+                                    defaultStream = getDefaultSkin();
+                                    processedImage = processImage(ImageIO.read(defaultStream));
+                                }
+                            } else {
+                                defaultStream = getDefaultSkin();
+                                processedImage = processImage(ImageIO.read(defaultStream));
+                            }
+                            
+                            cacheImage(cacheKey, processedImage, getFormat());
+                            sendImageResponse(exchange, processedImage);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
+                        try {
+                            InputStream errorDefault = getDefaultSkin();
+                            try {
+                                BufferedImage defaultImage = processImage(ImageIO.read(errorDefault));
+                                sendImageResponse(exchange, defaultImage);
+                            } finally {
+                                if (errorDefault != null) {
+                                    try { errorDefault.close(); } catch (IOException ignored) {}
+                                }
+                            }
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
                     } finally {
-                        exchange.close();
+                        // Обов'язково закриваємо всі ресурси
+                        if (skinStream != null) {
+                            try { skinStream.close(); } catch (IOException ignored) {}
+                        }
+                        if (defaultStream != null) {
+                            try { defaultStream.close(); } catch (IOException ignored) {}
+                        }
+                        if (connection != null) {
+                            connection.disconnect(); // Важливо!
+                        }
+                        try {
+                            exchange.close();
+                        } catch (Exception ignored) {}
                     }
                 });
+            } else {
+                exchange.close();
             }
         }
         
@@ -91,21 +188,48 @@ public class SkinServer {
             return image;
         }
 
-        protected CacheEntry getCachedImage(String cacheKey, CacheEntry.Format format) {
-            CacheEntry cacheEntry = imageCache.get(cacheKey);
-            if (cacheEntry != null && cacheEntry.format == format &&
-                (System.currentTimeMillis() - cacheEntry.timestamp) < CACHE_TIMEOUT) {
-                return cacheEntry;
-            } else {
-                imageCache.remove(cacheKey);
+        protected BufferedImage getCachedImage(String cacheKey, Format format) {
+            if (cacheKey == null) return null;
+            
+            try {
+                Path cacheFile = getCacheFilePath(cacheKey, format);
+                
+                if (!Files.exists(cacheFile)) {
+                    return null;
+                }
+                
+                long fileTime = Files.getLastModifiedTime(cacheFile).toMillis();
+                long currentTime = System.currentTimeMillis();
+                
+                if ((currentTime - fileTime) > CACHE_TIMEOUT) {
+                    Files.deleteIfExists(cacheFile);
+                    return null;
+                }
+                
+                return ImageIO.read(cacheFile.toFile());
+                
+            } catch (IOException e) {
+                System.err.println("Помилка читання кешу для " + cacheKey + ": " + e.getMessage());
                 return null;
             }
         }
 
-        protected void cacheImage(String cacheKey, BufferedImage image, CacheEntry.Format format) {
-            if (cacheKey != null) {
-                imageCache.put(cacheKey, new CacheEntry(image, System.currentTimeMillis(), format));
+        protected void cacheImage(String cacheKey, BufferedImage image, Format format) {
+            if (cacheKey == null || image == null) return;
+            
+            try {
+                Path cacheFile = getCacheFilePath(cacheKey, format);
+                Files.createDirectories(cacheFile.getParent());
+                ImageIO.write(image, "png", cacheFile.toFile());
+                
+            } catch (IOException e) {
+                System.err.println("Помилка збереження кешу для " + cacheKey + ": " + e.getMessage());
             }
+        }
+        
+        private Path getCacheFilePath(String cacheKey, Format format) {
+            String safeKey = cacheKey.replaceAll("[^a-zA-Z0-9-_]", "_");
+            return Paths.get(CACHE_DIR, format.getDirectory(), safeKey + ".png");
         }
 
         protected InputStream getDefaultSkin() {
@@ -115,25 +239,28 @@ public class SkinServer {
 
     static class SkinHandler extends AbstractHandler {
         @Override
-        protected CacheEntry.Format getFormat() {
-            return CacheEntry.Format.SKIN;
+        protected Format getFormat() {
+            return Format.SKIN;
         }
     }
 
     static class HeadHandler extends AbstractHandler {
         @Override
-        protected CacheEntry.Format getFormat() {
-            return CacheEntry.Format.HEAD;
+        protected Format getFormat() {
+            return Format.HEAD;
         }
 
         @Override
         protected BufferedImage processImage(BufferedImage image) {
             BufferedImage combined = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = combined.createGraphics();
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-            g2d.drawImage(image.getSubimage(8, 8, 8, 8), 0, 0, 128, 128, null);
-            g2d.drawImage(image.getSubimage(40, 8, 8, 8), 0, 0, 128, 128, null);
-            g2d.dispose();
+            try {
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                g2d.drawImage(image.getSubimage(8, 8, 8, 8), 0, 0, 128, 128, null);
+                g2d.drawImage(image.getSubimage(40, 8, 8, 8), 0, 0, 128, 128, null);
+            } finally {
+                g2d.dispose();
+            }
             return combined;
         }
     }
@@ -145,12 +272,30 @@ public class SkinServer {
         }
         return MojangAPI.getSkinTextureURL(uuid, name);
     }
-
-    private static InputStream getSkinStream(String skinUrl) throws IOException {
-        @SuppressWarnings("deprecation")
-		HttpURLConnection connection = (HttpURLConnection) new URL(skinUrl).openConnection();
-        connection.setRequestMethod("GET");
-        return connection.getResponseCode() == 200 ? connection.getInputStream() : null;
+    
+    public static void cleanupCache() {
+        try {
+            Path cacheDir = Paths.get(CACHE_DIR);
+            if (!Files.exists(cacheDir)) return;
+            
+            long currentTime = System.currentTimeMillis();
+            
+            Files.walk(cacheDir)
+                .filter(Files::isRegularFile)
+                .filter(path -> path.toString().endsWith(".png"))
+                .forEach(path -> {
+                    try {
+                        long fileTime = Files.getLastModifiedTime(path).toMillis();
+                        if ((currentTime - fileTime) > CACHE_TIMEOUT) {
+                            Files.deleteIfExists(path);
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Помилка видалення застарілого файлу кешу: " + e.getMessage());
+                    }
+                });
+                
+        } catch (IOException e) {
+            System.err.println("Помилка очищення кешу: " + e.getMessage());
+        }
     }
 }
-

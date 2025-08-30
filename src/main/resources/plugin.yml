@@ -6,35 +6,41 @@ author: mrbear22
 softdepend: [Authme, PlaceholderAPI, ProtocolLib, Votifier, Essentials, Vault, Plan, Factions]
 description: ${project.description}
 commands:
-    synergy:
-        description: Synergy
-        usage: <lang>synergy-command-usage</lang> /<command>
-    vote:
-        description: Vote
-        usage: <lang>synergy-command-usage</lang> /<command>
-    chat:
-        description: Chat
-        usage: <lang>synergy-command-usage</lang> /<command>
-    theme:
-        description: Theme
-        usage: <lang>synergy-command-usage</lang> /<command>
-    colors:
-        description: Custom colors list
-        usage: <lang>synergy-command-usage</lang> /<command>
-    emojis:
-        description: Custom emojis list
-        usage: <lang>synergy-command-usage</lang> /<command>
-    chatfilter:
-        description: Chat filter
-        usage: <lang>synergy-command-usage</lang> /<command>
-    discord:
-        description: Discord
-        usage: <lang>synergy-command-usage</lang> /<command>
-    language:
-        description: Language
-        usage: <lang>synergy-command-usage</lang> /<command>
-        aliases: [lang]
-    pronoun:
-        description: Pronoun
-        usage: <lang>synergy-command-usage</lang> /<command>
-        aliases: [gender, iamgirl, iamboy]
+  synergy:
+    description: <lang>command_description_synergy</lang>
+    usage: <lang>command_usage_synergy</lang>
+  vote:
+    description: <lang>command_description_vote</lang>
+    usage: <lang>command_usage_vote</lang>
+  chat:
+    description: <lang>command_description_chat</lang>
+    usage: <lang>command_usage_chat</lang>
+  theme:
+    description: <lang>command_description_theme</lang>
+    usage: <lang>command_usage_theme</lang>
+  colors:
+    description: <lang>command_description_colors</lang>
+    usage: <lang>command_usage_colors</lang>
+  emojis:
+    description: <lang>command_description_emojis</lang>
+    usage: <lang>command_usage_emojis</lang>
+  chatfilter:
+    description: <lang>command_description_chatfilter</lang>
+    usage: <lang>command_usage_chatfilter</lang>
+  discord:
+    description: <lang>command_description_discord</lang>
+    usage: <lang>command_usage_discord</lang>
+  twitch:
+    description: <lang>command_description_twitch</lang>
+    usage: <lang>command_usage_twitch</lang>
+  monobank:
+    description: <lang>command_description_monobank</lang>
+    usage: <lang>command_usage_monobank</lang>
+  language:
+    description: <lang>command_description_language</lang>
+    usage: <lang>command_usage_language</lang>
+    aliases: [lang]
+  pronoun:
+    description: <lang>command_description_pronoun</lang>
+    usage: <lang>command_usage_pronoun</lang>
+    aliases: [gender, iamgirl, iamboy]

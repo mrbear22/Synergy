@@ -162,8 +162,8 @@ public class EmbedCommand extends ListenerAdapter {
 
     private String getModalTitle(SlashCommandInteractionEvent event) {
         return event.getOption("message") != null 
-                ? Synergy.translate("<lang>synergy-discord-embed-edit</lang>", Translation.getDefaultLanguage()).getStripped()
-                : Synergy.translate("<lang>synergy-discord-embed-new</lang>", Translation.getDefaultLanguage()).getStripped();
+                ? Synergy.translate("<lang>discord-embed-edit</lang>", Translation.getDefaultLanguage()).getStripped()
+                : Synergy.translate("<lang>discord-embed-new</lang>", Translation.getDefaultLanguage()).getStripped();
     }
     
 /*
@@ -173,13 +173,13 @@ public class EmbedCommand extends ListenerAdapter {
 			OfflinePlayer player = Bukkit.getOfflinePlayer(Synergy.getDiscord().getUniqueIdByDiscordId(event.getUser().getId()));
 	    	double balance = Synergy.getSpigot().getEconomy().getBalance(player);
 	    	EmbedBuilder embed = new EmbedBuilder();
-	    	embed.addField(Synergy.translate("<lang>synergy-vault-balance-title</lang>", bread.getLanguage()).getStripped(), Synergy.translate("<lang>synergy-vault-balance-field</lang>", bread.getLanguage()).getStripped().replace("%AMOUNT%", String.valueOf((int) balance)), true);
+	    	embed.addField(Synergy.translate("<lang>vault-balance-title</lang>", bread.getLanguage()).getStripped(), Synergy.translate("<lang>vault-balance-field</lang>", bread.getLanguage()).getStripped().replace("%AMOUNT%", String.valueOf((int) balance)), true);
 	    	embed.setThumbnail("https://minotar.net/helm/"+Synergy.getBread(Synergy.getDiscord().getUniqueIdByDiscordId(event.getUser().getId())).getName());
 	    	embed.setColor(Color.decode("#f1c40f"));
-	    	embed.setFooter(Synergy.translate("<lang>synergy-vault-balance-footer</lang>", bread.getLanguage()).getStripped());
+	    	embed.setFooter(Synergy.translate("<lang>vault-balance-footer</lang>", bread.getLanguage()).getStripped());
 	    	event.replyEmbeds(embed.build()).queue();
     	} else {
-    		event.replyEmbeds(warning(Synergy.translate("<lang>synergy-you-have-to-link-account</lang>", Translation.getDefaultLanguage()).getStripped())).queue();
+    		event.replyEmbeds(warning(Synergy.translate("<lang>you-have-to-link-account</lang>", Translation.getDefaultLanguage()).getStripped())).queue();
     	}
 	}*/
 }

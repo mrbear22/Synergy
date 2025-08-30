@@ -75,7 +75,7 @@ public class SynergyEvent {
     }
 	
     public SynergyEvent setOption(String option, String value) {
-        this.options.put(option,value);
+        this.options.put(option, value);
         return this;
     }
 

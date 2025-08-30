@@ -17,6 +17,8 @@ import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
 import me.synergy.modules.LocalesManager;
 import me.synergy.objects.BreadMaker;
+import me.synergy.twitch.Twitch;
+import me.synergy.web.MonobankHandler;
 import me.synergy.web.WebServer;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -39,6 +41,8 @@ public class Bungee extends Plugin implements Listener {
 	    new DataManager().initialize();
         new LocalesManager().initialize();
 	    new Discord().initialize();
+	    new Twitch().initialize();
+        new MonobankHandler().initialize();
 	    new PlayerBungeeHandler().initialize();
 	    new SynergyProxyCommand().initialize();
 	    new WebServer().initialize();

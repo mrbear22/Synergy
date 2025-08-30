@@ -83,19 +83,19 @@ public class Discord {
         CommandListUpdateAction commands = Synergy.getDiscord().updateCommands();
         
         commands.addCommands(new CommandData[] {
-                Commands.slash("list", Synergy.translate("<lang>synergy-online-players-list</lang>", Translation.getDefaultLanguage()).getStripped())
+                Commands.slash("list", Synergy.translate("<lang>online-players-list</lang>", Translation.getDefaultLanguage()).getStripped())
                     .setGuildOnly(true)
             });
         commands.addCommands(new CommandData[] {
-                Commands.slash("vote", Synergy.translate("<lang>synergy-vote-for-server</lang>", Translation.getDefaultLanguage()).getStripped())
+                Commands.slash("vote", Synergy.translate("<lang>vote-for-server</lang>", Translation.getDefaultLanguage()).getStripped())
                     .setGuildOnly(true)
             });
         commands.addCommands(new CommandData[] {
-                Commands.slash("link", Synergy.translate("<lang>synergy-link-minecraft-title</lang>", Translation.getDefaultLanguage()).getStripped())
+                Commands.slash("link", Synergy.translate("<lang>link-minecraft-title</lang>", Translation.getDefaultLanguage()).getStripped())
                     .setGuildOnly(true)
             });
         commands.addCommands(new CommandData[] {
-                Commands.slash("embed", Synergy.translate("<lang>synergy-discord-embed-new</lang>", Translation.getDefaultLanguage()).getStripped())
+                Commands.slash("embed", Synergy.translate("<lang>discord-embed-new</lang>", Translation.getDefaultLanguage()).getStripped())
                     .addOptions(new OptionData[] {
                         (new OptionData(OptionType.CHANNEL, "channel", "Channel ID")).setRequired(true)
                     })
@@ -108,7 +108,7 @@ public class Discord {
                     }))
             });
         commands.addCommands(new CommandData[] {
-                Commands.slash("post", Synergy.translate("<lang>synergy-create-post</lang>", Translation.getDefaultLanguage()).getStripped())
+                Commands.slash("post", Synergy.translate("<lang>create-post</lang>", Translation.getDefaultLanguage()).getStripped())
                     .addOptions(new OptionData[] {
                         (new OptionData(OptionType.STRING, "title", "Title")).setRequired(true)
                     })

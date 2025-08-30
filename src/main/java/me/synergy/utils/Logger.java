@@ -17,6 +17,7 @@ public class Logger {
   }
 
   public void info(String string, boolean broadcast) {
+	string = Translation.translate(string, Translation.getDefaultLanguage());
 	try {
 	    if (Synergy.isRunningSpigot()) {
 	      Synergy.getSpigot().getLogger().info(string);
@@ -36,6 +37,7 @@ public class Logger {
   }
 
   public void warning(String string) {
+	string = Translation.translate(string, Translation.getDefaultLanguage());
 	try {
 	    if (Synergy.isRunningSpigot()) {
 	      Synergy.getSpigot().getLogger().warning(string);
@@ -52,6 +54,7 @@ public class Logger {
   }
 
   public void error(String string) {
+    string = Translation.translate(string, Translation.getDefaultLanguage());
 	try {
 	    if (Synergy.isRunningSpigot()) {
 	      Synergy.getSpigot().getLogger().severe(string);
@@ -70,4 +73,9 @@ public class Logger {
   public void discord(String string) {
 	    Synergy.createSynergyEvent("discord-message").setOption("message", string).setOption("channel", "log").send();
   }
+
+  public void debug(String string) {
+	  info(string, false);
+  }
+  
 }

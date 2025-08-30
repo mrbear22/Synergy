@@ -64,7 +64,7 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
 		if (!sender.hasPermission("synergy."+label.toLowerCase())) {
-			sender.sendMessage("<lang>synergy-no-permission</lang>");
+			sender.sendMessage("<lang>no-permission</lang>");
 			return true;
 		}
 
@@ -72,19 +72,19 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 			if (args.length > 1) {
 				if (args[0].equalsIgnoreCase("block")) {
 					Utils.addBlockedWord(args[1].toLowerCase());
-					sender.sendMessage("<lang>synergy-word-blocked<arg>"+args[1].toLowerCase()+"</arg></lang>");
+					sender.sendMessage("<lang>word-blocked<arg>"+args[1].toLowerCase()+"</arg></lang>");
 				}
 				if (args[0].equalsIgnoreCase("ignore")) {
 					Utils.addIgnoredWord(args[1].toLowerCase());
-					sender.sendMessage("<lang>synergy-word-ignored<arg>"+args[1].toLowerCase()+"</arg></lang>");
+					sender.sendMessage("<lang>word-ignored<arg>"+args[1].toLowerCase()+"</arg></lang>");
 				}
 				if (args[0].equalsIgnoreCase("remove")) {
 					Utils.removeBlockedWord(args[1].toLowerCase());
 					Utils.removeIgnoredWord(args[1].toLowerCase());
-					sender.sendMessage("<lang>synergy-word-removed<arg>"+args[1].toLowerCase()+"</arg></lang>");
+					sender.sendMessage("<lang>word-removed<arg>"+args[1].toLowerCase()+"</arg></lang>");
 				}
 			} else {
-				sender.sendMessage("<lang>synergy-command-usage</lang> /chatfilter block/ignore/remove <word>");
+				sender.sendMessage("<lang>command-usage</lang> /chatfilter block/ignore/remove <word>");
 			}
 		}
 
@@ -93,13 +93,13 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 			Player player = (Player) sender;
 			
 			if (args.length == 0) {
-				player.sendMessage("<lang>synergy-command-usage</lang> /chat <"+String.join("/", getChats(player))+">");
+				player.sendMessage("<lang>command-usage</lang> /chat <"+String.join("/", getChats(player))+">");
 				return true;
 			}
 
 			if (getChats(player).contains(args[0].toLowerCase())) {
 				Synergy.getBread(((Player) sender).getUniqueId()).setData("chat", args[0].toLowerCase());
-				sender.sendMessage("<lang>synergy-selected-chat<arg>"+args[0].toLowerCase()+"</arg></lang>");
+				sender.sendMessage("<lang>selected-chat<arg>"+args[0].toLowerCase()+"</arg></lang>");
 				return true;
 			}
 		}

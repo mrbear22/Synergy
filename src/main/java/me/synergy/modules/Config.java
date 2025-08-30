@@ -45,6 +45,11 @@ public class Config {
             addDefault("openai.temperature", 0.7);
             addDefault("openai.model", "gpt-3.5-turbo-instruct-0914");
 
+            addDefault("twitch.enabled", false);
+            addDefault("twitch.client-id", "client-id");
+
+            addDefault("monobank.enabled", false);
+
             addDefault("discord.enabled", false);
             addDefault("discord.bot-token", "token");
             addDefault("discord.guild-id", "00000000000000000");
@@ -77,13 +82,35 @@ public class Config {
             addDefault("web-server.custom-texturepack-url", "http://example.com:8153/example.zip");
             addDefault("web-server.port", 8153);
 
+            addDefault("deepl.api-key", "your-deepl-api-key-here");
+            addDefault("deepl.pro-account", false);
+            addDefault("deepl.request-delay-ms", 200);
+            addDefault("deepl.max-retries", 3);
 
             addDefault("votifier.enabled", false);
-            addDefault("votifier.announcement", "<lang>synergy-player-voted<arg>%PLAYER%</arg></lang>");
+            addDefault("votifier.announcement", "<lang>player-voted<arg>%PLAYER%</arg></lang>");
             
             if (Synergy.isRunningSpigot()) {
+            	
+            	if (getConfigurationSection("twitch.rewards").isEmpty()) {
+	                addDefault("twitch.rewards.wither.title", "Wither");
+	                addDefault("twitch.rewards.wither.description", "Spawn a Wither");
+	                addDefault("twitch.rewards.wither.cost", 1000);
+	                addDefault("twitch.rewards.wither.input-required", false);
+	                addDefault("twitch.rewards.wither.input-regex", "[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9]");
+	                addDefault("twitch.rewards.wither.commands", new String[] {"execute at %streamer_name% run summon minecraft:wither ~ ~2 ~", "execute at %streamer_name% run title @a[distance=..500] title {\"text\":\"%viewer_name% has spawned a Wither\"}"});
+            	}
 
-                addDefault("votifier.message", "<lang>synergy-voted-successfully<arg>%SERVICE%</arg></lang>");
+            	if (getConfigurationSection("monobank.rewards").isEmpty()) {
+	                addDefault("monobank.rewards.wither.title", "Wither");
+	                addDefault("monobank.rewards.wither.description", "Spawn a Wither");
+	                addDefault("monobank.rewards.wither.cost", 1000);
+	                addDefault("twitch.rewards.wither.input-required", false);
+	                addDefault("twitch.rewards.wither.input-regex", "[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9]");
+	                addDefault("monobank.rewards.wither.commands", new String[] {"execute at %target_name% run summon minecraft:wither ~ ~2 ~", "execute at %target_name% run title @a[distance=..500] title {\"text\":\"%counter_name% has spawned a Wither\"}"});
+            	}
+	                
+                addDefault("votifier.message", "<lang>voted-successfully<arg>%SERVICE%</arg></lang>");
                 addDefault("votifier.rewards", new String[] {"eco give %PLAYER% 1"});
                 addDefault("votifier.monitorings", new String[] {"https://example.com/vote/example"});
 
@@ -94,28 +121,31 @@ public class Config {
                 addDefault("placeholder-output-replacements.%faction_name%.%faction_name%", "[%faction_name%] ");
                 addDefault("placeholder-output-replacements.%faction_name%.%none%", "");
                 
-                addDefault("localizations.color-themes.default.primary", "<#1abc9c>");
-                addDefault("localizations.color-themes.default.secondary", "<#3498db>");
-                addDefault("localizations.color-themes.default.success", "<#2ecc71>");
-                addDefault("localizations.color-themes.default.danger", "<#e74c3c>");
+                addDefault("localizations.color-themes.default.primary", "#1abc9c");
+                addDefault("localizations.color-themes.default.secondary", "#3498db");
+                addDefault("localizations.color-themes.default.success", "#2ecc71");
+                addDefault("localizations.color-themes.default.danger", "#e74c3c");
                 
                 addDefault("localizations.pronouns", true);
+                addDefault("localizations.minimessage", true);
 
                 addDefault("discord-roles-sync.enabled", false);
                 addDefault("discord-roles-sync.sync-roles-from-discord-to-mc", false);
                 addDefault("discord-roles-sync.sync-roles-form-mc-to-discord", false);
                 addDefault("discord-roles-sync.custom-command-remove", "lp user %PLAYER% parent remove %GROUP%");
                 addDefault("discord-roles-sync.custom-command-add", "lp user %PLAYER% parent add %GROUP%");
-                addDefault("discord-roles-sync.roles.admin", "00000000000000000");
+
                 addDefault("discord-roles-sync.roles.default", "00000000000000000");
-                addDefault("discord-roles-sync.verified-role", "00000000000000000");
                 
-                addDefault("synergy-plugin-messaging.enabled", false);
-                addDefault("synergy-plugin-messaging.servername", "SomeFabulousServer");
-                addDefault("synergy-plugin-messaging.token", "Copy plugin-messaging-token from config.yml of Synergy in your Proxy folder");
+            	if (getConfigurationSection("discord-roles-sync.roles").isEmpty()) {
+            		addDefault("discord-roles-sync.roles.admin", "00000000000000000");
+            	}
+                
+                addDefault("plugin-messaging.enabled", false);
+                addDefault("plugin-messaging.servername", "SomeFabulousServer");
+                addDefault("plugin-messaging.token", "Copy plugin-messaging-token from config.yml of Synergy in your Proxy folder");
 
                 addDefault("chat-manager.enabled", true);
-                addDefault("chat-manager.custom-color-tags.&p", "<#BDC581>");
                 addDefault("chat-manager.chat-filter.blocked-words", new String[] {"fuck", "bitch"});
                 addDefault("chat-manager.chat-filter.ignored-words", new String[] {"чіпідрос", "книга"});
                 addDefault("chat-manager.chat-filter.blocked-words-tolerance-percentage", 38.5);
@@ -124,53 +154,59 @@ public class Config {
                 addDefault("chat-manager.warn-if-nobody-in-chat", true);
                 
                 addDefault("chat-manager.chats.global.enabled", true);
-                addDefault("chat-manager.chats.global.color", "<#dedee0>");
+                addDefault("chat-manager.chats.global.color", "#dedee0");
                 addDefault("chat-manager.chats.global.tag", "[G]");
                 addDefault("chat-manager.chats.global.symbol", "!");
                 
-                addDefault("chat-manager.chats.global.discord.color", "<#dedee0>");
+                addDefault("chat-manager.chats.global.discord.color", "#dedee0");
                 addDefault("chat-manager.chats.global.discord.tag", "[Discord]");
                 addDefault("chat-manager.chats.global.discord.channel", "00000000000000000");
                 
                 addDefault("chat-manager.chats.local.enabled", true);
                 addDefault("chat-manager.chats.local.radius", 500);
-                addDefault("chat-manager.chats.local.color", "<#deceb4>");
+                addDefault("chat-manager.chats.local.color", "#deceb4");
                 addDefault("chat-manager.chats.local.tag", "[L]");
                 
                 addDefault("chat-manager.chats.admin.enabled", true);
-                addDefault("chat-manager.chats.admin.color", "<#ffb4a1>");
+                addDefault("chat-manager.chats.admin.color", "#ffb4a1");
                 addDefault("chat-manager.chats.admin.tag", "[A]");
                 addDefault("chat-manager.chats.admin.symbol", "\\");
                 addDefault("chat-manager.chats.admin.permission", "synergy.chat.admin");
                 
-                addDefault("chat-manager.chats.admin.discord.color", "<#ffb4a1>");
+                addDefault("chat-manager.chats.admin.discord.color", "#ffb4a1");
                 addDefault("chat-manager.chats.admin.discord.tag", "[Discord]");
                 addDefault("chat-manager.chats.admin.discord.channel", "00000000000000000");
                 
                 addDefault("chat-manager.chats.plot.enabled", false);
-                addDefault("chat-manager.chats.plot.color", "<#c9ffcd>");
+                addDefault("chat-manager.chats.plot.color", "#c9ffcd");
                 addDefault("chat-manager.chats.plot.tag", "[Plot]");
                 addDefault("chat-manager.chats.plot.symbol", "=");
                 
                 addDefault("chat-manager.chats.faction.enabled", false);
-                addDefault("chat-manager.chats.faction.color", "<#c9ffcd>");
+                addDefault("chat-manager.chats.faction.color", "#c9ffcd");
                 addDefault("chat-manager.chats.faction.tag", "[Faction]");
                 addDefault("chat-manager.chats.faction.symbol", "=");
-
-
+                
+                addDefault("chat-manager.chats.twitch.enabled", false);
+                addDefault("chat-manager.chats.twitch.color", "#c9ffcd");
+                addDefault("chat-manager.chats.twitch.tag", "[Twitch]");
+                addDefault("chat-manager.chats.twitch.symbol", "none");
+                
                 addDefault("chat-manager.format", "%COLOR%%CHAT% %DISPLAYNAME%%COLOR%: %MESSAGE%");
                 
-                addDefault("chat-manager.custom-emojis.<3", "❤");
-                addDefault("chat-manager.custom-emojis.:flip:", "(╯°益°）╯︵ ┻━┻");
-                addDefault("chat-manager.custom-emojis.:v:", "✔");
-                addDefault("chat-manager.custom-emojis.:x:", "✘");
-                addDefault("chat-manager.custom-emojis.(c)", "©");
-                addDefault("chat-manager.custom-emojis.:hi:", "(´• ω •`)ﾉ");
-                addDefault("chat-manager.custom-emojis.:love:", "╰(❤ω❤)╯");
-                addDefault("chat-manager.custom-emojis.:cry:", "o(╥﹏╥)o");
-                addDefault("chat-manager.custom-emojis.(r)", "®");
-                addDefault("chat-manager.custom-emojis.:hugs:", "⊂(￣▽￣)⊃");
-                addDefault("chat-manager.custom-emojis.:hid:", "┬┴┤･ω･)ﾉ");
+            	if (getConfigurationSection("chat-manager.custom-emojis").isEmpty()) {
+	                addDefault("chat-manager.custom-emojis.<3", "❤");
+	                addDefault("chat-manager.custom-emojis.:flip:", "(╯°益°）╯︵ ┻━┻");
+	                addDefault("chat-manager.custom-emojis.:v:", "✔");
+	                addDefault("chat-manager.custom-emojis.:x:", "✘");
+	                addDefault("chat-manager.custom-emojis.(c)", "©");
+	                addDefault("chat-manager.custom-emojis.:hi:", "(´• ω •`)ﾉ");
+	                addDefault("chat-manager.custom-emojis.:love:", "╰(❤ω❤)╯");
+	                addDefault("chat-manager.custom-emojis.:cry:", "o(╥﹏╥)o");
+	                addDefault("chat-manager.custom-emojis.(r)", "®");
+	                addDefault("chat-manager.custom-emojis.:hugs:", "⊂(￣▽￣)⊃");
+	                addDefault("chat-manager.custom-emojis.:hid:", "┬┴┤･ω･)ﾉ");
+            	}
 
                 Synergy.getSpigot().getConfig().options().copyDefaults(true);
                 Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " file has been initialized!");
@@ -179,9 +215,9 @@ public class Config {
 
             if (Synergy.isRunningVelocity() || Synergy.isRunningBungee()) {
 
-                addDefault("synergy-plugin-messaging.enabled", true);
-                addDefault("synergy-plugin-messaging.servername", "Proxy");
-                addDefault("synergy-plugin-messaging.token", Utils.generateRandomString(50));
+                addDefault("plugin-messaging.enabled", true);
+                addDefault("plugin-messaging.servername", "Proxy");
+                addDefault("plugin-messaging.token", Utils.generateRandomString(50));
 
                 Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " file has been initialized!");
 

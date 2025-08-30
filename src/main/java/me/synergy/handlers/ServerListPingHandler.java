@@ -6,7 +6,7 @@ import org.bukkit.event.server.ServerListPingEvent;
 
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
-import me.synergy.utils.Color;
+import me.synergy.text.Color;
 
 public class ServerListPingHandler implements Listener {
 

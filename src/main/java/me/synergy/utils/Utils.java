@@ -115,45 +115,65 @@ public class Utils {
 
 
     public static List<String> getBlockedWorlds() {
-		return Synergy.getSpigot().getConfig().getStringList("chat-manager.chat-filter.blocked-words");
-	}
+        return Synergy.getSpigot().getConfig().getStringList("chat-manager.chat-filter.blocked-words");
+    }
 
     public static List<String> getIgnoredWorlds() {
-		return Synergy.getSpigot().getConfig().getStringList("chat-manager.chat-filter.ignored-words");
-	}
+        return Synergy.getSpigot().getConfig().getStringList("chat-manager.chat-filter.ignored-words");
+    }
 
     public static String censorBlockedWords(String sentence) {
         double tolerance = Synergy.getConfig().getDouble("chat-manager.chat-filter.blocked-words-tolerance-percentage");
-        
+
         for (String blockedWord : getBlockedWorlds()) {
+            if (blockedWord.length() == 1) {
+                sentence = sentence.replace(blockedWord, "*");
+                continue;
+            }
+            String blockedWordLower = blockedWord.toLowerCase();
             String match = "";
             int start = 0, end = 0;
+
+            String sentenceWithoutColors = removeColorCodes(sentence);
             
-            for (int i = 0; i < removeColorCodes(sentence).length(); i++) {
-                if (Character.isAlphabetic(removeColorCodes(sentence).charAt(i))) {
-                    boolean isFirstLetterMatches = blockedWord.charAt(0) == removeColorCodes(sentence).charAt(i);
-                    boolean isWordStartsWithBadWord = blockedWord.startsWith(match + removeColorCodes(sentence).charAt(i));
-                    boolean isWordWithoutDuplicatesStartsWithBadWord = blockedWord.startsWith(removeConsecutiveDuplicates(match + removeColorCodes(sentence).charAt(i)));
+            for (int i = 0; i < sentenceWithoutColors.length(); i++) {
+                if (Character.isAlphabetic(sentenceWithoutColors.charAt(i))) {
+                    char currentChar = Character.toLowerCase(sentenceWithoutColors.charAt(i));
+                    
+                    boolean isFirstLetterMatches = blockedWordLower.charAt(0) == currentChar;
+                    boolean isWordStartsWithBadWord = blockedWordLower.startsWith((match + currentChar).toLowerCase());
+                    boolean isWordWithoutDuplicatesStartsWithBadWord = blockedWordLower.startsWith(removeConsecutiveDuplicates((match + currentChar).toLowerCase()));
 
                     if (isFirstLetterMatches || isWordStartsWithBadWord || isWordWithoutDuplicatesStartsWithBadWord) {
                         if (match.isEmpty()) {
                             start = i;
                         }
-                        match += removeColorCodes(sentence).charAt(i);
+                        match += sentenceWithoutColors.charAt(i);
                         end = i;
                     } else {
                         match = "";
                     }
 
-                    if (blockedWord.equals(match) || blockedWord.equals(removeConsecutiveDuplicates(match))) {
-                        String word = findWordInRange(removeColorCodes(sentence), start, end);
+                    String matchLower = match.toLowerCase();
+                    String matchWithoutDuplicatesLower = removeConsecutiveDuplicates(match).toLowerCase();
+                    
+                    if (blockedWordLower.equals(matchLower) || blockedWordLower.equals(matchWithoutDuplicatesLower)) {
+                        String word = findWordInRange(sentenceWithoutColors, start, end);
 
-                        if (getIgnoredWorlds().contains(word)) {
+                        boolean isIgnored = false;
+                        for (String ignoredWord : getIgnoredWorlds()) {
+                            if (ignoredWord.toLowerCase().equals(word.toLowerCase())) {
+                                isIgnored = true;
+                                break;
+                            }
+                        }
+                        
+                        if (isIgnored) {
                             continue;
                         }
 
                         double percentage = (double) match.length() / (double) word.length() * 100;
-                        if (tolerance < percentage || !word.contains(blockedWord)) {
+                        if (tolerance < percentage || !word.toLowerCase().contains(blockedWordLower)) {
                             sentence = censorPartOfSentence(sentence, start, end);
                         }
                     }
@@ -165,7 +185,7 @@ public class Utils {
 
     public static String findWordInRange(String sentence, int start, int end) {
         String[] words = sentence.split("\\s+");
-        
+
         for (String word : words) {
             int wordStart = sentence.indexOf(word, start - 5 >= 0 ? start - 5 : 0);
             int wordEnd = wordStart + word.length() - 1;
@@ -181,7 +201,7 @@ public class Utils {
         if (end - start < 2) {
             return sentence;
         }
-        
+
         char[] charArray = sentence.toCharArray();
         for (int i = start + 1; i < end; i++) {
             if (Character.isAlphabetic(sentence.charAt(i))) {

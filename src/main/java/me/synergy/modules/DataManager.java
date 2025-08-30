@@ -14,7 +14,6 @@ import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
 import me.synergy.objects.Cache;
 import me.synergy.objects.DataObject;
-import me.synergy.utils.Timings;
 
 public class DataManager implements SynergyListener {
 

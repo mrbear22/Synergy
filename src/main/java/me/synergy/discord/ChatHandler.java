@@ -139,7 +139,7 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
             Synergy.getConfig().getStringList("discord.hightlights.channels").contains(channelId) &&
             message.getAttachments().size() > 0) {
             message.addReaction(Emoji.fromUnicode(Synergy.getConfig().getString("discord.hightlights.reaction-emoji"))).complete();
-            message.createThreadChannel(Synergy.translate("<lang>synergy-hightlights-comments</lang>", Translation.getDefaultLanguage()).getStripped()).queue();
+            message.createThreadChannel(Synergy.translate("<lang>hightlights-comments</lang>", Translation.getDefaultLanguage()).getStripped()).queue();
         }
         return;
         

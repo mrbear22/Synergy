@@ -17,33 +17,31 @@ import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.BookMessage;
-import me.synergy.utils.RepeatingTask;
 import me.synergy.utils.Translation;
 
 public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, SynergyListener {
 
-	public void initialize() {
+    public void initialize() {
         if (!Synergy.getConfig().getBoolean("discord.enabled")) {
-       //     return;
+            // return;
         }
 
         Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
         Synergy.getSpigot().getCommand("discord").setExecutor(this);
         Synergy.getSpigot().getCommand("discord").setTabCompleter(this);
         Synergy.getEventManager().registerEvents(this);
-	}
+    }
 
-	@SynergyHandler
-	public void onSynergyEvent(SynergyEvent event) {
+    @SynergyHandler
+    public void onSynergyEvent(SynergyEvent event) {
         if (event.getOption("tags").isSet()) {
             Discord.getUsersTagsCache().clear();
-        	for (String tag : event.getOption("tags").getAsString().split(",")) {
-        		Discord.getUsersTagsCache().add(tag);
-        	}
+            for (String tag : event.getOption("tags").getAsString().split(",")) {
+                Discord.getUsersTagsCache().add(tag);
+            }
         }
-	}
-	
+    }
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
@@ -58,39 +56,59 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-    	Player player = (Player) sender;
-    	BreadMaker bread = Synergy.getBread(player.getUniqueId());
-    	if (!player.hasPermission("synergy.discord")) {
-    		sender.sendMessage("<lang>synergy-no-permission</lang>");
-    		return true;
-    	}
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("<lang>command-not-player</lang>");
+            return false;
+        }
+        
+        Player player = (Player) sender;
+        BreadMaker bread = Synergy.getBread(player.getUniqueId());
+        
+        if (!player.hasPermission("synergy.discord")) {
+            sender.sendMessage("<lang>no-permission</lang>");
+            return false;
+        }
+        
         if (args.length == 0) {
-        	
-            StringBuilder build = new StringBuilder(Translation.translate("<lang>synergy-discord-invite</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
-            BookMessage.sendFakeBook((Player) sender, "Discord", build.toString());
-        	
-        	//bread.sendMessage(Translation.processLangTags("<lang>synergy-discord-invite</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
+            // Send usage directly in chat with Discord invite link, not as a book
+            String usage = Translation.translate("<lang>command_usage_discord</lang>", bread.getLanguage())
+                    .replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link"));
+            String[] usageLines = usage.split("\n");
+            for (String line : usageLines) {
+                bread.sendMessage(line);
+            }
             return true;
         }
-        switch (args[0]) {
+        
+        switch (args[0].toLowerCase()) {
             case "link":
-    	    	if (args.length < 2) {
-    	    		sender.sendMessage("<lang>synergy-discord-link-cmd-usage</lang>");
-    	    		return true;
-    	    	}
-            	Synergy.createSynergyEvent("make-discord-link").setPlayerUniqueId(player.getUniqueId()).setOption("tag", args[1]).send();
+                if (args.length < 2) {
+                    return false; // Show usage from plugin.yml
+                }
+                Synergy.createSynergyEvent("make-discord-link")
+                        .setPlayerUniqueId(player.getUniqueId())
+                        .setOption("tag", args[1])
+                        .send();
                 break;
+                
             case "confirm":
-            	Synergy.createSynergyEvent("confirm-discord-link").setPlayerUniqueId(player.getUniqueId()).send();
+                Synergy.createSynergyEvent("confirm-discord-link")
+                        .setPlayerUniqueId(player.getUniqueId())
+                        .send();
                 break;
+                
             case "unlink":
-            	Synergy.createSynergyEvent("remove-discord-link").setPlayerUniqueId(player.getUniqueId()).send();
+                Synergy.createSynergyEvent("remove-discord-link")
+                        .setPlayerUniqueId(player.getUniqueId())
+                        .send();
                 if (Synergy.getConfig().getBoolean("discord.kick-player.if-has-no-link.enabled")) {
-                	bread.kick(Synergy.getConfig().getString("discord.kick-player.if-has-no-link.message"));
+                    bread.kick(Synergy.getConfig().getString("discord.kick-player.if-has-no-link.message"));
                 }
                 break;
+                
+            default:
+                return false;
         }
         return true;
     }
-
 }
