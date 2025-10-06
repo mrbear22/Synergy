@@ -3,9 +3,9 @@ package me.synergy.events;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -15,11 +15,9 @@ import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import me.synergy.brains.Bungee;
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.DataObject;
-import net.md_5.bungee.api.config.ServerInfo;
 
 public class SynergyEvent {
 
@@ -97,9 +95,7 @@ public class SynergyEvent {
             	Synergy.getSpigot().sendPluginMessage(out.toByteArray());
             }
             if (Synergy.isRunningBungee()) {
-	            for (Entry<String, ServerInfo> server : Bungee.getInstance().getProxy().getServers().entrySet()) {
-	            	server.getValue().sendData("net:synergy", out.toByteArray());
-	            } 
+            	Synergy.getBungee().sendPluginMessage(out.toByteArray());
             }
         } else {
         	fireEvent();

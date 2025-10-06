@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>archi.quest</groupId>
 	<artifactId>synergy</artifactId>
-	<version>1.4.8</version>
+	<version>1.4.9</version>
 	<name>Synergy</name>
 	<description>Basic tools and server messaging plugin</description>
 	<properties>
@@ -216,20 +216,12 @@
 			<version>0.99.0.0</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>net.md-5</groupId>
-			<artifactId>bungeecord-api</artifactId>
-			<version>1.17-R0.1-SNAPSHOT</version>
-			<type>jar</type>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.md-5</groupId>
-			<artifactId>bungeecord-api</artifactId>
-			<version>1.19-R0.1-SNAPSHOT</version>
-			<type>javadoc</type>
-			<scope>provided</scope>
-		</dependency>
+	    <dependency>
+	        <groupId>net.md-5</groupId>
+	        <artifactId>bungeecord-api</artifactId>
+	        <version>1.20-R0.3-SNAPSHOT</version>
+	        <scope>provided</scope>
+	    </dependency>
 		<dependency>
 		    <groupId>com.github.SaberLLC</groupId>
 		    <artifactId>Saber-Factions</artifactId>

@@ -32,7 +32,7 @@ public class BookMessage {
         content = Endings.processEndings(content, bread.getPronoun());
         content = Color.processThemeTags(content, bread.getTheme());
         content = Color.processColorReplace(content, bread.getTheme());
-        
+        content = Color.removeTags(content);
         String[] pages = content.split("%np%");
 
         for (String page : pages) {

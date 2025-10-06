@@ -29,12 +29,15 @@ public class SynergyCommand implements CommandExecutor {
             case "reload":
                 if (!sender.hasPermission("synergy.reload")) {
                     sender.sendMessage("<lang>no-permission</lang>");
-                    return false;
+                    return true;
                 }
                 Synergy.getSpigot().reloadConfig();
                 Synergy.getLocalesManager().reload();
                 Synergy.getDataManager().initialize();
                 Synergy.getConfig().initialize();
+
+        		new DynamicCommands().shutdown();
+        		new DynamicCommands().initialize();
                 sender.sendMessage("<lang>reloaded</lang>");
                 return true;
 

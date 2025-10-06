@@ -92,6 +92,11 @@ public class Config {
             
             if (Synergy.isRunningSpigot()) {
             	
+            	if (getConfigurationSection("commands").isEmpty()) {
+            		addDefault("commands.help.message", new String[] {"<lang>help-message</lang>"});
+            		addDefault("commands.help.book", false);
+            	}
+            	
             	if (getConfigurationSection("twitch.rewards").isEmpty()) {
 	                addDefault("twitch.rewards.wither.title", "Wither");
 	                addDefault("twitch.rewards.wither.description", "Spawn a Wither");

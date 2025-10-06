@@ -1,6 +1,8 @@
 package me.synergy.discord;
 
 import java.awt.Color;
+import java.io.InputStream;
+import java.net.URL;
 
 import javax.annotation.Nonnull;
 
@@ -15,6 +17,7 @@ import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.utils.FileUpload;
 
 public class EmbedCommand extends ListenerAdapter {
 
@@ -44,12 +47,17 @@ public class EmbedCommand extends ListenerAdapter {
         String image = getOptionAsString(event, "image");
         String thumbnail = getOptionAsString(event, "thumbnail");
         String color = getOptionAsString(event, "color", "#a29bfe");
+        String messageImage = getOptionAsString(event, "attachment");
         editMessageId = getOptionAsString(event, "message");
 
         EmbedBuilder builder = createEmbedBuilder(title, text, author, thumbnail, image, color);
 
         if (editMessageId == null) {
-            channel.sendMessageEmbeds(builder.build()).queue();
+            if (messageImage != null && !messageImage.isEmpty()) {
+                sendMessageWithAttachment(channel, builder, messageImage);
+            } else {
+                channel.sendMessageEmbeds(builder.build()).queue();
+            }
         } else {
             channel.retrieveMessageById(editMessageId).complete().editMessageEmbeds(builder.build()).queue();
         }
@@ -61,7 +69,7 @@ public class EmbedCommand extends ListenerAdapter {
         TextInput titleInput = createTextInput("title", "Title", TextInputStyle.SHORT, 0, 256, "Title");
         TextInput textInput = createTextInput("text", "Text", TextInputStyle.PARAGRAPH, 0, 1000, "Text");
         TextInput authorInput = createTextInput("author", "Author", TextInputStyle.SHORT, 0, 256, "Author", false);
-        TextInput imageInput = createTextInput("image", "Image URL", TextInputStyle.SHORT, 0, 256, "URL", false);
+        TextInput imageInput = createTextInput("image", "Embed Image URL", TextInputStyle.SHORT, 0, 256, "URL", false);
         TextInput colorInput = createTextInput("color", "#color", TextInputStyle.SHORT, 0, 256, "#B48EAD");
 
         Modal modal = Modal.create("embed", getModalTitle(event)).addComponents(
@@ -164,6 +172,45 @@ public class EmbedCommand extends ListenerAdapter {
         return event.getOption("message") != null 
                 ? Synergy.translate("<lang>discord-embed-edit</lang>", Translation.getDefaultLanguage()).getStripped()
                 : Synergy.translate("<lang>discord-embed-new</lang>", Translation.getDefaultLanguage()).getStripped();
+    }
+    
+    private void sendMessageWithAttachment(TextChannel channel, EmbedBuilder builder, String imageUrl) {
+        try {
+            URL url = new URL(imageUrl);
+            java.net.HttpURLConnection connection = (java.net.HttpURLConnection) url.openConnection();
+            connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+            connection.connect();
+            
+            InputStream stream = connection.getInputStream();
+            String fileName = imageUrl.substring(imageUrl.lastIndexOf('/') + 1);
+            if (fileName.contains("?")) {
+                fileName = fileName.substring(0, fileName.indexOf("?"));
+            }
+            if (!fileName.contains(".")) {
+                fileName += ".png";
+            }
+            
+            channel.sendMessageEmbeds(builder.build())
+                   .addFiles(FileUpload.fromData(stream, fileName))
+                   .queue(success -> {
+                       try {
+                           stream.close();
+                           connection.disconnect();
+                       } catch (Exception e) {
+                           e.printStackTrace();
+                       }
+                   }, error -> {
+                       try {
+                           stream.close();
+                           connection.disconnect();
+                       } catch (Exception e) {
+                           e.printStackTrace();
+                       }
+                   });
+        } catch (Exception e) {
+            e.printStackTrace();
+            channel.sendMessageEmbeds(builder.build()).queue();
+        }
     }
     
 /*

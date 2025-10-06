@@ -1,6 +1,4 @@
-package me.synergy.objects;
-
-import me.synergy.modules.LocalesManager;
+package me.synergy.modules;
 
 public class Locales {
 
@@ -34,6 +32,10 @@ public class Locales {
 
 		addDefault("selected-theme", "en", "<success>Theme selected: <primary>%THEME%<sound:'entity.ocelot.death'>");
 
+		addDefault("help-message", "en", new String[] {
+				"Your text",
+			});
+		
 		// Themes list
 		addDefault("themes", "en", new String[] {
 			"   <danger><bold>Choose a theme:</bold>",

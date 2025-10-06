@@ -134,6 +134,9 @@ public class Discord {
                         new OptionData(OptionType.MENTIONABLE, "mention", "Mention")
                     })
                     .addOptions(new OptionData[] {
+                            new OptionData(OptionType.STRING, "attachment", "Attachment")
+                    })
+                    .addOptions(new OptionData[] {
                         new OptionData(OptionType.STRING, "edit", "Message ID (edit a message that has already been sent)")
                     })
                     .setGuildOnly(true)
@@ -144,19 +147,35 @@ public class Discord {
         commands.queue();
     }
     
-    private JDABuilder botBuilder() {
-       return JDABuilder.create(Synergy.getConfig().getString("discord.bot-token"), Arrays.asList(INTENTS))
-                .enableCache(CacheFlag.MEMBER_OVERRIDES, new CacheFlag[] {
-                    CacheFlag.VOICE_STATE
-                })
-                .disableCache(CacheFlag.ACTIVITY, new CacheFlag[] {
-                    CacheFlag.CLIENT_STATUS, CacheFlag.EMOJI, CacheFlag.ONLINE_STATUS, CacheFlag.STICKER
-                })
-                .setStatus(OnlineStatus.ONLINE)
-                .setActivity(Activity.customStatus(Synergy.getConfig().getStringList("discord.activities").get(0)))
-                .setMemberCachePolicy(MemberCachePolicy.ALL)
-                .setBulkDeleteSplittingEnabled(true);
+    public JDABuilder botBuilder() {
+        List<String> activities = Synergy.getConfig().getStringList("discord.activities");
+
+        JDABuilder builder = JDABuilder.create(
+                Synergy.getConfig().getString("discord.bot-token"),
+                Arrays.asList(INTENTS)
+        )
+        .enableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)
+        .disableCache(
+                CacheFlag.ACTIVITY,
+                CacheFlag.CLIENT_STATUS,
+                CacheFlag.EMOJI,
+                CacheFlag.ONLINE_STATUS,
+                CacheFlag.STICKER
+        )
+        .setStatus(OnlineStatus.ONLINE)
+        .setMemberCachePolicy(MemberCachePolicy.ALL)
+        .setBulkDeleteSplittingEnabled(true);
+
+        if (!activities.isEmpty()) {
+            String status = activities.get(0);
+            status = PlaceholdersAPI.processPlaceholders(null, status);
+            status = status.replace("%online%", String.valueOf(Utils.getPlayers().size()));
+            builder.setActivity(Activity.customStatus(status));
+        }
+
+        return builder;
     }
+
     
     public void shutdown() {
         if (getJda() != null) {
@@ -168,17 +187,21 @@ public class Discord {
     }
     
     private void activityStatus() {
-        if (Synergy.getConfig().getStringList("discord.activities").size() > 1) {
-        	REPEATING_TASK.scheduleAtFixedRate(() -> {
-                long currentTimeSeconds = System.currentTimeMillis() / 1000;
-                int index = (int)(currentTimeSeconds % Synergy.getConfig().getStringList("discord.activities").size());
-                String customStatusText = Synergy.getConfig().getStringList("discord.activities").get(index);
-                customStatusText = PlaceholdersAPI.processPlaceholders(null, customStatusText);
-                customStatusText = customStatusText.replace("%online%", String.valueOf(Utils.getPlayers().size()));
-                Discord.JDA.getPresence().setActivity(Activity.customStatus(customStatusText));
-            }, 0, 60, TimeUnit.SECONDS);
-        }
+        REPEATING_TASK.scheduleAtFixedRate(() -> {
+            List<String> activities = Synergy.getConfig().getStringList("discord.activities");
+            if (activities.isEmpty()) return;
+
+            long currentTimeSeconds = System.currentTimeMillis() / 1000;
+            int index = (int) (currentTimeSeconds % activities.size());
+
+            String customStatusText = activities.get(index);
+            customStatusText = PlaceholdersAPI.processPlaceholders(null, customStatusText);
+            customStatusText = customStatusText.replace("%online%", String.valueOf(Utils.getPlayers().size()));
+
+            Discord.JDA.getPresence().setActivity(Activity.customStatus(customStatusText));
+        }, 0, 60, TimeUnit.SECONDS);
     }
+
     
     public static Guild getGuild() {
     	return JDA.getGuildById(Synergy.getConfig().getString("discord.guild-id"));

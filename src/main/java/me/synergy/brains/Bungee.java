@@ -1,6 +1,7 @@
 package me.synergy.brains;
 
 import java.util.UUID;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.io.ByteArrayDataInput;
@@ -19,9 +20,12 @@ import me.synergy.modules.LocalesManager;
 import me.synergy.objects.BreadMaker;
 import me.synergy.twitch.Twitch;
 import me.synergy.web.MonobankHandler;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.chat.ComponentSerializer;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import me.synergy.web.WebServer;
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -110,14 +114,20 @@ public class Bungee extends Plugin implements Listener {
 	   }, 0L, WebServer.MONITOR_INTERVAL_SECONDS, TimeUnit.SECONDS);
    }
 
-    @SuppressWarnings("deprecation")
     public static void kick(UUID uniqueId, String reason) {
         BreadMaker bread = Synergy.getBread(uniqueId);
         ProxiedPlayer player = getInstance().getProxy().getPlayer(uniqueId);
         if (player != null) {
-            player.disconnect(Synergy.translate(reason, bread.getLanguage()).getColored(bread.getTheme()));
+            BaseComponent[] components = ComponentSerializer.parse(Synergy.translate(reason, bread.getLanguage()).getColored(bread.getTheme()));
+            player.disconnect(components);
         }
     }
+
+	public void sendPluginMessage(byte[] byteArray) {
+        for (Entry<String, ServerInfo> server : Bungee.getInstance().getProxy().getServers().entrySet()) {
+        	server.getValue().sendData("net:synergy", byteArray);
+        } 
+	}
 
 	
 }

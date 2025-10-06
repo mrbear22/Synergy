@@ -32,7 +32,7 @@ public class SynergyEventManager {
                             try {
                                 method.invoke(listener, event);
                             } catch (IllegalAccessException | InvocationTargetException e) {
-                                e.printStackTrace();
+                            //    e.printStackTrace();
                             }
                         }
                     }

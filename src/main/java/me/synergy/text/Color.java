@@ -59,12 +59,37 @@ public class Color {
     }
     
     public static String processLegacyColors(String text, String theme) {
-        text = processThemeTags(text, theme);
         text = processCustomColorCodes(text);
         text = processLegacyColorCodes(text);
         text = processColorReplace(text, theme);
+        text = processThemeTags(text, theme);
         text = processHexColors(text);
         text = processFormattingTags(text);
+        
+        text = text
+            .replace("<black>", "&0")
+            .replace("<dark_blue>", "&1")
+            .replace("<dark_green>", "&2")
+            .replace("<dark_aqua>", "&3")
+            .replace("<dark_red>", "&4")
+            .replace("<dark_purple>", "&5")
+            .replace("<gold>", "&6")
+            .replace("<gray>", "&7")
+            .replace("<dark_gray>", "&8")
+            .replace("<blue>", "&9")
+            .replace("<green>", "&a")
+            .replace("<aqua>", "&b")
+            .replace("<red>", "&c")
+            .replace("<light_purple>", "&d")
+            .replace("<yellow>", "&e")
+            .replace("<white>", "&f")
+            .replace("<obfuscated>", "&k")
+            .replace("<bold>", "&l")
+            .replace("<strikethrough>", "&m")
+            .replace("<underlined>", "&n")
+            .replace("<italic>", "&o")
+            .replace("<reset>", "&r");
+        
         return ChatColor.translateAlternateColorCodes('&', text);
     }
 

@@ -20,7 +20,6 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.DumperOptions;
 
 import me.synergy.brains.Synergy;
-import me.synergy.objects.Locales;
 
 public class LocalesManager {
 

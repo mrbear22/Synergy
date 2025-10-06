@@ -13,6 +13,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
+import com.google.common.collect.Iterables;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 
@@ -20,6 +21,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.commands.ChatCommand;
 import me.synergy.commands.DiscordCommand;
+import me.synergy.commands.DynamicCommands;
 import me.synergy.commands.LanguageCommand;
 import me.synergy.commands.MonobankCommand;
 import me.synergy.commands.PronounCommand;
@@ -89,6 +91,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
         new ResourcePackHandler().initialize();
         new ThemeCommand().initialize();
 		new VoteHandler().initialize();
+		new DynamicCommands().initialize();
 
 		if (Synergy.isDependencyAvailable("ProtocolLib")) {
 			PROTOCOLMANAGER = ProtocolLibrary.getProtocolManager();
@@ -147,11 +150,12 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
     }
 
     public void sendPluginMessage(byte[] data) {
-    	Bukkit.getServer().sendPluginMessage(this, "net:synergy", data);
-    //	Player player = Iterables.getFirst(Bukkit.getOnlinePlayers(), null);
-    //	if (player != null) {
-    //		player.sendPluginMessage(this, "net:synergy", data);
-    //	}
+    	Player player = Iterables.getFirst(Bukkit.getOnlinePlayers(), null);
+    	if (player != null) {
+    		player.sendPluginMessage(this, "net:synergy", data);
+    	} else {
+        	Bukkit.getServer().sendPluginMessage(this, "net:synergy", data);
+    	}
     }
     
    
@@ -160,6 +164,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
         new Discord().shutdown();
         new WebServer().shutdown();
         new RepeatingTask().shutdown();
+		new DynamicCommands().shutdown();
         getLogger().info("Synergy has stopped it's service!");
     }
     
