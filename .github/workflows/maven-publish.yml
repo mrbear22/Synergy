@@ -35,7 +35,7 @@ jobs:
         with:
           name: jar-artifact
           path: release/
-          compression-level: 0 # (Опціонально) Прискорює завантаження, оскільки JAR вже стислий
+          compression-level: 0
 
       - name: Publish to GitHub Packages Apache Maven
         run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
