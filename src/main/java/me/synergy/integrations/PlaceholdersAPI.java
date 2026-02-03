@@ -9,9 +9,9 @@ import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Cache;
 import me.synergy.text.Color;
 import me.synergy.text.Interactive;
-import me.synergy.utils.Endings;
-import me.synergy.utils.Translation;
-import me.synergy.utils.Endings.Pronoun;
+import me.synergy.text.Translation;
+import me.synergy.text.Gendered;
+import me.synergy.text.Gendered.Gender;
 import net.md_5.bungee.api.ChatColor;
 
 public class PlaceholdersAPI {
@@ -129,16 +129,18 @@ public class PlaceholdersAPI {
             BreadMaker bread = (player == null) ? null : Synergy.getBread(player.getUniqueId());
             String language = (bread == null) ? Translation.getDefaultLanguage() : bread.getLanguage();
             String theme = (bread == null) ? Color.getDefaultTheme() : bread.getTheme();
-            Pronoun pronoun = (bread == null) ? Pronoun.HE : bread.getPronoun();
+            Gender gender = (bread == null) ? Gender.MALE : bread.getGender();
             
-            //String result = new Locale("<lang>" + identifier + "</lang>", language).setExecuteInteractive(bread).setEndings(pronoun).getLegacyColored(theme);
+            //String result = new Locale("<locale:" + identifier + ">", language).setGendered(gender).getLegacyColored(theme);
            
-            String result = Translation.translate("<lang>" + identifier + "</lang>", language);
-            result = Endings.processEndings(result, pronoun);
+            String result = Translation.translate("<locale:" + identifier + ">", language);
+            result = Gendered.process(result, gender);
             result = Interactive.removeTags(result);
             result = Color.processThemeTags(result, theme);
             result = Color.processColorReplace(result, theme);
             result = Color.processCustomColorCodes(result);
+            
+            
             
             cache.add("placeholder:"+identifier, result, 10);
 

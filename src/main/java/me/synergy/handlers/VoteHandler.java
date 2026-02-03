@@ -2,15 +2,13 @@ package me.synergy.handlers;
 
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 
 public class VoteHandler {
     
     public void initialize() {
         if (Synergy.isRunningBungee()) {
-        	new VoteProxyHandler.BungeeHandler().initialize();
-        } else if (Synergy.isRunningVelocity()) {
-        	new VoteProxyHandler.VelocityHandler().initialize();
+        	new VoteBungeeHandler().initialize();
         } else if (Synergy.isRunningSpigot()) {
             new VoteSpigotHandler().initialize();
         }
@@ -34,7 +32,7 @@ public class VoteHandler {
             .setPlayerUniqueId(bread.getUniqueId())
             .setOption("chat", "global")
             .setOption("color", "#55efc4")
-            .setOption("author", Synergy.translate(message, Translation.getDefaultLanguage()).setEndings(bread.getPronoun()).getStripped())
+            .setOption("author", Synergy.translate(message, Translation.getDefaultLanguage()).setGendered(bread.getGender()).getStripped())
             .fireEvent();
         
         bread.setData("last-voted", System.currentTimeMillis());

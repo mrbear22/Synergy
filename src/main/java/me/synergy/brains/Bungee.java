@@ -1,13 +1,13 @@
 package me.synergy.brains;
 
-import java.util.UUID;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteStreams;
 
-import me.synergy.commands.SynergyProxyCommand;
+import me.synergy.commands.SynergyBungeeCommand;
 import me.synergy.discord.Discord;
 import me.synergy.discord.RolesHandler;
 import me.synergy.events.SynergyEvent;
@@ -20,12 +20,11 @@ import me.synergy.modules.LocalesManager;
 import me.synergy.objects.BreadMaker;
 import me.synergy.twitch.Twitch;
 import me.synergy.web.MonobankHandler;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 import me.synergy.web.WebServer;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -48,7 +47,7 @@ public class Bungee extends Plugin implements Listener {
 	    new Twitch().initialize();
         new MonobankHandler().initialize();
 	    new PlayerBungeeHandler().initialize();
-	    new SynergyProxyCommand().initialize();
+	    new SynergyBungeeCommand().initialize();
 	    new WebServer().initialize();
         new RolesHandler().initialize();
         new VoteHandler().initialize();
@@ -85,16 +84,13 @@ public class Bungee extends Plugin implements Listener {
 	    
 	    ByteArrayDataInput in = ByteStreams.newDataInput(event.getData());
 	    String identifier = in.readUTF();
-	    String stringUUID = in.readUTF();
-	    
+        String stringUUID = in.readUTF();
 	    UUID uuid = null;
 	    if (stringUUID != null && !stringUUID.isEmpty()) {
 	        try {
 	            uuid = UUID.fromString(stringUUID);
-	        } catch (IllegalArgumentException e) {
-	        }
+	        } catch (IllegalArgumentException e) { }
 	    }
-	    
 	    String data = in.readUTF();
 	    
 	    new SynergyEvent(identifier, uuid, data).send();
@@ -118,8 +114,12 @@ public class Bungee extends Plugin implements Listener {
         BreadMaker bread = Synergy.getBread(uniqueId);
         ProxiedPlayer player = getInstance().getProxy().getPlayer(uniqueId);
         if (player != null) {
-            BaseComponent[] components = ComponentSerializer.parse(Synergy.translate(reason, bread.getLanguage()).getColored(bread.getTheme()));
-            player.disconnect(components);
+            player.disconnect(new TextComponent(
+                Synergy.translate(reason, bread.getLanguage())
+                    .setPlaceholders(bread)
+                    .setGendered(bread.getGender())
+                    .getColoredLegacy(bread.getTheme())
+            ));
         }
     }
 

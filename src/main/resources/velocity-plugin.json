@@ -1,0 +1,11 @@
+{
+  "id": "${project.artifactId}",
+  "name": "${project.name}",
+  "version": "${project.version}",
+  "description": "${project.description}",
+  "url": "${project.url}",
+  "authors": ["mrbear22"],
+  "main": "me.synergy.brains.Velocity",
+  "depends": [],
+  "optional": ["NuVotifier", "Plan"]
+}

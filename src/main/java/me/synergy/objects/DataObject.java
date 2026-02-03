@@ -1,7 +1,8 @@
 package me.synergy.objects;
 
 import java.util.UUID;
-import me.synergy.utils.Endings.Pronoun;
+
+import me.synergy.text.Gendered.Gender;
 
 public class DataObject {
 
@@ -46,9 +47,9 @@ public class DataObject {
         }
     }
 
-    public Pronoun getAsPronoun() {
+    public Gender getAsGender() {
         try {
-            return data != null ? Pronoun.valueOf(data.toString().toUpperCase()) : null;
+            return data != null ? Gender.valueOf(data.toString().toUpperCase()) : null;
         } catch (IllegalArgumentException e) {
             return null;
         }

@@ -1,295 +1,184 @@
 package me.synergy.handlers;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.bukkit.entity.Player;
+import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.BookMeta;
 
 import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
+import com.comphenix.protocol.wrappers.AdventureComponentConverter;
 
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
+import me.synergy.objects.Locale;
 
 public class LocalesHandler {
 
     public void initialize() {
+        if (!Synergy.getConfig().getBoolean("localizations.enabled")) return;
+        
+        if (!Synergy.isDependencyAvailable("ProtocolLib")) {
+            Synergy.getLogger().warning("ProtocolLib is required to initialize " + getClass().getSimpleName() + " module!");
+            return;
+        }
+
         try {
-            if (!Synergy.getConfig().getBoolean("localizations.enabled")) {
-                return;
-            }
-            if (!Synergy.isDependencyAvailable("ProtocolLib")) {
-                Synergy.getLogger().warning("ProtocolLib is required to initialize " + this.getClass().getSimpleName() + " module!");
-                return;
-            }
-
-            registerChatPackets();
-            registerDisplayPackets();
-            registerScoreboardPackets();
-            registerInventoryPackets();
-
-            Synergy.getLogger().info(this.getClass().getSimpleName() + " module has been initialized!");
+            registerPacketListeners();
+            Synergy.getLogger().info(getClass().getSimpleName() + " module has been initialized!");
         } catch (Exception e) {
-            Synergy.getLogger().error(this.getClass().getSimpleName() + " module failed to initialize:");
+            Synergy.getLogger().error(getClass().getSimpleName() + " module failed to initialize:");
             e.printStackTrace();
         }
     }
 
-    private void registerChatPackets() {
-        // Chat messages
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.HIGH, PacketType.Play.Server.SYSTEM_CHAT) {
-                @Override
-                public void onPacketSending(PacketEvent event) {                    
-                    try {
-                        processChatComponents(event);
-                    } catch (Exception e) {
-                        Synergy.getLogger().error("Error processing chat: " + e.getMessage());
-                    }
-                }
-            }
-        );
+    private void registerPacketListeners() {
+        var manager = Synergy.getSpigot().getProtocolManager();
+        
+        manager.addPacketListener(createListener(ListenerPriority.HIGH, this::processComponents, 
+            PacketType.Play.Server.SYSTEM_CHAT));
+        
+        manager.addPacketListener(createListener(ListenerPriority.MONITOR, this::processComponents,
+            PacketType.Play.Server.SET_TITLE_TEXT, PacketType.Play.Server.SET_SUBTITLE_TEXT,
+            PacketType.Play.Server.SET_ACTION_BAR_TEXT, PacketType.Play.Server.BOSS,
+            PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER, PacketType.Play.Server.PLAYER_INFO,
+            PacketType.Play.Server.SCOREBOARD_TEAM, PacketType.Play.Server.OPEN_WINDOW,
+            PacketType.Play.Server.SPAWN_ENTITY, PacketType.Play.Server.KICK_DISCONNECT));
+        
+        manager.addPacketListener(createListener(ListenerPriority.MONITOR, this::processStringComponents,
+            PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE, PacketType.Play.Server.SCOREBOARD_OBJECTIVE,
+            PacketType.Play.Server.MAP));
+        
+        manager.addPacketListener(createListener(ListenerPriority.NORMAL, this::processInventoryItems,
+            PacketType.Play.Server.WINDOW_ITEMS, PacketType.Play.Server.SET_SLOT));
     }
 
-    private void registerDisplayPackets() {
-        // Title, Subtitle, ActionBar
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.MONITOR, 
-                PacketType.Play.Server.SET_TITLE_TEXT, 
-                PacketType.Play.Server.SET_SUBTITLE_TEXT,
-                PacketType.Play.Server.SET_ACTION_BAR_TEXT) {
-                
-                @Override
-                public void onPacketSending(PacketEvent event) {
-                    processChatComponents(event);
+    private PacketAdapter createListener(ListenerPriority priority, PacketProcessor processor, PacketType... types) {
+        return new PacketAdapter(Synergy.getSpigot(), priority, types) {
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                try {
+                    processor.process(event);
+                } catch (Exception e) {
+                    Synergy.getLogger().error("Error processing packet " + event.getPacketType() + ": " + e.getMessage());
                 }
             }
-        );
-
-        // BossBar
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.MONITOR, PacketType.Play.Server.BOSS) {
-                @Override
-                public void onPacketSending(PacketEvent event) {
-                    processChatComponents(event);
-                }
-            }
-        );
-
-        // TAB Header/Footer
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.MONITOR, 
-                PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER) {
-                
-                @Override
-                public void onPacketSending(PacketEvent event) {
-                    processChatComponents(event);
-                }
-            }
-        );
-
-        // Player Info (TAB names)
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.MONITOR, PacketType.Play.Server.PLAYER_INFO) {
-                @Override
-                public void onPacketSending(PacketEvent event) {
-                    processChatComponents(event);
-                }
-            }
-        );
+        };
     }
 
-    private void registerScoreboardPackets() {
-        // Scoreboard Display
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.MONITOR, 
-                PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE) {
-                
-                @Override
-                public void onPacketSending(PacketEvent event) {
-                    processStringComponents(event);
-                }
-            }
-        );
-
-        // Scoreboard Objective
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.MONITOR, 
-                PacketType.Play.Server.SCOREBOARD_OBJECTIVE) {
-                
-                @Override
-                public void onPacketSending(PacketEvent event) {
-                //    processChatComponents(event);
-                    processStringComponents(event);
-                }
-            }
-        );
-
-        // Scoreboard Score
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.MONITOR, 
-                PacketType.Play.Server.SCOREBOARD_SCORE) {
-                
-                @Override
-                public void onPacketSending(PacketEvent event) {
-                //    processStringComponents(event);
-                }
-            }
-        );
-    }
-
-    private void registerInventoryPackets() {
-        Synergy.getSpigot().getProtocolManager().addPacketListener(
-            new PacketAdapter(Synergy.getSpigot(), ListenerPriority.NORMAL, 
-                PacketType.Play.Server.WINDOW_ITEMS, 
-                PacketType.Play.Server.SET_SLOT) {
-                
-                @Override
-                public void onPacketSending(PacketEvent event) {
-                    processInventoryItems(event);
-                }
-            }
-        );
-    }
-
-    private void processChatComponents(PacketEvent event) {
-        try {
-            PacketContainer packet = event.getPacket();
-            BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
-            List<WrappedChatComponent> components = packet.getChatComponents().getValues();
+    private void processComponents(PacketEvent event) {
+        var packet = event.getPacket();
+        var bread = Synergy.getBread(event.getPlayer().getUniqueId());
+        
+        for (int i = 0; i < packet.getChatComponents().size(); i++) {
+            var wrapped = packet.getChatComponents().read(i);
+            if (wrapped == null || wrapped.getJson() == null) continue;
             
-            for (int i = 0; i < components.size(); i++) {
-                WrappedChatComponent component = components.get(i);
-                if (component != null && component.getJson() != null) {
-                    String json = component.getJson();
-                    
-                    //new Logger().info("before: " +json);
-                    
-                    if (json.contains("<cancel_message>")) {
-                        event.setCancelled(true);
-                        return;
-                    }
-                    
-                    String translatedJson = processJsonComponent(json, bread);
-                    
-                    if (translatedJson.contains("<cancel_message>")) {
-                        event.setCancelled(true);
-                        return;
-                    }
-                    
-                    //new Logger().info("after: " +translatedJson);
-                    
-                    component.setJson(translatedJson);
-                    packet.getChatComponents().write(i, component);
-                }
+            var locale = new Locale(AdventureComponentConverter.fromWrapper(wrapped), bread.getLanguage()).setExecuteInteractive(bread).setPlaceholders(bread).setGendered(null);
+            
+            if (locale.isCancelled()) {
+                event.setCancelled(true);
+                return;
             }
-        } catch (Exception e) {
-        	e.printStackTrace();
-            Synergy.getLogger().error("Error processing chat components in " + event.getPacketType() + ": " + e.getMessage());
+            
+            if (locale.hasDelay()) {
+                event.setCancelled(true);
+                Bukkit.getScheduler().runTaskLater(Synergy.getSpigot(), () -> {
+                    try {
+                        var delayed = new PacketContainer(event.getPacketType());
+                        delayed.getChatComponents().write(0, AdventureComponentConverter.fromComponent(
+                            locale.setExecuteInteractive(bread).getColoredComponent(bread.getTheme())));
+                        if (event.getPacketType() == PacketType.Play.Server.SYSTEM_CHAT) 
+                            delayed.getBooleans().write(0, false);
+                        ProtocolLibrary.getProtocolManager().sendServerPacket(event.getPlayer(), delayed);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }, locale.getDelay() * 20L);
+                return;
+            }
+            
+            try {
+                packet.getChatComponents().write(i, AdventureComponentConverter.fromComponent(
+                    locale.setExecuteInteractive(bread).getColoredComponent(bread.getTheme())));
+            } catch (Exception e) {
+                packet.getChatComponents().write(i, AdventureComponentConverter.fromComponent(
+                    locale.getColoredComponent(bread.getTheme())));
+            }
         }
     }
 
     private void processStringComponents(PacketEvent event) {
-        try {
-            PacketContainer packet = event.getPacket();
-            BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
-            List<String> strings = packet.getStrings().getValues();
-            
-            for (int i = 0; i < strings.size(); i++) {
-                String original = strings.get(i);
-                if (original != null && !original.isEmpty()) {
-                    String translated = Synergy.translate(original, bread.getLanguage())
-                        .setPlaceholders(bread)
-                        .setEndings(null)
-                        .getLegacyColored(bread.getTheme());
-                    packet.getStrings().write(i, translated);
-                }
-            }
-        } catch (Exception e) {
-            Synergy.getLogger().error("Error processing string components in " + event.getPacketType() + ": " + e.getMessage());
-        }
+        var packet = event.getPacket();
+        var bread = Synergy.getBread(event.getPlayer().getUniqueId());
+        
+        packet.getStrings().getValues().stream()
+            .filter(s -> s != null && !s.isEmpty())
+            .forEach(original -> {
+                int index = packet.getStrings().getValues().indexOf(original);
+                packet.getStrings().write(index, Synergy.translate(original, bread.getLanguage())
+                    .setPlaceholders(bread).setGendered(null).setExecuteInteractive(bread).getColoredLegacy(bread.getTheme()));
+            });
     }
 
     private void processInventoryItems(PacketEvent event) {
-        try {
-            Player player = event.getPlayer();
-            BreadMaker bread = Synergy.getBread(player.getUniqueId());
-            PacketContainer packet = event.getPacket();
-            
-            if (packet.getType() == PacketType.Play.Server.WINDOW_ITEMS) {
-                List<ItemStack> items = packet.getItemListModifier().read(0);
-                List<ItemStack> translatedItems = new ArrayList<>();
-                
-                for (ItemStack item : items) {
-                    translatedItems.add(translateItemVisual(item, bread));
-                }
-                
-                packet.getItemListModifier().write(0, translatedItems);
-            } else if (packet.getType() == PacketType.Play.Server.SET_SLOT) {
-                ItemStack item = packet.getItemModifier().read(0);
-                ItemStack translatedItem = translateItemVisual(item, bread);
-                packet.getItemModifier().write(0, translatedItem);
+        var packet = event.getPacket();
+        var bread = Synergy.getBread(event.getPlayer().getUniqueId());
+        
+        if (packet.getType() == PacketType.Play.Server.WINDOW_ITEMS) {
+            var items = packet.getItemListModifier().read(0);
+            if (items != null) {
+                packet.getItemListModifier().write(0, 
+                    items.stream().map(item -> translateItem(item, bread)).toList());
             }
-        } catch (Exception e) {
-            Synergy.getLogger().error("Error processing inventory items: " + e.getMessage());
+        } else {
+            var item = packet.getItemModifier().read(0);
+            if (item != null) packet.getItemModifier().write(0, translateItem(item, bread));
         }
     }
-
-    private String processJsonComponent(String json, BreadMaker bread) {
-        try {
-
-            return Synergy.translate(json, bread.getLanguage())
-                    .setPlaceholders(bread)
-                    .setEndings(null)
-                    .setExecuteInteractive(bread)
-                    .getColored(bread.getTheme());
-        } catch (Exception e) {
-            return Synergy.translate(json, bread.getLanguage())
-                    .setPlaceholders(bread)
-                    .setEndings(bread.getPronoun())
-                    .getColored(bread.getTheme());
+    
+    @SuppressWarnings("deprecation")
+	private ItemStack translateItem(ItemStack item, BreadMaker bread) {
+        if (item == null || !item.hasItemMeta()) return item;
+        
+        var meta = item.getItemMeta().clone();
+        var visual = new ItemStack(item.getType(), item.getAmount());
+        
+        if (meta.hasDisplayName()) 
+            meta.setDisplayName(Synergy.translate(meta.getDisplayName(), bread.getLanguage())
+                .setPlaceholders(bread).setGendered(bread.getGender()).getColoredLegacy(bread.getTheme()));
+        
+        if (meta.hasLore()) 
+            meta.setLore(meta.getLore().stream()
+                .map(line -> Synergy.translate(line, bread.getLanguage())
+                    .setPlaceholders(bread).setGendered(bread.getGender()).getColoredLegacy(bread.getTheme()))
+                .toList());
+        
+        if (meta instanceof BookMeta book) {
+            var original = (BookMeta) item.getItemMeta();
+            if (original.hasTitle()) 
+                book.title(Synergy.translate(original.title(), bread.getLanguage())
+                    .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
+            if (original.hasAuthor()) 
+                book.author(Synergy.translate(original.author(), bread.getLanguage())
+                    .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
+            if (original.hasPages()) 
+                book.pages(original.pages().stream()
+                    .map(page -> Synergy.translate(page, bread.getLanguage())
+                        .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()))
+                    .toList());
+            meta = book;
         }
+        
+        visual.setItemMeta(meta);
+        return visual;
     }
 
-    private ItemStack translateItemVisual(ItemStack item, BreadMaker bread) {
-        if (item == null || !item.hasItemMeta()) {
-            return item;
-        }
-
-        ItemStack visualItem = item.clone();
-        ItemMeta meta = visualItem.getItemMeta();
-        
-        if (meta.hasDisplayName()) {
-            String displayName = meta.getDisplayName();
-            String translatedName = Synergy.translate(displayName, bread.getLanguage())
-                .setPlaceholders(bread)
-                .setEndings(bread.getPronoun())
-                .getLegacyColored(bread.getTheme());
-            meta.setDisplayName(translatedName);
-        }
-
-        if (meta.hasLore()) {
-            List<String> lore = meta.getLore();
-            List<String> translatedLore = new ArrayList<>();
-            
-            for (String line : lore) {
-                String translatedLine = Synergy.translate(line, bread.getLanguage())
-                    .setPlaceholders(bread)
-                    .setEndings(bread.getPronoun())
-                    .getLegacyColored(bread.getTheme());
-                translatedLore.add(translatedLine);
-            }
-            
-            meta.setLore(translatedLore);
-        }
-        
-        visualItem.setItemMeta(meta);
-        return visualItem;
+    @FunctionalInterface
+    private interface PacketProcessor {
+        void process(PacketEvent event);
     }
 }

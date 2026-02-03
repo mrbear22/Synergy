@@ -5,7 +5,7 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 
 import me.synergy.brains.Synergy;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 
 public class ChatHandler {
 

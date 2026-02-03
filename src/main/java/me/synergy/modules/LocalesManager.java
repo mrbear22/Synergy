@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ public class LocalesManager {
                 return;
             }
             initializeTranslations(yamlData);
+            checkMissingTranslations();
             new Locales().initialize();
         } catch (IOException e) {
             e.printStackTrace();
@@ -95,6 +97,34 @@ public class LocalesManager {
         Synergy.getLogger().info("Initialized " + count + " translations!");
     }
 
+    private void checkMissingTranslations() {
+        Set<String> allKeys = new HashSet<>();
+        LOCALES.values().forEach(map -> allKeys.addAll(map.keySet()));
+        
+        if (allKeys.isEmpty()) return;
+        
+        boolean hasMissing = false;
+        for (Map.Entry<String, HashMap<String, String>> entry : LOCALES.entrySet()) {
+            String language = entry.getKey();
+            Set<String> langKeys = entry.getValue().keySet();
+            
+            Set<String> missingKeys = new HashSet<>(allKeys);
+            missingKeys.removeAll(langKeys);
+            
+            if (!missingKeys.isEmpty()) {
+                hasMissing = true;
+                Synergy.getLogger().warning("Language '" + language + "' is missing " + missingKeys.size() + " translation(s):");
+                for (String key : missingKeys) {
+                    Synergy.getLogger().warning("  - " + key);
+                }
+            }
+        }
+        
+        if (!hasMissing) {
+            Synergy.getLogger().info("All translations are complete for all languages!");
+        }
+    }
+
     private int addTranslationInternal(String key, String language, String translation) {
         LOCALES.computeIfAbsent(language, k -> new HashMap<>())
                .put(key, translation.replace("%nl%", System.lineSeparator()));
@@ -108,7 +138,6 @@ public class LocalesManager {
         return 1;
     }
 
-    // String methods
     public boolean addOrUpdate(String key, String language, String translation) {
         try {
             LOCALES.computeIfAbsent(language, k -> new HashMap<>()).put(key, translation);
@@ -128,7 +157,6 @@ public class LocalesManager {
         return addOrUpdate(key, language, translation);
     }
 
-    // String array methods
     public boolean addOrUpdate(String key, String language, String[] translations) {
         try {
             String combined = String.join(System.lineSeparator(), translations);

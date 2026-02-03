@@ -40,7 +40,7 @@ public class Utils {
                 count++;
                 i++;
             }
-            int repeatCount = Math.min(count, 3);
+            int repeatCount = Math.min(count, 5);
             for (int j = 0; j < repeatCount; j++) {
                 sb.append(currentChar);
             }
@@ -325,4 +325,24 @@ public class Utils {
         }
     }
 
+    public static String convertMinecraftColorsToHex(String string) {
+        return string
+            .replaceAll("&0", "<#000001>")
+            .replaceAll("&1", "<#1000AA>")
+            .replaceAll("&2", "<#00AA01>")
+            .replaceAll("&3", "<#10AAAA>")
+            .replaceAll("&4", "<#AA0001>")
+            .replaceAll("&5", "<#AA00AA>")
+            .replaceAll("&6", "<#FFAA01>")
+            .replaceAll("&7", "<#AAAAA1>")
+            .replaceAll("&8", "<#555556>")
+            .replaceAll("&9", "<#6555FF>")
+            .replaceAll("&a", "<#65FF55>")
+            .replaceAll("&b", "<#65FFFF>")
+            .replaceAll("&c", "<#FF5556>")
+            .replaceAll("&d", "<#FF55FF>")
+            .replaceAll("&e", "<#FFFF56>")
+            .replaceAll("&f", "<#FFFFF1>");
+    }
+    
 }

@@ -1,27 +1,36 @@
 package me.synergy.text;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.bukkit.entity.Player;
 import me.synergy.objects.BreadMaker;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.SoundCategory;
+import org.bukkit.Sound;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.title.Title;
+import net.kyori.adventure.sound.Sound.Source;
+import net.kyori.adventure.key.Key;
+import java.time.Duration;
 
 public class Interactive {
+	
     private static final Pattern SOUND_TAG = Pattern.compile("<sound:'(.*?)'>");
     private static final Pattern TITLE_TAG = Pattern.compile("<title:'([^']*)'(?::'([^']*)')?(?::(\\d+):(\\d+):(\\d+))?>");
     private static final Pattern ACTIONBAR_TAG = Pattern.compile("<actionbar:'(.*?)'>");
     
     public static String process(String text, BreadMaker bread) {
         Player player = Bukkit.getPlayer(bread.getName());
-        if (text == null || player == null) return text;
+        if (text == null || player == null) {
+            return text;
+        }
         
-        text = processTag(text, SOUND_TAG, (sound) -> playSound(player, sound));
+        text = processTag(text, SOUND_TAG, sound -> playSound(player, sound));
         text = processTitleTag(text, player);
-        text = processTag(text, ACTIONBAR_TAG, (actionbar) -> player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(actionbar)));
-        
-        return text;
+        text = processTag(text, ACTIONBAR_TAG, actionbar -> {
+            player.sendActionBar(Component.text(actionbar));
+        });
+        return removeTags(text);
     }
     
     private static String processTitleTag(String text, Player player) {
@@ -42,7 +51,17 @@ public class Interactive {
                 fadeOut = Integer.parseInt(m.group(5));
             }
             
-            player.sendTitle(title, subtitle, fadeIn, stay, fadeOut);
+            Title paperTitle = Title.title(
+                Component.text(title),
+                Component.text(subtitle),
+                Title.Times.times(
+                    Duration.ofMillis(fadeIn * 50L),
+                    Duration.ofMillis(stay * 50L),
+                    Duration.ofMillis(fadeOut * 50L)
+                )
+            );
+            
+            player.showTitle(paperTitle);
             m.appendReplacement(sb, "<reset>");
         }
         m.appendTail(sb);
@@ -52,6 +71,7 @@ public class Interactive {
     private static String processTag(String text, Pattern pattern, TagAction action) {
         Matcher m = pattern.matcher(text);
         StringBuffer sb = new StringBuffer();
+        
         while (m.find()) {
             String value = m.group(1);
             action.execute(value);
@@ -62,17 +82,35 @@ public class Interactive {
     }
     
     public static String removeTags(String text) {
-        if (text == null) return text;
+        if (text == null) {
+            return text;
+        }
         text = text.replaceAll("<sound:'[^']*'>", "");
         text = text.replaceAll("<title:'[^']*'(?::'[^']*')?(?::\\d+:\\d+:\\d+)?>", "");
         text = text.replaceAll("<actionbar:'[^']*'>", "");
         return text;
     }
     
-    private static void playSound(Player player, String sound) {
+    private static void playSound(Player player, String soundKey) {
         try {
-            player.playSound(player.getLocation(), sound, SoundCategory.AMBIENT, 1.0f, 1.0f);
-        } catch (Exception ignored) {}
+            try {
+                Sound bukkitSound = Sound.valueOf(soundKey.toUpperCase());
+                player.playSound(player.getLocation(), bukkitSound, SoundCategory.AMBIENT, 1.0f, 1.0f);
+                return;
+            } catch (IllegalArgumentException ignored) {
+            }
+            
+            Key key = Key.key(soundKey);
+            net.kyori.adventure.sound.Sound sound = net.kyori.adventure.sound.Sound.sound(
+                key,
+                Source.AMBIENT,
+                1.0f,
+                1.0f
+            );
+            player.playSound(sound);
+            
+        } catch (Exception e) {
+        }
     }
     
     @FunctionalInterface

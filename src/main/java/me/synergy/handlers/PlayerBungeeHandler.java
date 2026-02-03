@@ -11,8 +11,8 @@ import me.synergy.brains.Bungee;
 import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.objects.BreadMaker;
+import me.synergy.text.Translation;
 import me.synergy.twitch.Twitch;
-import me.synergy.utils.Translation;
 import me.synergy.web.MonobankHandler;
 import net.dv8tion.jda.api.entities.User;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -128,7 +128,7 @@ public class PlayerBungeeHandler implements Listener {
                             .setOption("chat", "global")
                             .setOption("color", "#81ecec")
                             .setOption("author", Synergy.translate("<lang>player-join-message<arg>" + player.getName() + "</arg></lang>", Translation.getDefaultLanguage())
-                                .setEndings(bread.getPronoun())
+                                .setGendered(bread.getGender())
                                 .getStripped())
                             .fireEvent();
                     }
@@ -174,7 +174,7 @@ public class PlayerBungeeHandler implements Listener {
 	            .setOption("chat", "global")
 	            .setOption("color", "#fab1a0")
 	            .setOption("author", Synergy.translate("<lang>player-quit-message<arg>" + player.getName() + "</arg></lang>", Translation.getDefaultLanguage())
-	                .setEndings(bread.getPronoun())
+	                .setGendered(bread.getGender())
 	                .getStripped())
 	            .fireEvent();
         }

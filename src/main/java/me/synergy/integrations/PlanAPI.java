@@ -34,12 +34,12 @@ public class PlanAPI implements DataExtension {
 	
 	@StringProvider(
 	        text = "Pronoun",
-	        description = "Player's pronoun.",
+	        description = "Player's gender.",
 	        iconName = "venus-mars",
 	        iconColor  = Color.AMBER
 	)
 	public String Pronoun(UUID playerUUID) {
-	    return Synergy.getBread(playerUUID).getPronoun().name();
+	    return Synergy.getBread(playerUUID).getData("gender").isSet() ? "Unknown" : Synergy.getBread(playerUUID).getData("gender").getAsString();
 	}
 	
 	@StringProvider(

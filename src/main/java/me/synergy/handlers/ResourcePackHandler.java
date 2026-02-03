@@ -31,7 +31,8 @@ public class ResourcePackHandler implements Listener, SynergyListener {
         Synergy.getBread(event.getPlayer().getUniqueId()).setData("resourcepack", "no");
     }
 
-    @EventHandler
+    @SuppressWarnings("deprecation")
+	@EventHandler
     public void onJoin(PlayerJoinEvent event) {
         if (Synergy.getConfig().getBoolean("web-server.custom-texturepack")) {
         	event.getPlayer().setResourcePack(Synergy.getConfig().getString("web-server.custom-texturepack-url"));

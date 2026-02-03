@@ -17,7 +17,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 
 public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, SynergyListener {
 
@@ -70,7 +70,6 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
         }
         
         if (args.length == 0) {
-            // Send usage directly in chat with Discord invite link, not as a book
             String usage = Translation.translate("<lang>command_usage_discord</lang>", bread.getLanguage())
                     .replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link"));
             String[] usageLines = usage.split("\n");
@@ -83,24 +82,27 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
         switch (args[0].toLowerCase()) {
             case "link":
                 if (args.length < 2) {
-                    return false; // Show usage from plugin.yml
+                    return false;
                 }
                 Synergy.createSynergyEvent("make-discord-link")
-                        .setPlayerUniqueId(player.getUniqueId())
-                        .setOption("tag", args[1])
-                        .send();
+                    .setPlayerUniqueId(player.getUniqueId())
+                    .setOption("tag", args[1])
+                    .send();
                 break;
                 
             case "confirm":
                 Synergy.createSynergyEvent("confirm-discord-link")
-                        .setPlayerUniqueId(player.getUniqueId())
-                        .send();
+                    .setPlayerUniqueId(player.getUniqueId())
+                    .send();
                 break;
                 
             case "unlink":
                 Synergy.createSynergyEvent("remove-discord-link")
-                        .setPlayerUniqueId(player.getUniqueId())
-                        .send();
+                    .setPlayerUniqueId(player.getUniqueId())
+                    .send();
+                Synergy.createSynergyEvent("sync-roles-from-discord-to-mc")
+	                .setPlayerUniqueId(player.getUniqueId())
+	                .send();
                 if (Synergy.getConfig().getBoolean("discord.kick-player.if-has-no-link.enabled")) {
                     bread.kick(Synergy.getConfig().getString("discord.kick-player.if-has-no-link.message"));
                 }

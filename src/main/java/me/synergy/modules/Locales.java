@@ -8,11 +8,11 @@ public class Locales {
 
 		addDefault("command-usage", "en", "<danger>Command usage:");
 
-		addDefault("player-join-message", "en", "<secondary>[<success>+<secondary>] <primary>%ARGUMENT% <secondary>joined the server");
+		addDefault("player-join-message", "en", "<secondary>[<success>+<secondary>] <primary>%player% <secondary>joined the server");
 
-		addDefault("player-quit-message", "en", "<secondary>[<danger>-<secondary>] <primary>%ARGUMENT% <secondary>left the server");
+		addDefault("player-quit-message", "en", "<secondary>[<danger>-<secondary>] <primary>%player% <secondary>left the server");
 
-		addDefault("player-first-time-join-message", "en", "<primary>%ARGUMENT% <secondary>joined for the first time!");
+		addDefault("player-first-time-join-message", "en", "<primary>%player% <secondary>joined for the first time!");
 
 		addDefault("reloaded", "en", "<success>Configuration and translations reloaded!");
 
@@ -24,13 +24,13 @@ public class Locales {
 
 		addDefault("confirmation-canceled", "en", "<danger>Confirmation canceled.");
 
-		addDefault("your-pronoun", "en", "<primary>Your pronoun: <secondary>%ARGUMENT%");
+		addDefault("your-gender", "en", "<primary>Your gender: <secondary>%gender%");
 
-		addDefault("selected-language", "en", "<success>Language selected: <primary>%LANGUAGE%<sound:'entity.ocelot.death'>");
+		addDefault("selected-language", "en", "<success>Language selected: <primary>%language%<sound:'entity.ocelot.death'>");
 
 		addDefault("selected-chat", "en", "<success>Chat selected: <primary>%ARGUMENT%<sound:'entity.ocelot.death'>");
 
-		addDefault("selected-theme", "en", "<success>Theme selected: <primary>%THEME%<sound:'entity.ocelot.death'>");
+		addDefault("selected-theme", "en", "<success>Theme selected: <primary>%theme%<sound:'entity.ocelot.death'>");
 
 		addDefault("help-message", "en", new String[] {
 				"Your text",
@@ -71,7 +71,9 @@ public class Locales {
 		addDefault("message-recipients", "en", "Players who saw your message: %RECIPIENTS%");
 
 		// Voting
-		addDefault("voted-successfully", "en", "<success>Vote from %SERVICE% counted. Thank you!<sound:'entity.player.levelup'>");
+		addDefault("votifier-message", "en", "<success>Vote from %service% counted. Thank you!<sound:'entity.player.levelup'>");
+		
+		addDefault("votifier-announcement", "en", "<success>%player% successfully voted on %service%!");
 
 		addDefault("vote-for-server", "en", "Vote for the server");
 
@@ -317,15 +319,19 @@ public class Locales {
 
 		addDefault("you-have-to-link-account", "en", "Please link your account: /link");
 
-		addDefault("link-discord-already-linked", "en", "<primary>Account already linked to <secondary>%ACCOUNT%<primary>! Unlink: <secondary><u>/discord unlink</u>");
+		addDefault("link-discord-already-linked", "en", "<primary>Account already linked to <secondary>%ACCOUNT%<primary>! Unlink it using <secondary><u>/discord unlink</u>");
 
-		addDefault("link-minecraft-already-linked", "en", "<primary>Account already linked to <secondary>%ACCOUNT%<primary>! If yours, login and unlink: <secondary><u>/discord unlink</u>");
+		addDefault("link-minecraft-already-linked", "en", "<primary>Account already linked to <secondary>%ACCOUNT%<primary>! Unlink it using <secondary><u>/unlink</u>");
 
 		addDefault("you-have-no-linked-accounts", "en", "<danger>No linked accounts! Link: <secondary><u>/discord link {usertag}</u>");
 
-		addDefault("link-minecraft-unlinked", "en", "<success>Account unlinked. Relink: <secondary><u>/discord link {usertag}</u>");
+		addDefault("link-minecraft-unlinked", "en", "<success>Account unlinked. Relink: <secondary><u>/link {usertag}</u>");
+		
+		addDefault("link-discord-unlinked", "en", "<success>Account unlinked. Relink: <secondary><u>/discord link {usertag}</u>");
 
 		addDefault("link-minecraft-title", "en", "Link Minecraft account");
+		
+		addDefault("unlink-minecraft-title", "en", "Unlink Minecraft account");
 
 		addDefault("link-minecraft-your-username", "en", "Your Minecraft username");
 

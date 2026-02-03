@@ -45,6 +45,7 @@ import me.synergy.integrations.VaultAPI;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
 import me.synergy.modules.LocalesManager;
+import me.synergy.objects.BreadMaker;
 import me.synergy.twitch.Twitch;
 import me.synergy.utils.RepeatingTask;
 import me.synergy.utils.UpdateChecker;
@@ -235,15 +236,15 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
 		return uniqueId == null ? null : Bukkit.getOfflinePlayer(uniqueId) == null ? null : Bukkit.getOfflinePlayer(uniqueId).getName();
 	}
 
-	@SuppressWarnings("deprecation")
 	public UUID getUniqueIdFromName(String username) {
 		return username == null ? null : Bukkit.getOfflinePlayer(username) == null ? null : Bukkit.getOfflinePlayer(username).getUniqueId();
 	}
 
 	public String getPlayerLanguage(UUID uniqueId) {
-		Player player = Bukkit.getPlayer(uniqueId);
-		String language = player.getLocale().split("_")[0];
-		return Synergy.getLocalesManager().getLanguages().contains(language) ? language : "en";
+	    Player player = Bukkit.getPlayer(uniqueId);
+	    if (player == null) return "en";
+	    String language = player.locale().getLanguage();
+	    return Synergy.getLocalesManager().getLanguages().contains(language) ? language : "en";
 	}
 
 	public void executeConsoleCommand(String command) {
@@ -288,9 +289,16 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
         }.runTaskTimerAsynchronously(this, 0L, WebServer.MONITOR_INTERVAL_SECONDS * 20L);
     }
 
-	public static void kick(UUID uniqueId, String reason) {
-		Bukkit.getPlayer(uniqueId).kickPlayer(reason);
-	}
+    public static void kick(UUID uniqueId, String reason) {
+        BreadMaker bread = Synergy.getBread(uniqueId);
+        Player player = Bukkit.getPlayer(uniqueId);
+        if (player != null) {
+            player.kick(Synergy.translate(reason, bread.getLanguage())
+                .setPlaceholders(bread)
+                .setGendered(bread.getGender())
+                .getColoredComponent(bread.getTheme()));
+        }
+    }
 
 	public Location getPlayerLocation(UUID uuid) {
 		return Bukkit.getPlayer(uuid).getLocation();

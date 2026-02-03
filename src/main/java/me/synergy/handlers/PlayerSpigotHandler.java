@@ -16,8 +16,9 @@ import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Chat;
+import me.synergy.objects.LocaleBuilder;
+import me.synergy.text.Translation;
 import me.synergy.twitch.Twitch;
-import me.synergy.utils.Translation;
 import me.synergy.web.MonobankHandler;
 import net.dv8tion.jda.api.entities.User;
 
@@ -38,11 +39,15 @@ public class PlayerSpigotHandler implements Listener {
     	bread.getCache().clear();
     	
         if (kickedPlayers.remove(event.getPlayer().getUniqueId())) {
-        	event.setQuitMessage(null);
+        	event.quitMessage(null);
         	return;
         }
         
-    	event.setQuitMessage("<lang>player-quit-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
+    	event.quitMessage(LocaleBuilder.of("player-quit-message")
+    			.placeholder("player", event.getPlayer().getName())
+    			.placeholder("gender", bread.getGender().name().toLowerCase())
+    			.component()
+    		);
 
     	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has left ```");
 
@@ -73,7 +78,7 @@ public class PlayerSpigotHandler implements Listener {
 				   .setOption("chat", "global")
 				   .setOption("color", "#fab1a0")
 				   .setOption("author", Synergy.translate("<lang>player-quit-message<arg>"+player.getName()+"</arg></lang>", Translation.getDefaultLanguage())
-												.setEndings(bread.getPronoun())
+												.setGendered(bread.getGender())
 												.getStripped()).fireEvent();
     	}
     }
@@ -86,7 +91,11 @@ public class PlayerSpigotHandler implements Listener {
         bread.getCache().clear();
         bread.setData("name", event.getPlayer().getName());
         
-	    event.setJoinMessage("<lang>player-join-message<arg>"+event.getPlayer().getName()+"</arg></lang><pronoun>"+bread.getPronoun().name()+"</pronoun>");
+	    event.joinMessage(LocaleBuilder.of("player-join-message")
+	    		.placeholder("player", event.getPlayer().getName())
+	    		.placeholder("gender", bread.getGender().name().toLowerCase())
+	    		.component()
+	    	);
         
     	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has joined with IP "+event.getPlayer().getAddress()+" ```");
         
@@ -115,7 +124,7 @@ public class PlayerSpigotHandler implements Listener {
         if (Synergy.getConfig().getBoolean("discord.kick-player.if-has-no-link.enabled")) {
         	if (!bread.getData("discord", false).isSet()) {
                 kickedPlayers.add(player.getUniqueId());
-        		event.setJoinMessage(null);
+        		event.joinMessage(null);
         		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-has-no-link.message"));
     	        return;
         	}
@@ -125,7 +134,7 @@ public class PlayerSpigotHandler implements Listener {
         	if (Discord.isBanned(bread)) {
                 kickedPlayers.add(player.getUniqueId());
         		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-banned.message"));
-        		event.setJoinMessage(null);
+        		event.joinMessage(null);
     	        return;
         	}
         }
@@ -134,7 +143,7 @@ public class PlayerSpigotHandler implements Listener {
         	if (Discord.isMissing(bread)) {
                 kickedPlayers.add(player.getUniqueId());
         		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-missing.message"));
-        		event.setJoinMessage(null);
+        		event.joinMessage(null);
     	        return;
         	}
         }
@@ -143,7 +152,7 @@ public class PlayerSpigotHandler implements Listener {
         	if (Discord.isMuted(bread)) {
                 kickedPlayers.add(player.getUniqueId());
         		bread.kick(Synergy.getConfig().getString("discord.kick-player.if-muted.message"));
-        		event.setJoinMessage(null);
+        		event.joinMessage(null);
     	        return;
         	}
         }
@@ -154,7 +163,7 @@ public class PlayerSpigotHandler implements Listener {
 		           .setOption("channel", channel)
 		           .setOption("color", "#81ecec")
 		           .setOption("author", Synergy.translate("<lang>player-join-message<arg>"+player.getName()+"</arg></lang>", Translation.getDefaultLanguage())
-					        			.setEndings(bread.getPronoun())
+					        			.setGendered(bread.getGender())
 					        			.getStripped()).fireEvent();
 		}
 		
@@ -172,9 +181,9 @@ public class PlayerSpigotHandler implements Listener {
     
 	@EventHandler
 	public void onPlayerKick(PlayerKickEvent event) {
-	 	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has been kicked with the reason: "+event.getReason()+"```");
+	 	Synergy.getLogger().discord("```Player "+event.getPlayer().getName()+" has been kicked with the reason: "+event.reason()+"```");
         BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
-		event.setReason(Synergy.translate(event.getReason(), bread.getLanguage()).getLegacyColored(bread.getTheme()));
+		event.reason(Synergy.translate(event.reason(), bread.getLanguage()).getColoredComponent(bread.getTheme()));
     }
 
 }

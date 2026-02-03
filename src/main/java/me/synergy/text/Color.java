@@ -1,164 +1,106 @@
 package me.synergy.text;
 
-import java.util.regex.Matcher;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import me.synergy.brains.Synergy;
-import net.md_5.bungee.api.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public class Color {
 
-    private static final String HEX_COLOR_PATTERN = "#[0-9a-fA-F]{6}";
-	
+    private static final Pattern TAG_PATTERN = Pattern.compile("</?((?:#[0-9a-fA-F]{6}|[a-zA-Z_]+))>");
+    
+    private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacyAmpersand();
+    private static final PlainTextComponentSerializer PLAIN_SERIALIZER = PlainTextComponentSerializer.plainText();
+    
+    private static final Map<String, String> LEGACY_TO_TAG = Map.ofEntries(
+        Map.entry("&0", "<black>"), Map.entry("&1", "<dark_blue>"), Map.entry("&2", "<dark_green>"),
+        Map.entry("&3", "<dark_aqua>"), Map.entry("&4", "<dark_red>"), Map.entry("&5", "<dark_purple>"),
+        Map.entry("&6", "<gold>"), Map.entry("&7", "<gray>"), Map.entry("&8", "<dark_gray>"),
+        Map.entry("&9", "<blue>"), Map.entry("&a", "<green>"), Map.entry("&b", "<aqua>"),
+        Map.entry("&c", "<red>"), Map.entry("&d", "<light_purple>"), Map.entry("&e", "<yellow>"),
+        Map.entry("&f", "<white>"), Map.entry("&k", "<obfuscated>"), Map.entry("&l", "<bold>"),
+        Map.entry("&m", "<strikethrough>"), Map.entry("&n", "<underlined>"), 
+        Map.entry("&o", "<italic>"), Map.entry("&r", "<reset>")
+    );
+    
+	public static String process(String string, String theme) {
+		string = Color.processLegacyColorCodes(string);
+		string = Color.processThemeTags(string, theme);
+		string = Color.processColorReplace(string, theme);
+		string = Color.processCustomColorCodes(string);
+		return string;
+	}
+    
+    public static String componentToMiniMessage(Component component) {
+        Component compacted = component.compact();
+		String string = MiniMessage.miniMessage().serialize(compacted);
+		string = string.replaceAll("\\\\<", "<").replaceAll("\\\\>", ">");
+        return string;
+    }
+    
     public static String processThemeTags(String string, String theme) {
         for (String t : new String[]{theme, "default"}) {
-            try {
-                var section = Synergy.getConfig().getConfigurationSection("localizations.color-themes." + t);
-                if (section != null) {
-                    for (var entry : section.entrySet()) {
-                        String hexCode = Synergy.getConfig().getString("localizations.color-themes." + t + "." + entry.getKey()).substring(1, 8);
-                        string = string.replace("<" + entry.getKey() +">", "<"+hexCode+">");
-                        string = string.replace("</" + entry.getKey() + ">","</"+hexCode+">");
-                    }
+            var section = Synergy.getConfig().getConfigurationSection("localizations.color-themes." + t);
+            if (section != null) {
+                for (var entry : section.entrySet()) {
+                    String value = Synergy.getConfig().getString("localizations.color-themes." + t + "." + entry.getKey());
+                    string = string.replace("<" + entry.getKey() + ">", value)
+                                   .replace("</" + entry.getKey() + ">", value.replace("<", "</"));
                 }
-            } catch (Exception e) {
-                Synergy.getLogger().error("Error processing theme tags: " + e.getLocalizedMessage());
             }
         }
         return string;
     }
-	 
+    
     public static String processColorReplace(String string, String theme) {
-        try {
-            var section = Synergy.getConfig().getConfigurationSection("localizations.color-replace");
-            if (section != null) {
-                for (var entry : section.entrySet()) {
-                    String hexCode = processThemeTags(Synergy.getConfig().getString("localizations.color-replace." + entry.getKey()), theme).substring(1, 8);
-                    string = string.replace("<" + entry.getKey() +">", "<"+hexCode+">");
-                    string = string.replace("</" + entry.getKey() + ">","</"+hexCode+">");
-                }
+        var section = Synergy.getConfig().getConfigurationSection("localizations.color-replace");
+        if (section != null) {
+            for (var entry : section.entrySet()) {
+                String value = processThemeTags(
+                    Synergy.getConfig().getString("localizations.color-replace." + entry.getKey()), theme
+                );
+                string = string.replace("<" + entry.getKey() + ">", value)
+                               .replace("</" + entry.getKey() + ">", value.replace("<", "</"));
             }
-        } catch (Exception e) {
-            Synergy.getLogger().error("Error processing color replace: " + e.getLocalizedMessage());
         }
         return string;
     }
     
     public static String processCustomColorCodes(String string) {
-        try {
-            var section = Synergy.getConfig().getConfigurationSection("chat-manager.custom-color-tags");
-            if (section != null) {
-                for (var entry : section.entrySet()) {
-                	string = string.replace(entry.getKey(), String.valueOf(entry.getValue()));
-                }
+        var section = Synergy.getConfig().getConfigurationSection("chat-manager.custom-color-tags");
+        if (section != null) {
+            for (var entry : section.entrySet()) {
+                string = string.replace(entry.getKey(), String.valueOf(entry.getValue()));
             }
-        } catch (Exception e) {
-            Synergy.getLogger().error("Error processing custom color codes: " + e.getLocalizedMessage());
         }
         return string;
     }
     
-    public static String processLegacyColors(String text, String theme) {
-        text = processCustomColorCodes(text);
+
+    public static String removeColor(String text) {
         text = processLegacyColorCodes(text);
-        text = processColorReplace(text, theme);
-        text = processThemeTags(text, theme);
-        text = processHexColors(text);
-        text = processFormattingTags(text);
-        
-        text = text
-            .replace("<black>", "&0")
-            .replace("<dark_blue>", "&1")
-            .replace("<dark_green>", "&2")
-            .replace("<dark_aqua>", "&3")
-            .replace("<dark_red>", "&4")
-            .replace("<dark_purple>", "&5")
-            .replace("<gold>", "&6")
-            .replace("<gray>", "&7")
-            .replace("<dark_gray>", "&8")
-            .replace("<blue>", "&9")
-            .replace("<green>", "&a")
-            .replace("<aqua>", "&b")
-            .replace("<red>", "&c")
-            .replace("<light_purple>", "&d")
-            .replace("<yellow>", "&e")
-            .replace("<white>", "&f")
-            .replace("<obfuscated>", "&k")
-            .replace("<bold>", "&l")
-            .replace("<strikethrough>", "&m")
-            .replace("<underlined>", "&n")
-            .replace("<italic>", "&o")
-            .replace("<reset>", "&r");
-        
-        return ChatColor.translateAlternateColorCodes('&', text);
-    }
-
-    private static String processFormattingTags(String text) {
-        return text
-            .replace("<bold>", ChatColor.BOLD.toString())
-            .replace("</bold>", ChatColor.RESET.toString())
-            .replace("<italic>", ChatColor.ITALIC.toString())
-            .replace("</italic>", ChatColor.RESET.toString())
-            .replace("<underlined>", ChatColor.UNDERLINE.toString())
-            .replace("</underlined>", ChatColor.RESET.toString())
-            .replace("<strikethrough>", ChatColor.STRIKETHROUGH.toString())
-            .replace("</strikethrough>", ChatColor.RESET.toString())
-            .replace("<obfuscated>", ChatColor.MAGIC.toString())
-            .replace("</obfuscated>", ChatColor.RESET.toString())
-            .replace("<reset>", ChatColor.RESET.toString());
-    }
-
-    public static String removeColor(String json) {
-        json = processThemeTags(json, getDefaultTheme());
-        json = processColorReplace(json, getDefaultTheme());
-        json = processLegacyColorCodes(json);
-        json = removeTags(json);
-        return ChatColor.stripColor(ChatColor.translateAlternateColorCodes('&', json));
-    }
-
-    private static String processHexColors(String text) {
-        Pattern pattern = Pattern.compile("<(" + HEX_COLOR_PATTERN + ")>");
-        Matcher matcher = pattern.matcher(text);
-        while (matcher.find()) {
-            text = text.replace(matcher.group(), ChatColor.of(matcher.group(1)).toString());
-        }
-        return text;
+        text = processThemeTags(text, "default");
+        text = processColorReplace(text, "default");
+        text = removeTags(text);
+        return PLAIN_SERIALIZER.serialize(LEGACY_SERIALIZER.deserialize(text));
     }
 
     public static String processLegacyColorCodes(String input) {
-        return input
-            // Colors
-            .replaceAll("[&§]0", "<black>")
-            .replaceAll("[&§]1", "<dark_blue>")
-            .replaceAll("[&§]2", "<dark_green>")
-            .replaceAll("[&§]3", "<dark_aqua>")
-            .replaceAll("[&§]4", "<dark_red>")
-            .replaceAll("[&§]5", "<dark_purple>")
-            .replaceAll("[&§]6", "<gold>")
-            .replaceAll("[&§]7", "<gray>")
-            .replaceAll("[&§]8", "<dark_gray>")
-            .replaceAll("[&§]9", "<blue>")
-            .replaceAll("[&§]a", "<green>")
-            .replaceAll("[&§]b", "<aqua>")
-            .replaceAll("[&§]c", "<red>")
-            .replaceAll("[&§]d", "<light_purple>")
-            .replaceAll("[&§]e", "<yellow>")
-            .replaceAll("[&§]f", "<white>")
-            // Formatting
-            .replaceAll("[&§]k", "<obfuscated>")
-            .replaceAll("[&§]l", "<bold>")
-            .replaceAll("[&§]m", "<strikethrough>")
-            .replaceAll("[&§]n", "<underlined>")
-            .replaceAll("[&§]o", "<italic>")
-            .replaceAll("[&§]r", "<reset>");
+        input = input.replace('§', '&');
+        for (var entry : LEGACY_TO_TAG.entrySet()) {
+            input = input.replace(entry.getKey(), entry.getValue());
+        }
+        return input;
     }
     
     public static String removeTags(String text) {
-        text = text.replaceAll("<(?:#[0-9a-fA-F]{6}|[a-zA-Z_]+)>", "");
-        text = text.replaceAll("</(?:#[0-9a-fA-F]{6}|[a-zA-Z_]+)>", "");
-        return text;
+        return TAG_PATTERN.matcher(text).replaceAll("");
     }
-
+    
     public static String getDefaultTheme() {
         return "default";
     }

@@ -5,14 +5,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.Nonnull;
-
 import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -22,6 +20,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.ItemComponent;
@@ -104,73 +103,168 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
                 break;
         }
     }
+    
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) {
+        if (event.getAuthor().isBot()) {
+            return;
+        }
+        
+        String content = event.getMessage().getContentRaw().trim();
+        
+        if (content.toLowerCase().startsWith("/unlink")) {
+            processUnlink(event.getAuthor(), 
+                (msg) -> event.getMessage().reply(msg).queue());
+            return;
+        }
+        
+        if (!content.toLowerCase().startsWith("/link")) {
+            return;
+        }
+        
+        String[] parts = content.split("\\s+", 2);
+        String username = parts.length > 1 ? parts[1].trim() : null;
+        
+        UUID existingUuid = Discord.getUniqueIdByDiscordId(event.getAuthor().getId());
+        if (existingUuid != null) {
+            event.getMessage().reply(
+                Synergy.translate("<lang>link-minecraft-already-linked</lang>", Translation.getDefaultLanguage())
+                       .getStripped()
+                       .replace("%ACCOUNT%", Synergy.getBread(existingUuid).getName())
+            ).queue();
+            return;
+        }
+        
+        if (username == null || username.isEmpty()) {
+            event.getMessage().reply(
+                Synergy.translate("<lang>link-minecraft-your-username</lang>", Translation.getDefaultLanguage())
+                       .getStripped()
+            ).queue();
+            return;
+        }
+        
+        processLinking(event.getAuthor(), username, 
+            (msg) -> event.getMessage().reply(msg).queue()
+        );
+    }
 	
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-    	if (!event.getName().toLowerCase().equals("link")) {
+    	if (event.getName().equalsIgnoreCase("unlink")) {
+    		processUnlink(event.getUser(), 
+    			(msg) -> event.replyEmbeds(Discord.info(msg)).setEphemeral(true).queue());
     		return;
     	}
-    	UUID uuid = Discord.getUniqueIdByDiscordId(event.getMember().getId());
+    	
+    	if (!event.getName().equalsIgnoreCase("link")) {
+    		return;
+    	}
+    	
+    	UUID uuid = Discord.getUniqueIdByDiscordId(event.getUser().getId());
     	if (uuid != null) {
             event.replyEmbeds(Discord.warning(
-                    Synergy.translate("<lang>link-discord-already-linked</lang>", Translation.getDefaultLanguage())
+                    Synergy.translate("<lang>link-minecraft-already-linked</lang>", Translation.getDefaultLanguage())
                            .getStripped()
                            .replace("%ACCOUNT%", Synergy.getBread(uuid).getName())
                 )).setEphemeral(true).queue();
             return;
     	}
-        TextInput subject = TextInput.create("username", Synergy.translate("<lang>link-minecraft-your-username</lang>", Translation.getDefaultLanguage()).getStripped(), TextInputStyle.SHORT).setPlaceholder("Steve").setMinLength(3).setMaxLength(28).build();
-        Modal modal = Modal.create("minecraftlink", Synergy.translate("<lang>link-minecraft-title</lang>", Translation.getDefaultLanguage()).getStripped()).addComponents(new LayoutComponent[] {
-            ActionRow.of(new ItemComponent[] {
-                subject
-            })
-        }).build();
-        event.replyModal(modal).queue();
+    	
+        String nickname = event.getOption("nickname") != null 
+            ? event.getOption("nickname").getAsString() 
+            : null;
+        
+        if (nickname == null || nickname.trim().isEmpty()) {
+            if (event.getChannelType().isGuild()) {
+	            TextInput subject = TextInput.create("username", 
+	                Synergy.translate("<lang>link-minecraft-your-username</lang>", Translation.getDefaultLanguage()).getStripped(), 
+	                TextInputStyle.SHORT)
+	                .setPlaceholder("Steve")
+	                .setMinLength(3)
+	                .setMaxLength(28)
+	                .build();
+	                
+	            Modal modal = Modal.create("minecraftlink", 
+	                Synergy.translate("<lang>link-minecraft-title</lang>", Translation.getDefaultLanguage()).getStripped())
+	                .addComponents(new LayoutComponent[] {
+	                    ActionRow.of(new ItemComponent[] {
+	                        subject
+	                    })
+	                }).build();
+                event.replyModal(modal).queue();
+            } else {
+                event.replyEmbeds(Discord.info(Synergy.translate("<lang>you-have-to-link-account</lang>", Translation.getDefaultLanguage()).getStripped())).setEphemeral(true).queue();
+            }
+        } else {
+            processLinking(event.getUser(), nickname,
+                (msg) -> event.replyEmbeds(Discord.info(msg)).setEphemeral(true).queue()
+            );
+        }
     }
     
     @Override
-    public void onModalInteraction(@Nonnull ModalInteractionEvent event) {
+    public void onModalInteraction(ModalInteractionEvent event) {
         if (!event.getModalId().equals("minecraftlink")) return;
 
         String username = event.getValue("username").getAsString();
+        processLinking(event.getUser(), username,
+            (msg) -> event.replyEmbeds(Discord.info(msg)).setEphemeral(true).queue()
+        );
+    }
+    
+    private void processUnlink(User user, ReplyHandler replyHandler) {
+        UUID uuid = Discord.getUniqueIdByDiscordId(user.getId());
+        
+        if (uuid == null) {
+            replyHandler.reply(Synergy.translate("<lang>you-have-no-linked-accounts</lang>", Translation.getDefaultLanguage()).getStripped());
+            return;
+        }
+        
+        BreadMaker bread = Synergy.getBread(uuid);
+        bread.setData("discord", null);
+        bread.sendMessage("<lang>link-minecraft-unlinked</lang>");
+        
+        replyHandler.reply(Synergy.translate("<lang>link-minecraft-unlinked</lang>", Translation.getDefaultLanguage()).getStripped());
+    }
+    
+    private void processLinking(User user, String username, ReplyHandler replyHandler) {
         UUID uuid = Synergy.getOfflineUniqueId(username);
 
         if (uuid == null) {
-            String unknownUser = Synergy.translate("<lang>unknown-user</lang>", Translation.getDefaultLanguage()).getStripped();
-            event.replyEmbeds(Discord.warning(
+            replyHandler.reply(
                 Synergy.translate("<lang>player-doesnt-exist</lang>", Translation.getDefaultLanguage())
                        .getStripped()
-                       .replace("%ACCOUNT%", unknownUser)
-            )).setEphemeral(true).queue();
+                       .replace("%ACCOUNT%", Synergy.translate("<lang>unknown-user</lang>", Translation.getDefaultLanguage()).getStripped())
+            );
             return;
         }
 
         String discordId = Discord.getDiscordIdByUniqueId(uuid);
-        User linkedUser = (discordId != null) ? Synergy.getDiscord().getUserById(discordId) : null;
-        String linkedUserName = (linkedUser != null) ? linkedUser.getEffectiveName() : Synergy.translate("<lang>unknown-user</lang>", Translation.getDefaultLanguage()).getStripped();
-
         if (discordId != null) {
-            event.replyEmbeds(Discord.warning(
+            User linkedUser = Synergy.getDiscord().getUserById(discordId);
+            String linkedUserName = linkedUser != null ? linkedUser.getEffectiveName() : 
+                Synergy.translate("<lang>unknown-user</lang>", Translation.getDefaultLanguage()).getStripped();
+            
+            replyHandler.reply(
                 Synergy.translate("<lang>link-minecraft-already-linked</lang>", Translation.getDefaultLanguage())
                        .getStripped()
                        .replace("%ACCOUNT%", linkedUserName)
-            )).setEphemeral(true).queue();
+            );
             return;
         }
 
-        UUID existingAccount = Discord.getUniqueIdByDiscordId(event.getUser().getId());
+        UUID existingAccount = Discord.getUniqueIdByDiscordId(user.getId());
         if (existingAccount != null) {
-            String existingName = Synergy.getBread(existingAccount).getName();
-            event.replyEmbeds(Discord.warning(
-                Synergy.translate("<lang>link-discord-already-linked</lang>", Translation.getDefaultLanguage())
+            replyHandler.reply(
+                Synergy.translate("<lang>link-minecraft-already-linked</lang>", Translation.getDefaultLanguage())
                        .getStripped()
-                       .replace("%ACCOUNT%", existingName)
-            )).setEphemeral(true).queue();
+                       .replace("%ACCOUNT%", Synergy.getBread(existingAccount).getName())
+            );
             return;
         }
 
         BreadMaker bread = new BreadMaker(uuid);
-        bread.setData("confirm-discord", event.getUser().getId());
+        bread.setData("confirm-discord", user.getId());
         
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.schedule(() -> {
@@ -178,15 +272,19 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
             scheduler.shutdown();
         }, 10, TimeUnit.MINUTES);
 
-        event.replyEmbeds(Discord.info(
-            Synergy.translate("<lang>link-minecraft-confirmation</lang>", Translation.getDefaultLanguage())
-                   .getStripped()
-        )).setEphemeral(true).queue();
+        replyHandler.reply(
+            Synergy.translate("<lang>link-minecraft-confirmation</lang>", Translation.getDefaultLanguage()).getStripped()
+        );
 
         bread.sendMessage(
             Translation.translate("<lang>link-discord-confirmation</lang>", bread.getLanguage())
-                      .replace("%ACCOUNT%", event.getUser().getEffectiveName())
+                      .replace("%ACCOUNT%", user.getEffectiveName())
         );
+    }
+    
+    @FunctionalInterface
+    private interface ReplyHandler {
+        void reply(String message);
     }
 
     
@@ -194,7 +292,7 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
         BreadMaker bread = new BreadMaker(uuid);
         if (bread.getData("discord", false).isSet()) {
             bread.setData("discord", null);
-            bread.sendMessage("<lang>link-minecraft-unlinked</lang>");
+            bread.sendMessage("<lang>link-discord-unlinked</lang>");
             return;
         }
         bread.sendMessage("<lang>you-have-no-linked-accounts</lang>");

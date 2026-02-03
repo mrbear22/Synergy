@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 
 public class MonobankCommand implements CommandExecutor, TabCompleter, Listener {
     

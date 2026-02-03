@@ -5,15 +5,19 @@ import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
+import me.synergy.objects.LocaleBuilder;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-
+import org.bukkit.plugin.messaging.PluginMessageListener;
 import com.vexsoftware.votifier.model.Vote;
 import com.vexsoftware.votifier.model.VotifierEvent;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import java.nio.charset.StandardCharsets;
 
 public class VoteSpigotHandler {
     
@@ -21,13 +25,18 @@ public class VoteSpigotHandler {
         if (!Synergy.getConfig().getBoolean("votifier.enabled")) {
             return;
         }
-
+        
         Synergy.getEventManager().registerEvents(new SynergyVoteListener());
-
+        
         if (Synergy.isDependencyAvailable("Votifier")) {
             Bukkit.getPluginManager().registerEvents(new BukkitVoteListener(), Synergy.getSpigot());
             Synergy.getLogger().info("Bukkit VoteHandler module has been initialized in standalone mode!");
         } else {
+            Bukkit.getMessenger().registerIncomingPluginChannel(
+                Synergy.getSpigot(), 
+                "nuvotifier:votes", 
+                new NuvotifierPluginMessageListener()
+            );
             Synergy.getLogger().info("Bukkit VoteHandler module has been initialized in network mode!");
         }
     }
@@ -39,37 +48,70 @@ public class VoteSpigotHandler {
             Vote vote = event.getVote();
             String service = vote.getServiceName();
             String username = vote.getUsername();
-
             VoteHandler.processVote(service, username);
         }
     }
-
+    
+    public class NuvotifierPluginMessageListener implements PluginMessageListener {
+        
+        @Override
+        public void onPluginMessageReceived(String channel, Player player, byte[] message) {
+            if (!channel.equals("nuvotifier:votes")) {
+                return;
+            }
+            
+            try {
+                String messageStr = new String(message, StandardCharsets.UTF_8);
+                JsonObject json = JsonParser.parseString(messageStr).getAsJsonObject();
+                
+                String username = json.get("username").getAsString();
+                String service = json.get("serviceName").getAsString();
+                
+                BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
+                
+                Synergy.createSynergyEvent("votifier")
+	            	.setPlayerUniqueId(bread.getUniqueId())
+	    	        .setOption("service", service)
+	    	        .setOption("username", username)
+	    	        .fireEvent();
+	                
+            } catch (Exception e) {
+                Synergy.getLogger().error("Error processing NuVotifier plugin message: " + e.getMessage());
+            }
+        }
+    }
+    
     public class SynergyVoteListener implements SynergyListener {
         
         @SynergyHandler
         public void onSynergyPluginMessage(SynergyEvent event) {
-
             if (!event.getIdentifier().equals("votifier")) {
                 return;
             }
-
+            
             String service = event.getOption("service").getAsString();
             String username = event.getOption("username").getAsString();
-            BreadMaker bread = event.getBread();
-            
-            Synergy.getLogger().info("Player " + username + " voted on " + service);
 
+            Synergy.getLogger().info("Player " + username + " voted on " + service);
+            
             for (Player player : Bukkit.getOnlinePlayers()) {
-            	BreadMaker b = Synergy.getBread(player.getUniqueId());
                 if (player.getName().equals(username)) {
-                	String message = Synergy.getConfig().getString("votifier.message").replace("%PLAYER%", username).replace("%SERVICE%", service);
-                    player.sendMessage(Synergy.translate(message, b.getLanguage()).setEndings(bread.getPronoun()).getString());
+                    player.sendMessage(LocaleBuilder.of("votifier-message")
+                    		.placeholder("player", username)
+                    		.placeholder("service", service)
+                    		.fallback("You've successfully voted on %service%. Thank you!")
+                    		.build()
+                    );
                 } else {
-                	String message = Synergy.getConfig().getString("votifier.announcement").replace("%PLAYER%", username).replace("%SERVICE%", service);
-                    player.sendMessage(Synergy.translate(message, b.getLanguage()).setEndings(bread.getPronoun()).getString());
+                    player.sendMessage(LocaleBuilder.of("votifier-announcement")
+                    		.placeholder("player", username)
+                    		.placeholder("service", service)
+                    		.fallback("%player% successfully voted on %service%!")
+                    		.build()
+                    );
                 }
             }
-
+            
             for (String command : Synergy.getConfig().getStringList("votifier.rewards")) {
                 Synergy.dispatchCommand(command.replace("%PLAYER%", username));
             }

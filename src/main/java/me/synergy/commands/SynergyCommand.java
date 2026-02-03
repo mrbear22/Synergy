@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.DeepLTranslator;
 import me.synergy.modules.LocalesManager;
+import me.synergy.objects.LocaleBuilder;
 import me.synergy.utils.Timings;
 
 public class SynergyCommand implements CommandExecutor {
@@ -28,7 +28,7 @@ public class SynergyCommand implements CommandExecutor {
         switch (args[0].toLowerCase()) {
             case "reload":
                 if (!sender.hasPermission("synergy.reload")) {
-                    sender.sendMessage("<lang>no-permission</lang>");
+                    sender.sendMessage(LocaleBuilder.of("no-permission").build());
                     return true;
                 }
                 Synergy.getSpigot().reloadConfig();
@@ -36,40 +36,56 @@ public class SynergyCommand implements CommandExecutor {
                 Synergy.getDataManager().initialize();
                 Synergy.getConfig().initialize();
 
-        		new DynamicCommands().shutdown();
-        		new DynamicCommands().initialize();
-                sender.sendMessage("<lang>reloaded</lang>");
+                new DynamicCommands().shutdown();
+                new DynamicCommands().initialize();
+                sender.sendMessage(LocaleBuilder.of("reloaded").build());
                 return true;
 
             case "timings":
                 if (!sender.hasPermission("synergy.timings")) {
-                    sender.sendMessage("<lang>no-permission</lang>");
+                    sender.sendMessage(LocaleBuilder.of("no-permission").build());
                     return false;
                 }
                 Map<String, Double> averages = new Timings().getAllAverages();
                 if (averages.isEmpty()) {
-                    sender.sendMessage(ChatColor.RED + "No timings recorded yet.");
+                    sender.sendMessage(LocaleBuilder.of("timings-no-data")
+                        .fallback("<red>No timings recorded yet.")
+                        .build());
                     return true;
                 }
-                sender.sendMessage(ChatColor.YELLOW + "=== Timings Report ===");
+                sender.sendMessage(LocaleBuilder.of("timings-header")
+                    .fallback("<yellow>=== Timings Report ===")
+                    .build());
                 averages.forEach((id, avg) ->
-                    sender.sendMessage(ChatColor.YELLOW + id + ": " + getTimingColor(avg) + String.format("%.2f ms", avg))
+                    sender.sendMessage(LocaleBuilder.of("timings-entry")
+                        .placeholder("id", id)
+                        .placeholder("time", String.format("%.2f", avg))
+                        .placeholder("color", getTimingColor(avg))
+                        .fallback("<yellow>%id%: <%color%>%time% ms")
+                        .build())
                 );
                 return true;
 
             case "createlocale":
                 if (!sender.hasPermission("synergy.createlocale")) {
-                    sender.sendMessage("<lang>no-permission</lang>");
+                    sender.sendMessage(LocaleBuilder.of("no-permission").build());
                     return false;
                 }
                 if (args.length < 2) {
-                    sender.sendMessage(ChatColor.RED + "Usage: /synergy createlocale <language_tag>");
-                    sender.sendMessage(ChatColor.GRAY + "Example: /synergy createlocale uk");
+                    sender.sendMessage(LocaleBuilder.of("createlocale-usage")
+                        .fallback("<red>Usage: /synergy createlocale <language_tag>")
+                        .build());
+                    sender.sendMessage(LocaleBuilder.of("createlocale-example")
+                        .fallback("<gray>Example: /synergy createlocale uk")
+                        .build());
                     return true;
                 }
                 
                 String targetLang = args[1].toLowerCase();
-                sender.sendMessage(ChatColor.YELLOW + "Starting translation process for language: " + targetLang);
+                sender.sendMessage(LocaleBuilder.of("createlocale-starting")
+                    .placeholder("language", targetLang)
+                    .fallback("<yellow>Starting translation process for language: %language%")
+                    .build());
 
                 Synergy.getSpigot().getServer().getScheduler().runTaskAsynchronously(
                     Synergy.getSpigot(), 
@@ -79,7 +95,7 @@ public class SynergyCommand implements CommandExecutor {
 
             case "info":
                 if (!sender.hasPermission("synergy.info")) {
-                    sender.sendMessage("<lang>no-permission</lang>");
+                    sender.sendMessage(LocaleBuilder.of("no-permission").build());
                     return false;
                 }
                 return true;
@@ -97,23 +113,33 @@ public class SynergyCommand implements CommandExecutor {
             DeepLTranslator translator = new DeepLTranslator();
             
             if (!translator.isLanguageSupported(targetLang)) {
-                sender.sendMessage(ChatColor.RED + "Language '" + targetLang + "' is not supported by DeepL API");
-                sender.sendMessage(ChatColor.GRAY + "Supported languages: " + String.join(", ", translator.getSupportedLanguages()));
+                sender.sendMessage(LocaleBuilder.of("createlocale-unsupported")
+                    .placeholder("language", targetLang)
+                    .fallback("<red>Language '%language%' is not supported by DeepL API")
+                    .build());
+                sender.sendMessage(LocaleBuilder.of("createlocale-supported-list")
+                    .placeholder("languages", String.join(", ", translator.getSupportedLanguages()))
+                    .fallback("<gray>Supported languages: %languages%")
+                    .build());
                 return;
             }
 
             // Get all English translations
             if (!Synergy.getLocalesManager().getLanguages().contains("en")) {
-                sender.sendMessage(ChatColor.RED + "No English translations found to translate from!");
+                sender.sendMessage(LocaleBuilder.of("createlocale-no-english")
+                    .fallback("<red>No English translations found to translate from!")
+                    .build());
                 return;
             }
 
             Synergy.getLocalesManager();
-			Map<String, HashMap<String, String>> allLocales = LocalesManager.getLocales();
+            Map<String, HashMap<String, String>> allLocales = LocalesManager.getLocales();
             HashMap<String, String> englishTranslations = allLocales.get("en");
             
             if (englishTranslations == null || englishTranslations.isEmpty()) {
-                sender.sendMessage(ChatColor.RED + "No English translations found to translate from!");
+                sender.sendMessage(LocaleBuilder.of("createlocale-no-english")
+                    .fallback("<red>No English translations found to translate from!")
+                    .build());
                 return;
             }
 
@@ -121,13 +147,19 @@ public class SynergyCommand implements CommandExecutor {
             String[] keys = englishTranslations.keySet().toArray(new String[0]);
             int totalKeys = keys.length;
 
-            sender.sendMessage(ChatColor.YELLOW + "Translating " + totalKeys + " keys...");
+            sender.sendMessage(LocaleBuilder.of("createlocale-translating")
+                .placeholder("count", String.valueOf(totalKeys))
+                .fallback("<yellow>Translating %count% keys...")
+                .build());
 
             // Process translations with delays using Bukkit scheduler
             processTranslationWithDelay(sender, translator, englishTranslations, keys, targetLang, 0, 0, 0);
 
         } catch (Exception e) {
-            sender.sendMessage(ChatColor.RED + "Translation process failed: " + e.getMessage());
+            sender.sendMessage(LocaleBuilder.of("createlocale-failed")
+                .placeholder("error", e.getMessage())
+                .fallback("<red>Translation process failed: %error%")
+                .build());
             Synergy.getLogger().error("Translation process failed " + e);
         }
     }
@@ -139,10 +171,21 @@ public class SynergyCommand implements CommandExecutor {
         // Check if we're done
         if (currentIndex >= keys.length) {
             // Final report
-            sender.sendMessage(ChatColor.GREEN + "=== Translation Complete ===");
-            sender.sendMessage(ChatColor.GREEN + "Successfully translated: " + translated);
-            sender.sendMessage(ChatColor.RED + "Failed: " + failed);
-            sender.sendMessage(ChatColor.YELLOW + "Language '" + targetLang + "' has been created!");
+            sender.sendMessage(LocaleBuilder.of("createlocale-complete-header")
+                .fallback("<green>=== Translation Complete ===")
+                .build());
+            sender.sendMessage(LocaleBuilder.of("createlocale-complete-success")
+                .placeholder("count", String.valueOf(translated))
+                .fallback("<green>Successfully translated: %count%")
+                .build());
+            sender.sendMessage(LocaleBuilder.of("createlocale-complete-failed")
+                .placeholder("count", String.valueOf(failed))
+                .fallback("<red>Failed: %count%")
+                .build());
+            sender.sendMessage(LocaleBuilder.of("createlocale-complete-message")
+                .placeholder("language", targetLang)
+                .fallback("<yellow>Language '%language%' has been created!")
+                .build());
             return;
         }
 
@@ -150,7 +193,10 @@ public class SynergyCommand implements CommandExecutor {
         String englishText = englishTranslations.get(key);
         
         if (Synergy.getLocalesManager().hasTranslation(key, targetLang)) {
-            sender.sendMessage(ChatColor.GRAY + "Skipping " + key + " (already exists)");
+            sender.sendMessage(LocaleBuilder.of("createlocale-skipping")
+                .placeholder("key", key)
+                .fallback("<gray>Skipping %key% (already exists)")
+                .build());
             
             Synergy.getSpigot().getServer().getScheduler().runTaskAsynchronously(
                 Synergy.getSpigot(),
@@ -192,15 +238,26 @@ public class SynergyCommand implements CommandExecutor {
                         try {
                             Synergy.getLocalesManager().addOrUpdate(key, targetLang, translatedLines);
                         } catch (Exception e) {
-                            sender.sendMessage(ChatColor.RED + "Error saving array translation for '" + key + "': " + e.getMessage());
+                            sender.sendMessage(LocaleBuilder.of("createlocale-save-error")
+                                .placeholder("key", key)
+                                .placeholder("error", e.getMessage())
+                                .fallback("<red>Error saving array translation for '%key%': %error%")
+                                .build());
                         }
                     });
                     
                     newTranslated = translated + 1;
                     newFailed = failed;
-                    sender.sendMessage(ChatColor.GREEN + "Translated array '" + key + "' (" + englishLines.length + " lines)");
+                    sender.sendMessage(LocaleBuilder.of("createlocale-array-success")
+                        .placeholder("key", key)
+                        .placeholder("lines", String.valueOf(englishLines.length))
+                        .fallback("<green>Translated array '%key%' (%lines% lines)")
+                        .build());
                 } else {
-                    sender.sendMessage(ChatColor.RED + "Partially failed to translate array key: " + key);
+                    sender.sendMessage(LocaleBuilder.of("createlocale-array-partial-fail")
+                        .placeholder("key", key)
+                        .fallback("<red>Partially failed to translate array key: %key%")
+                        .build());
                     newTranslated = translated;
                     newFailed = failed + 1;
                 }
@@ -213,24 +270,35 @@ public class SynergyCommand implements CommandExecutor {
                         try {
                             Synergy.getLocalesManager().addOrUpdate(key, targetLang, translatedText);
                         } catch (Exception e) {
-                            sender.sendMessage(ChatColor.RED + "Error saving translation for '" + key + "': " + e.getMessage());
+                            sender.sendMessage(LocaleBuilder.of("createlocale-save-error")
+                                .placeholder("key", key)
+                                .placeholder("error", e.getMessage())
+                                .fallback("<red>Error saving translation for '%key%': %error%")
+                                .build());
                         }
                     });
                     
                     newTranslated = translated + 1;
                     newFailed = failed;
                 } else {
-                    sender.sendMessage(ChatColor.RED + "Failed to translate key: " + key);
+                    sender.sendMessage(LocaleBuilder.of("createlocale-translate-fail")
+                        .placeholder("key", key)
+                        .fallback("<red>Failed to translate key: %key%")
+                        .build());
                     newTranslated = translated;
                     newFailed = failed + 1;
                 }
             }
 
             if (newTranslated % 10 == 0) {
-                sender.sendMessage(ChatColor.GREEN + "Progress: " + newTranslated + "/" + keys.length);
+                sender.sendMessage(LocaleBuilder.of("createlocale-progress")
+                    .placeholder("current", String.valueOf(newTranslated))
+                    .placeholder("total", String.valueOf(keys.length))
+                    .fallback("<green>Progress: %current%/%total%")
+                    .build());
             }
 
-            long delayTicks = Synergy.getConfig().getInt("deepl.request-delay-ms", 200) / 50; // Convert ms to ticks
+            long delayTicks = Synergy.getConfig().getInt("deepl.request-delay-ms", 200) / 50;
             Synergy.getSpigot().getServer().getScheduler().runTaskLaterAsynchronously(
                 Synergy.getSpigot(),
                 () -> processTranslationWithDelay(sender, translator, englishTranslations, keys, 
@@ -239,9 +307,13 @@ public class SynergyCommand implements CommandExecutor {
             );
 
         } catch (Exception e) {
-            sender.sendMessage(ChatColor.RED + "Error translating '" + key + "': " + e.getMessage());
+            sender.sendMessage(LocaleBuilder.of("createlocale-error")
+                .placeholder("key", key)
+                .placeholder("error", e.getMessage())
+                .fallback("<red>Error translating '%key%': %error%")
+                .build());
             
-            long delayTicks = Synergy.getConfig().getInt("deepl.request-delay-ms", 200) / 50; // Convert ms to ticks
+            long delayTicks = Synergy.getConfig().getInt("deepl.request-delay-ms", 200) / 50;
             Synergy.getSpigot().getServer().getScheduler().runTaskLaterAsynchronously(
                 Synergy.getSpigot(),
                 () -> processTranslationWithDelay(sender, translator, englishTranslations, keys, 
@@ -252,8 +324,8 @@ public class SynergyCommand implements CommandExecutor {
     }
 
     private String getTimingColor(double avg) {
-        return avg < 5 ? ChatColor.GREEN.toString() :
-               avg < 20 ? ChatColor.YELLOW.toString() :
-               ChatColor.RED.toString();
+        return avg < 5 ? "green" :
+               avg < 20 ? "yellow" :
+               "red";
     }
 }

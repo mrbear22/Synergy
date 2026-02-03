@@ -41,7 +41,7 @@ public class UpdateChecker {
 
                 JsonObject jsonResponse = JsonParser.parseString(response.toString()).getAsJsonObject();
                 String latestVersion = jsonResponse.get("tag_name").getAsString();
-                String currentVersion = Synergy.getSpigot().getDescription().getVersion();
+                String currentVersion = Synergy.getSpigot().getPluginMeta().getVersion();
                 String downloadUrl = jsonResponse.getAsJsonArray("assets").size() > 0 
                     ? jsonResponse.getAsJsonArray("assets").get(0).getAsJsonObject().get("browser_download_url").getAsString() 
                     : jsonResponse.get("html_url").getAsString();

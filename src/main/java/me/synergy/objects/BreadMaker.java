@@ -9,7 +9,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.brains.Velocity;
 import me.synergy.integrations.AuthmeAPI;
 import me.synergy.integrations.EssentialsAPI;
-import me.synergy.utils.Endings.Pronoun;
+import me.synergy.text.Gendered.Gender;
 
 public class BreadMaker {
 
@@ -113,11 +113,11 @@ public class BreadMaker {
 		return "default";
 	}
 
-	public Pronoun getPronoun() {
-		if (getData("pronoun").isSet()) {
-			return getData("pronoun").getAsPronoun();
+	public Gender getGender() {
+		if (getData("gender").isSet()) {
+			return getData("gender").getAsGender();
 		}
-		return Pronoun.HE;
+		return Gender.MALE;
 	}
 
 	public Cache getCache() {
@@ -127,13 +127,13 @@ public class BreadMaker {
 	public void kick(String reason) {
 		try {
 		    if (Synergy.isRunningSpigot()) {
-		      Spigot.kick(getUniqueId(), reason);
+		    	Spigot.kick(getUniqueId(), reason);
 		    }
 		    if (Synergy.isRunningVelocity()) {
 		    	Velocity.kick(getUniqueId(), reason);
 		    }
 		    if (Synergy.isRunningBungee()) {
-			  Bungee.kick(getUniqueId(), reason);
+		    	Bungee.kick(getUniqueId(), reason);
 			}
 		} catch (Exception c) {
 			System.out.print(c.getLocalizedMessage());

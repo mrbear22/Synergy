@@ -13,10 +13,11 @@ import me.synergy.modules.DataManager;
 import me.synergy.modules.LocalesManager;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Locale;
+import me.synergy.text.Translation;
 import me.synergy.utils.Cooldown;
 import me.synergy.utils.Logger;
-import me.synergy.utils.Translation;
 import net.dv8tion.jda.api.JDA;
+import net.kyori.adventure.text.Component;
 
 public class Synergy {
     public static String platform;
@@ -86,18 +87,17 @@ public class Synergy {
 
     public static boolean isDependencyAvailable(String plugin) {
         if (isRunningSpigot()) {
-        	return getSpigot().getServer().getPluginManager().isPluginEnabled(plugin);
+            return Spigot.getInstance().getServer().getPluginManager().isPluginEnabled(plugin);
         }
         if (isRunningBungee()) {
-        	return getBungee().getProxy().getPluginManager().getPlugin(plugin) != null;
+            return Bungee.getInstance().getProxy().getPluginManager().getPlugin(plugin) != null;
         }
         if (isRunningVelocity()) {
-        	getVelocity();
-			return Velocity.getProxy().getPluginManager().getPlugin(plugin) != null;
+            return Velocity.getProxy().getPluginManager().getPlugin(plugin.toLowerCase()).isPresent();
         }
         return false;
     }
-
+    
 	public static DataManager getDataManager() {
 		return new DataManager();
 	}
@@ -113,7 +113,11 @@ public class Synergy {
     public static Locale translate(String string, String language) {
     	return new Locale(string, language);
     }
-
+    
+    public static Locale translate(Component component, String language) {
+    	return new Locale(component, language);
+    }
+    
 	public static File getDataFolder() {
 		File dataFolder = new File("plugins/Synergy");
 		return dataFolder;

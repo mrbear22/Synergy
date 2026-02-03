@@ -91,10 +91,6 @@ public class SkinServer {
                 return;
             }
             
-            exchange.getResponseHeaders().set("Content-Type", "image/png");
-            exchange.getResponseHeaders().set("Cache-Control", "max-age=600");
-            exchange.sendResponseHeaders(200, 0);
-
             String[] segments = exchange.getRequestURI().getPath().split("/");
 
             if (segments.length >= 3 && !segments[2].isEmpty()) {
@@ -102,6 +98,7 @@ public class SkinServer {
                 String name = segments[2].length() != 36 ? segments[2] : null;
                 String cacheKey = (uuid != null) ? uuid.toString() : name;
 
+                // НЕ відправляємо headers тут! Відправимо в async task
                 executorService.submit(() -> {
                     HttpURLConnection connection = null;
                     InputStream skinStream = null;
@@ -109,11 +106,12 @@ public class SkinServer {
                     
                     try {
                         BufferedImage cachedImage = getCachedImage(cacheKey, getFormat());
+                        BufferedImage processedImage;
+                        
                         if (cachedImage != null) {
-                            sendImageResponse(exchange, cachedImage);
+                            processedImage = cachedImage;
                         } else {
                             String skinUrl = getSkinUrl(uuid, name);
-                            BufferedImage processedImage;
                             
                             if (skinUrl != null) {
                                 connection = (HttpURLConnection) new URL(skinUrl).openConnection();
@@ -140,14 +138,22 @@ public class SkinServer {
                             }
                             
                             cacheImage(cacheKey, processedImage, getFormat());
-                            sendImageResponse(exchange, processedImage);
                         }
+                        
+                        // Відправляємо headers і дані тут, в async task
+                        exchange.getResponseHeaders().set("Content-Type", "image/png");
+                        exchange.getResponseHeaders().set("Cache-Control", "max-age=600");
+                        exchange.sendResponseHeaders(200, 0);
+                        sendImageResponse(exchange, processedImage);
+                        
                     } catch (Exception e) {
                         e.printStackTrace();
                         try {
                             InputStream errorDefault = getDefaultSkin();
                             try {
                                 BufferedImage defaultImage = processImage(ImageIO.read(errorDefault));
+                                exchange.getResponseHeaders().set("Content-Type", "image/png");
+                                exchange.sendResponseHeaders(200, 0);
                                 sendImageResponse(exchange, defaultImage);
                             } finally {
                                 if (errorDefault != null) {
@@ -156,9 +162,11 @@ public class SkinServer {
                             }
                         } catch (Exception ex) {
                             ex.printStackTrace();
+                            try {
+                                exchange.sendResponseHeaders(500, 0);
+                            } catch (IOException ignored) {}
                         }
                     } finally {
-                        // Обов'язково закриваємо всі ресурси
                         if (skinStream != null) {
                             try { skinStream.close(); } catch (IOException ignored) {}
                         }
@@ -166,7 +174,7 @@ public class SkinServer {
                             try { defaultStream.close(); } catch (IOException ignored) {}
                         }
                         if (connection != null) {
-                            connection.disconnect(); // Важливо!
+                            connection.disconnect();
                         }
                         try {
                             exchange.close();
@@ -174,6 +182,8 @@ public class SkinServer {
                     }
                 });
             } else {
+                // Для невалідних запитів відразу відповідаємо
+                exchange.sendResponseHeaders(400, 0);
                 exchange.close();
             }
         }

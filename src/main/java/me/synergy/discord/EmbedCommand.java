@@ -4,10 +4,8 @@ import java.awt.Color;
 import java.io.InputStream;
 import java.net.URL;
 
-import javax.annotation.Nonnull;
-
 import me.synergy.brains.Synergy;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
@@ -84,7 +82,7 @@ public class EmbedCommand extends ListenerAdapter {
     }
 
     @Override
-    public void onModalInteraction(@Nonnull ModalInteractionEvent event) {
+    public void onModalInteraction(ModalInteractionEvent event) {
         if (event.getModalId().equals("embed")) {
             handleModalInteraction(event);
         }

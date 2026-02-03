@@ -3,6 +3,7 @@ package me.synergy.utils;
 import me.synergy.brains.Bungee;
 import me.synergy.brains.Synergy;
 import me.synergy.brains.Velocity;
+import me.synergy.text.Translation;
 
 public class Logger {
 
@@ -37,7 +38,7 @@ public class Logger {
   }
 
   public void warning(String string) {
-	string = Translation.translate(string, Translation.getDefaultLanguage());
+	//string = Translation.translate(string, Translation.getDefaultLanguage());
 	try {
 	    if (Synergy.isRunningSpigot()) {
 	      Synergy.getSpigot().getLogger().warning(string);

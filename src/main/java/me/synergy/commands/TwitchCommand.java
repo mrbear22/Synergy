@@ -15,7 +15,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 
 public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, SynergyListener {
 

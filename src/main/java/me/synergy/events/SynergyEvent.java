@@ -7,9 +7,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
-
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
@@ -57,10 +54,6 @@ public class SynergyEvent {
 		return new BreadMaker(getPlayerUniqueId());
 	}
 	
-	public OfflinePlayer getOfflinePlayer() {
-		return getPlayerUniqueId() == null ? null : Bukkit.getOfflinePlayer(getPlayerUniqueId());
-	}
-	
 	private String getOptionsAsJson() {
         Gson gson = new Gson();
         return gson.toJson(options);
@@ -96,6 +89,9 @@ public class SynergyEvent {
             }
             if (Synergy.isRunningBungee()) {
             	Synergy.getBungee().sendPluginMessage(out.toByteArray());
+            }
+            if (Synergy.isRunningVelocity()) {
+            	Synergy.getVelocity().sendPluginMessage(out.toByteArray());
             }
         } else {
         	fireEvent();

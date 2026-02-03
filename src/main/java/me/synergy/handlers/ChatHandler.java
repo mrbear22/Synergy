@@ -1,11 +1,7 @@
 package me.synergy.handlers;
 
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -13,330 +9,267 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
+import io.papermc.paper.event.player.AsyncChatEvent;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
-import me.synergy.integrations.PlotSquaredAPI;
-import me.synergy.integrations.SaberFactionsAPI;
-import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Chat;
-import me.synergy.objects.DataObject;
-import me.synergy.text.Color;
-import me.synergy.utils.Cooldown;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 import me.synergy.utils.Utils;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class ChatHandler implements Listener, SynergyListener {
 
-	public interface MessageSource {
-	    String getColor();
-	    String getTag();
-	}
-	
+    @FunctionalInterface
+    public interface ChatFilter {
+        boolean apply(Player player, AsyncChatEvent event);
+    }
+    
+    public interface MessageSource {
+        String getColor();
+        String getTag();
+        String getFormat();
+    }
+
     public void initialize() {
-    	if (!Synergy.getConfig().getBoolean("chat-manager.enabled")) {
-    		return;
-    	}
+        if (!Synergy.getConfig().getBoolean("chat-manager.enabled")) return;
+        
+        Chat.registerAll();
+        
         Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
-        Synergy.getEventManager().registerEvents(this);	
+        Synergy.getEventManager().registerEvents(this);
     }
 
     @EventHandler
-    public void onPlayerChat(AsyncPlayerChatEvent event) {
-        Player player = event.getPlayer();
-        BreadMaker bread = Synergy.getBread(player.getUniqueId());
-        DataObject data = bread.getData("chat");
-		Cooldown cooldown = Synergy.getCooldown(event.getPlayer().getUniqueId());
+    public void onPlayerChat(AsyncChatEvent event) {
+        var p = event.getPlayer();
+        var bread = Synergy.getBread(p.getUniqueId());
+        var cd = Synergy.getCooldown(p.getUniqueId());
         
         if (!bread.isAuthenticated() || bread.isMuted()) {
             event.setCancelled(true);
-        	return;
-		}
-        
-        Message message = new Message(event.getMessage());
-        Chat chat = new Chat(message.hasChatSymbol() && new Chat(getChatNameBySymbol(event.getMessage())).isEnabled() ? getChatNameBySymbol(event.getMessage())
-        					: data.isSet() && new Chat(data.getAsString()).isEnabled() ? data.getAsString()
-        					: new Chat("local").isEnabled() ? "local"
-        					: "global");
-        
-        if (message.getMessage().isEmpty()) {
-        	event.getPlayer().sendMessage("<lang>message-cant-be-empty</lang>");
-            event.setCancelled(true);
-        	return;
+            return;
         }
         
-        if (cooldown.hasCooldown("chat")) {
-        	event.getPlayer().sendMessage("<lang>cooldown</lang>");
-            event.setCancelled(true);
-        	return;
-        }
-        cooldown.setCooldown("chat", 2);
+        var raw = LegacyComponentSerializer.legacyAmpersand().serialize(event.message());
+        var msg = new Message(raw);
+        var chat = new Chat(Optional.ofNullable(msg.hasChatSymbol() ? getChatBySymbol(msg.getRaw()) : null)
+            .filter(n -> new Chat(n).isEnabled())
+            .orElseGet(() -> Optional.ofNullable(bread.getData("chat"))
+                .filter(d -> d.isSet() && new Chat(d.getAsString()).isEnabled())
+                .map(d -> d.getAsString())
+                .orElse(new Chat("local").isEnabled() ? "local" : "global")));
         
-        switch(chat.getName()) {
-        	case "local":
-                int radius = chat.getRadius();
-                event.getRecipients().removeIf(recipient -> recipient.getWorld() != player.getWorld()
-                		|| recipient.getLocation().distance(player.getLocation()) > radius);
-                break;
-            case "plot":
-                if (!Synergy.isDependencyAvailable("PlotSquared")) {
-                	player.sendMessage("<lang>dependency-not-found<arg>PlotSquared</arg></lang>");
-	            	event.setCancelled(true);
-	            	return;
-	            }
-        		if (PlotSquaredAPI.getCurrentPlot(player) == null) {
-                	player.sendMessage("<lang>youre-not-in-plot</lang>");
-                	event.setCancelled(true);
-                	return;
-        		}
-                event.getRecipients().removeIf(recipient -> !PlotSquaredAPI.getCurrentPlot(player).equals(PlotSquaredAPI.getCurrentPlot(recipient)));
-                break;
-            case "faction":
-            	if (!Synergy.isDependencyAvailable("Factions")) {
-                	player.sendMessage("<lang>dependency-not-found<arg>Factions</arg></lang>");
-                	event.setCancelled(true);
-                	return;
-            	}
-        		if (SaberFactionsAPI.getFactionByPlayer(player) == null) {
-                	player.sendMessage("<lang>youre-not-in-faction</lang>");
-                	event.setCancelled(true);
-                	return;
-        		}
-        		event.getRecipients().removeIf(recipient -> !SaberFactionsAPI.getFactionByPlayer(player).equals(SaberFactionsAPI.getFactionByPlayer(recipient)));
+        if (msg.getMessage().isEmpty()) {
+            p.sendMessage(Synergy.translate("<lang>message-cant-be-empty</lang>", bread.getLanguage())
+                .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
+            event.setCancelled(true);
+            return;
+        }
+        
+        if (cd.hasCooldown("chat")) {
+            p.sendMessage(Synergy.translate("<lang>cooldown</lang>", bread.getLanguage())
+                .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
+            event.setCancelled(true);
+            return;
+        }
+        cd.setCooldown("chat", 2);
+        
+        if (!Chat.applyFilter(chat.getName(), p, event)) {
+            event.setCancelled(true);
+            return;
         }
         
         if (chat.getPermission() != null) {
-        	event.getRecipients().removeIf(recipient -> !recipient.hasPermission(chat.getPermission()));
+            event.viewers().removeIf(a -> !(a instanceof Player r) || !r.hasPermission(chat.getPermission()));
         }
+        
+        var format = formatMessage(chat, msg, p);
         
         if (Synergy.getConfig().getBoolean("chat-manager.use-interactive-tags")) {
-        	event.getRecipients().stream().forEach(recipient -> recipient.sendMessage(formatMessage(chat, message, player)));
-        	Bukkit.getLogger().info("[CHAT] "+"["+chat.getTag()+"] "+player.getName()+": "+message.getMessage());
-        	event.setCancelled(true);
+            event.viewers().forEach(a -> {
+                if (a instanceof Player r) {
+                    var b = Synergy.getBread(r.getUniqueId());
+                    r.sendMessage(Synergy.translate(format, b.getLanguage())
+                        .setPlaceholders(b).setGendered(b.getGender())
+                        .setExecuteInteractive(b).getColoredComponent(b.getTheme()));
+                }
+            });
+            Bukkit.getLogger().info("[CHAT] [" + chat.getTag() + "] " + p.getName() + ": " + msg.getMessage());
+            event.setCancelled(true);
         } else {
-        	event.setFormat(formatMessage(chat, message, player));
+            event.renderer((s, n, m, v) -> v instanceof Player r ? 
+                Synergy.translate(format, Synergy.getBread(r.getUniqueId()).getLanguage())
+                    .setPlaceholders(Synergy.getBread(r.getUniqueId()))
+                    .setGendered(Synergy.getBread(r.getUniqueId()).getGender())
+                    .getColoredComponent(Synergy.getBread(r.getUniqueId()).getTheme()) : m);
         }
 
-        logMessage(chat, message, player);
+        Synergy.getLogger().discord("```[" + Synergy.getServerName() + "] [" + chat.getTag() + "] " + 
+            p.getName() + ": " + msg.getMessage() + "```");
         
-        sendDiscordMessage(chat, message, player);
+        if (chat.getDiscord().getChannel().length() == 19 && 
+            (chat.getPermission() == null || p.hasPermission(chat.getPermission()))) {
+            Synergy.createSynergyEvent("discord-embed").setPlayerUniqueId(p.getUniqueId())
+                .setOption("channel", chat.getDiscord().getChannel())
+                .setOption("author", p.getName())
+                .setOption("title", msg.getMessage())
+                .setOption("color", chat.getColor().substring(1, chat.getColor().length() - 1)).send();
+        }
         
-        if (Synergy.getConfig().getBoolean("chat-manager.warn-if-nobody-in-chat") && event.getRecipients().size() < 2 && !"global".equals(chat.getName())) {
-        	player.sendMessage("<lang>noone-hears-you</lang>");
+        if (Synergy.getConfig().getBoolean("chat-manager.warn-if-nobody-in-chat") && 
+            event.viewers().size() < 2 && !"global".equals(chat.getName())) {
+            p.sendMessage(Synergy.translate("<lang>noone-hears-you</lang>", bread.getLanguage())
+                .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
         }
     }
 
-	@SynergyHandler
+    @SynergyHandler
     public void onSynergyPluginMessage(SynergyEvent event) {
-	    if (event.getIdentifier().equals("system-chat")) {
-	    	if (Bukkit.getPlayer(event.getPlayerUniqueId()) != null) {
-	    		Bukkit.getPlayer(event.getPlayerUniqueId()).sendMessage(event.getOption("message").getAsString());
-	    	}
-	    }
-	    
-	    if (event.getIdentifier().equals("broadcast")) {
-	    	for (Player p : Bukkit.getOnlinePlayers()) {
-	    		BreadMaker bread = Synergy.getBread(p.getUniqueId());
-	    		p.sendMessage(Synergy.translate(event.getOption("message").getAsString(), bread.getLanguage())
-	    				.setPlaceholders(bread)
-	    				.setEndings(event.getBread().getPronoun())
-	    				.setExecuteInteractive(bread)
-	    				.getLegacyColored(bread.getTheme()));
-	    	}
-	    }
-	}
-    
-	@SynergyHandler
-	public void onTwitchMessage(SynergyEvent event) throws SQLException {
-	    if (!"twitch-chat".equals(event.getIdentifier())) return;
-
-	    String user = event.getOption("player").getAsString();
-	    String channel = event.getOption("twitch-channel").getAsString();
-	    String message = event.getOption("message").getAsString();
-	    	    
-	    Chat chat = new Chat("twitch");
-	    if (!chat.isEnabled()) return;
-
-	    UUID uuid = Synergy.getDataManager().findUserUUID("twitch-username", channel);
-	    if (uuid == null) {
-	        return;
-	    }
-
-	    Synergy.getBread(uuid).sendMessage(formatMessage(chat, new Message(message), user));
-	    Synergy.getLogger().info("[" + channel + "] " + user + ": " + message);
-	}
-	
-	@SynergyHandler
-	public void onDiscordMessage(SynergyEvent event) throws SQLException {
-	    if (!"discord-chat".equals(event.getIdentifier())) return;
-
-	    String discordUserId = event.getOption("discord-user-id").getAsString();
-	    String discordChannelId = event.getOption("discord-channel-id").getAsString();
-	    
-	    String chatName = getChats().stream()
-	        .filter(chat -> chat.getDiscord().getChannel().equals(discordChannelId))
-	        .map(Chat::getName)
-	        .findFirst()
-	        .orElse(null);
-	    
-	    if (chatName == null) return;
-	    
-	    Chat chat = new Chat(chatName);
-	    if (!chat.isEnabled()) return;
-
-	    UUID uuid = Synergy.getDataManager().findUserUUID("discord", discordUserId);
-	    if (uuid == null) {
-	        sendEmbedMessage(discordChannelId, "<lang>you-have-to-link-account</lang>");
-	        return;
-	    }
-
-	    OfflinePlayer player = Synergy.getSpigot().getOfflinePlayerByUniqueId(uuid);
-	    Set<Player> recipients = new HashSet<>(Bukkit.getOnlinePlayers());
-
-	    if (Synergy.getBread(uuid).isMuted()) {
-	        sendEmbedMessage(discordChannelId, "<lang>you-are-muted</lang>");
-	        return;
-	    }
-
-	    if (chat.getPermission() != null) {
-	        recipients.removeIf(recipient -> !recipient.hasPermission(chat.getPermission()));
-	    }
-
-	    recipients.forEach(recipient -> recipient.sendMessage(formatMessage(chat.getDiscord(), new Message(event.getOption("message").getAsString()), player)));
-	}
-
-	@EventHandler
-	public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
-		Cooldown cooldown = Synergy.getCooldown(event.getPlayer().getUniqueId());
-		if (!cooldown.hasCooldown("command")) {
-		    List<String> commands = Arrays.asList("/reg", "/register", "/l", "/login", "/unregister");
-		    if (!commands.stream().anyMatch(event.getMessage()::startsWith)) {
-		        Synergy.getLogger().discord("```["+Synergy.getServerName()+"] [cmd] " + event.getPlayer().getName() + ": " + event.getMessage() + "```");
-		    }
-		}
-	}
-
-	private String formatMessage(MessageSource source, Message message, OfflinePlayer player) {
-        String format = Synergy.getConfig().getString("chat-manager.format");
-        BreadMaker bread = Synergy.getBread(player.getUniqueId());
-
-        if (Synergy.isDependencyAvailable("PlaceholderAPI")) {
-        	format = Utils.replacePlaceholderOutputs(player, format);
-            format = PlaceholderAPI.setPlaceholders(player, format);
+        if ("system-chat".equals(event.getIdentifier())) {
+            Optional.ofNullable(Bukkit.getPlayer(event.getPlayerUniqueId())).ifPresent(p -> {
+                var b = Synergy.getBread(p.getUniqueId());
+                p.sendMessage(Synergy.translate(event.getOption("message").getAsString(), b.getLanguage())
+                    .setPlaceholders(b).setGendered(b.getGender()).getColoredComponent(b.getTheme()));
+            });
         }
         
-        if (!bread.hasPermission("synergy.colors")) {
-        	message.setMessage(Utils.stripColorTags(message.getMessage()));
+        if ("broadcast".equals(event.getIdentifier())) {
+            Bukkit.getOnlinePlayers().forEach(p -> {
+                var b = Synergy.getBread(p.getUniqueId());
+                p.sendMessage(Synergy.translate(event.getOption("message").getAsString(), b.getLanguage())
+                    .setPlaceholders(b).setGendered(event.getBread().getGender())
+                    .setExecuteInteractive(b).getColoredComponent(b.getTheme()));
+            });
         }
-
-        format = format.replace("%CHAT%", source.getTag());
-        format = format.replace("%COLOR%", source.getColor());
-        format = format.replace("%DISPLAYNAME%", player.getName());
-        format = format.replace("%MESSAGE%", message.getMessage());
-        format = format.replace("%", "%%");
-        format = Color.processLegacyColors(format, bread.getTheme());
-        format = Color.processCustomColorCodes(format);
-        
-        return format;
     }
     
-	private String formatMessage(MessageSource source, Message message, String player) {
-        String format = Synergy.getConfig().getString("chat-manager.format");
-
-        if (Synergy.isDependencyAvailable("PlaceholderAPI")) {
-        	format = Utils.replacePlaceholderOutputs(null, format);
-            format = PlaceholderAPI.setPlaceholders(null, format);
+    @SynergyHandler
+    public void onTwitchMessage(SynergyEvent event) throws SQLException {
+        if (!"twitch-chat".equals(event.getIdentifier())) return;
+        
+        var chat = new Chat("twitch");
+        if (!chat.isEnabled()) return;
+        
+        Optional.ofNullable(Synergy.getDataManager().findUserUUID("twitch-username", 
+            event.getOption("twitch-channel").getAsString())).ifPresent(uuid -> {
+                Synergy.getBread(uuid).sendMessage(formatMessage(chat, 
+                    new Message(event.getOption("message").getAsString()), 
+                    event.getOption("player").getAsString()));
+                Synergy.getLogger().info("[" + event.getOption("twitch-channel").getAsString() + "] " + 
+                    event.getOption("player").getAsString() + ": " + event.getOption("message").getAsString());
+            });
+    }
+    
+    @SynergyHandler
+    public void onDiscordMessage(SynergyEvent event) throws SQLException {
+        if (!"discord-chat".equals(event.getIdentifier())) return;
+        
+        var channelId = event.getOption("discord-channel-id").getAsString();
+        var chat = getChats().stream()
+            .filter(c -> c.getDiscord().getChannel().equals(channelId))
+            .findFirst().orElse(null);
+        
+        if (chat == null || !chat.isEnabled()) return;
+        
+        var uuid = Synergy.getDataManager().findUserUUID("discord", event.getOption("discord-user-id").getAsString());
+        
+        if (uuid == null) {
+            Synergy.createSynergyEvent("discord-embed")
+                .setOption("channel", channelId)
+                .setOption("title", Synergy.translate("<lang>you-have-to-link-account</lang>", Translation.getDefaultLanguage()).getStripped())
+                .setOption("color", "#fab1a0").send();
+            return;
         }
         
-        format = format.replace("%CHAT%", source.getTag());
-        format = format.replace("%COLOR%", source.getColor());
-        format = format.replace("%DISPLAYNAME%", player);
-        format = format.replace("%MESSAGE%", message.getMessage());
-        format = format.replace("%", "%%");
+        if (Synergy.getBread(uuid).isMuted()) {
+            Synergy.createSynergyEvent("discord-embed")
+                .setOption("channel", channelId)
+                .setOption("title", Synergy.translate("<lang>you-are-muted</lang>", Translation.getDefaultLanguage()).getStripped())
+                .setOption("color", "#fab1a0").send();
+            return;
+        }
         
-        return format;
+        var player = Synergy.getSpigot().getOfflinePlayerByUniqueId(uuid);
+        var format = formatMessage(chat.getDiscord(), new Message(event.getOption("message").getAsString()), player);
+        
+        Bukkit.getOnlinePlayers().stream()
+            .filter(p -> chat.getPermission() == null || p.hasPermission(chat.getPermission()))
+            .forEach(p -> {
+                var b = Synergy.getBread(p.getUniqueId());
+                p.sendMessage(Synergy.translate(format, b.getLanguage())
+                    .setPlaceholders(b).setGendered(b.getGender()).getColoredComponent(b.getTheme()));
+            });
     }
-	
-    private void logMessage(Chat chat, Message message, Player player) {
-    	Synergy.getLogger().discord("```["+Synergy.getServerName()+"] [" + chat.getTag() + "] " + player.getName() + ": " + message.getMessage() + "```");
+
+    @EventHandler
+    public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
+        if (!Synergy.getCooldown(event.getPlayer().getUniqueId()).hasCooldown("command") &&
+            Arrays.asList("/reg", "/register", "/l", "/login", "/unregister").stream()
+                .noneMatch(event.getMessage()::startsWith)) {
+            Synergy.getLogger().discord("```[" + Synergy.getServerName() + "] [cmd] " + 
+                event.getPlayer().getName() + ": " + event.getMessage() + "```");
+        }
     }
-    
-	private void sendEmbedMessage(String channelId, String messageKey) {
-	    Synergy.createSynergyEvent("discord-embed")
-	        .setOption("channel", channelId)
-	        .setOption("title", Synergy.translate(messageKey, Translation.getDefaultLanguage()).getStripped())
-	        .setOption("color", "#fab1a0")
-	        .send();
-	}
-    
-    private void sendDiscordMessage(Chat chat, Message message, Player player) {
-		if (chat.getDiscord().getChannel().length() != 19) {
-			return;
-		}
-		if (chat.getPermission() != null && !player.hasPermission(chat.getPermission())) {
-			return;
-		}
-        Synergy.createSynergyEvent("discord-embed").setPlayerUniqueId(player.getUniqueId())
-		       .setOption("channel", chat.getDiscord().getChannel())
-		       .setOption("author", player.getName())
-		       .setOption("title", message.getMessage())
-		       .setOption("color", chat.getColor().substring(1, chat.getColor().length()-1)).send();
-    }
-	
-	private static Set<Chat> getChats() {
-	    return Synergy.getConfig().getConfigurationSection("chat-manager.chats").entrySet().stream()
-	        .map(entry -> new Chat(entry.getKey()))
-	        .collect(Collectors.toSet());
-	}
-    
-    private static String getChatNameBySymbol(String message) {
-        for (Chat chat : getChats()) {
-        	if (chat.getSymbol() != null && !chat.getSymbol().isEmpty() && message.startsWith(chat.getSymbol())) {
-                return chat.getName();
+
+    private String formatMessage(MessageSource source, Message msg, Object player) {
+        var format = source.getFormat()
+            .replace("%CHAT%", source.getTag())
+            .replace("%COLOR%", source.getColor())
+            .replace("%DISPLAYNAME%", player instanceof String s ? s : ((OfflinePlayer) player).getName())
+            .replace("%MESSAGE%", msg.getMessage());
+        
+        if (player instanceof OfflinePlayer op) {
+            var bread = Synergy.getBread(op.getUniqueId());
+            if (Synergy.isDependencyAvailable("PlaceholderAPI")) {
+                format = PlaceholderAPI.setPlaceholders(op, Utils.replacePlaceholderOutputs(op, format));
             }
+            if (!bread.hasPermission("synergy.colors")) {
+                format = format.replace(msg.getMessage(), Utils.stripColorTags(msg.getMessage()));
+            }
+        } else if (Synergy.isDependencyAvailable("PlaceholderAPI")) {
+            format = PlaceholderAPI.setPlaceholders(null, Utils.replacePlaceholderOutputs(null, format));
         }
-        return new Chat("local").isEnabled() ? "local" : "global";
+        
+        return format;
+    }
+    
+    private static Set<Chat> getChats() {
+        return Synergy.getConfig().getConfigurationSection("chat-manager.chats").keySet().stream()
+            .map(Chat::new).collect(Collectors.toSet());
+    }
+    
+    private static String getChatBySymbol(String msg) {
+        return getChats().stream()
+            .filter(c -> c.getSymbol() != null && !c.getSymbol().isEmpty() && msg.startsWith(c.getSymbol()))
+            .map(Chat::getName).findFirst()
+            .orElse(new Chat("local").isEnabled() ? "local" : "global");
     }
 
-	static class Message  {
-		private String message;
+    static class Message {
+        private final String raw;
+        private final String processed;
 
-		public Message(String message) {
-			message = Utils.translateSmiles(message);
-			message = Utils.censorBlockedWords(message);
-			message = Utils.removeRepetitiveCharacters(message);
-			message = Translation.removeAllTags(message);
-			this.message = message;
-		}
-		
-		public void setMessage(String message) {
-			this.message = message;
-		}
-
-		public String getMessage() {
-			return Message.removeChatSymbol(message);
-		}
-		
-		public Boolean hasChatSymbol() {
-			for (Chat chat : getChats()) {
-	        	if (chat.getSymbol() != null && message.startsWith(chat.getSymbol())) {
-	                return true;
-	            }
-			}
-	        return false;
-		}
-		
-	    private static String removeChatSymbol(String message) {
-	    	Chat chat = new Chat(getChatNameBySymbol(message));
-	        if (message.length() > 0 && chat.getSymbol() != null && chat.getSymbol().contains(String.valueOf(message.charAt(0)))) {
-	        	message = message.substring(1);
-	        }
-	        return message;
-	    }
-	}
+        public Message(String msg) {
+            this.raw = msg;
+            this.processed = Utils.convertMinecraftColorsToHex(Utils.removeRepetitiveCharacters(Utils.censorBlockedWords(Utils.translateSmiles(msg))));
+        }
+        
+        public String getRaw() { return raw; }
+        
+        public String getMessage() { 
+            var chat = new Chat(getChatBySymbol(processed));
+            return processed.length() > 0 && chat.getSymbol() != null && 
+                chat.getSymbol().contains(String.valueOf(processed.charAt(0))) 
+                ? processed.substring(1) : processed;
+        }
+        
+        public boolean hasChatSymbol() {
+            return getChats().stream().anyMatch(c -> c.getSymbol() != null && raw.startsWith(c.getSymbol()));
+        }
+    }
 }

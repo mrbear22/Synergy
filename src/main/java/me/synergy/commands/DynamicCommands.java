@@ -9,13 +9,15 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
-
 import me.synergy.brains.Spigot;
 import me.synergy.brains.Synergy;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class DynamicCommands implements CommandExecutor {
     private static Set<String> commands;
     private static CommandMap commandMap;
+    private static final LegacyComponentSerializer LEGACY_SERIALIZER = LegacyComponentSerializer.legacyAmpersand();
     
     public void initialize() {
         try {
@@ -40,7 +42,7 @@ public class DynamicCommands implements CommandExecutor {
             c.setAccessible(true);
             PluginCommand cmd = c.newInstance(name, Spigot.getInstance());
             cmd.setExecutor(this);
-            commandMap.register(Spigot.getInstance().getDescription().getName(), cmd);
+            commandMap.register(Spigot.getInstance().getPluginMeta().getName(), cmd);
         } catch (Exception e) {
             Synergy.getLogger().warning("Failed to register /" + name);
         }
@@ -66,12 +68,14 @@ public class DynamicCommands implements CommandExecutor {
         
         if (messageObj instanceof java.util.List) {
             for (String line : (java.util.List<String>) messageObj) {
-                sender.sendMessage(line.replace("&", "§"));
+                Component component = LEGACY_SERIALIZER.deserialize(line);
+                sender.sendMessage(component);
             }
         } else {
             for (String line : messageObj.toString().split("\\n")) {
                 if (!line.trim().isEmpty()) {
-                    sender.sendMessage(line.replace("&", "§"));
+                    Component component = LEGACY_SERIALIZER.deserialize(line);
+                    sender.sendMessage(component);
                 }
             }
         }

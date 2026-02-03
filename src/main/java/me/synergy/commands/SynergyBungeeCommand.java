@@ -7,13 +7,13 @@ import me.synergy.modules.LocalesManager;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Command;
 
-public class SynergyProxyCommand extends Command {
+public class SynergyBungeeCommand extends Command {
 
     public void initialize() {
     	Bungee.getInstance().getProxy().getPluginManager().registerCommand(Bungee.getInstance(), this);
     }
 
-    public SynergyProxyCommand() {
+    public SynergyBungeeCommand() {
         super("bsynergy");
     }
 

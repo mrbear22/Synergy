@@ -5,7 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import me.synergy.brains.Synergy;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;

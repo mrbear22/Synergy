@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
 import me.synergy.objects.BreadMaker;
-import me.synergy.utils.Translation;
+import me.synergy.text.Translation;
 import me.synergy.utils.Utils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
@@ -92,7 +92,14 @@ public class Discord {
             });
         commands.addCommands(new CommandData[] {
                 Commands.slash("link", Synergy.translate("<lang>link-minecraft-title</lang>", Translation.getDefaultLanguage()).getStripped())
-                    .setGuildOnly(true)
+                    .addOptions(new OptionData[] {
+                        (new OptionData(OptionType.STRING, "nickname", Synergy.translate("<lang>link-minecraft-your-username</lang>", Translation.getDefaultLanguage()).getStripped()))
+                    })
+                    .setGuildOnly(false)
+            });
+        commands.addCommands(new CommandData[] {
+                Commands.slash("unlink", Synergy.translate("<lang>unlink-minecraft-title</lang>", Translation.getDefaultLanguage()).getStripped())
+                    .setGuildOnly(false)
             });
         commands.addCommands(new CommandData[] {
                 Commands.slash("embed", Synergy.translate("<lang>discord-embed-new</lang>", Translation.getDefaultLanguage()).getStripped())
@@ -168,7 +175,9 @@ public class Discord {
 
         if (!activities.isEmpty()) {
             String status = activities.get(0);
-            status = PlaceholdersAPI.processPlaceholders(null, status);
+            if (Synergy.isRunningSpigot()) {
+            	status = PlaceholdersAPI.processPlaceholders(null, status);
+            }
             status = status.replace("%online%", String.valueOf(Utils.getPlayers().size()));
             builder.setActivity(Activity.customStatus(status));
         }
