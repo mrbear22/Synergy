@@ -80,7 +80,8 @@ public class SkinServer {
         }
     }
 
-    static abstract class AbstractHandler implements HttpHandler {
+    @SuppressWarnings("restriction")
+	static abstract class AbstractHandler implements HttpHandler {
         protected abstract Format getFormat();
 
         @Override

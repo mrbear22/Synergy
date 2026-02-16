@@ -16,6 +16,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Locales;
 import me.synergy.objects.Chat;
 import me.synergy.utils.BookMessage;
 import me.synergy.utils.Utils;
@@ -31,6 +32,60 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
             Synergy.getSpigot().getCommand("chat").setTabCompleter(this);
             Synergy.getSpigot().getCommand("chatfilter").setExecutor(this);
             Synergy.getSpigot().getCommand("chatfilter").setTabCompleter(this);
+            
+            Locales.addDefault("command_description_colors", "en", "View available colors");
+            Locales.addDefault("command_usage_colors", "en", new String[] {
+    		    "<danger>Usage: /colors",
+    		    "",
+    		    "<secondary>This command displays:",
+    		    "<primary>• <secondary>Available custom color codes",
+    		    "<primary>• <secondary>Color previews with examples",
+    		    "<primary>• <secondary>How to use colors in chat",
+    		    "<primary>• <secondary>Your color permissions"
+    		});
+
+            Locales.addDefault("command_description_emojis", "en", "View available emojis");
+            Locales.addDefault("command_usage_emojis", "en", new String[] {
+    		    "<danger>Usage: /emojis",
+    		    "",
+    		    "<secondary>This command shows:",
+    		    "<primary>• <secondary>Complete emoji list",
+    		    "<primary>• <secondary>Emoji codes and previews",
+    		    "<primary>• <secondary>How to use emojis in chat",
+    		    "<primary>• <secondary>Your emoji permissions"
+    		});
+
+            Locales.addDefault("command_description_chatfilter", "en", "Chat filter management");
+            Locales.addDefault("command_usage_chatfilter", "en", new String[] {
+    		    "<danger>Usage: /chatfilter <action> <word>",
+    		    "",
+    		    "<secondary>Actions:",
+    		    "<primary>  block  <secondary>- Add word to blocked list",
+    		    "<primary>  remove <secondary>- Remove word from filter",
+    		    "<primary>  ignore <secondary>- Add to personal ignore list",
+    		    "",
+    		    "<secondary>Examples:",
+    		    "<primary>  /chatfilter block spam",
+    		    "<primary>  /chatfilter remove test",
+    		    "<primary>  /chatfilter ignore annoy"
+    		});
+            
+            Locales.addDefault("command_description_chat", "en", "Chat management");
+            Locales.addDefault("command_usage_chat", "en", new String[] {
+    		    "<danger>Usage: /chat <chat_name> [player]",
+    		    "",
+    		    "<secondary>Arguments:",
+    		    "<primary>  chat_name <secondary>- Chat channel to join",
+    		    "<primary>  player    <secondary>- (Optional) Target player",
+    		    "",
+    		    "<secondary>Examples:",
+    		    "<primary>  /chat global <secondary>- Join global chat",
+    		    "<primary>  /chat local  <secondary>- Switch to local chat",
+    		    "<primary>  /chat staff  <secondary>- Access staff chat"
+    		});
+            
+            Locales.addDefault("selected-chat", "en", "<success>Chat selected: <primary>%ARGUMENT%<sound:'entity.ocelot.death'>");
+    		
             Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
         }
     }

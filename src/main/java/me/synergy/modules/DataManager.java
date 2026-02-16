@@ -123,7 +123,7 @@ public class DataManager implements SynergyListener {
             new Cache(uuid).add(option, value, 600);
         }
         
-        SynergyEvent event = Synergy.createSynergyEvent("update-bread-cache").setPlayerUniqueId(uuid).setOption("option", option);
+        SynergyEvent event = Synergy.event("update-bread-cache").setPlayerUniqueId(uuid).setOption("option", option);
         if (value != null) {
         	event.setOption("value", value.toString());
         }

@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Locales;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -17,7 +18,23 @@ public class VoteCommand extends ListenerAdapter {
 	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
 	            return;
 	        }
+	        
+	        Locales.addDefault("command_description_vote", "en", "Vote for the server");
+	        Locales.addDefault("command_usage_vote", "en", new String[] {
+			    "<danger>Usage: /vote",
+			    "",
+			    "<secondary>Vote for our server to receive:",
+			    "<primary>• <secondary>Experience points and currency",
+			    "<primary>• <secondary>Special voting rewards",
+			    "<primary>• <secondary>Help the server grow"
+			});
 
+	        Locales.addDefault("votifier-message", "en", "<success>Vote from %service% counted. Thank you!<sound:'entity.player.levelup'>");
+	        Locales.addDefault("votifier-announcement", "en", "<success>%player% successfully voted on %service%!");
+	        Locales.addDefault("vote-for-server", "en", "Vote for the server");
+	        Locales.addDefault("vote-monitorings", "en", "<secondary>Earn by voting for the server:");
+	        Locales.addDefault("player-voted", "en", "<primary>%ARGUMENT% <secondary>voted for the server!");
+	        
 	        Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
 	    } catch (Exception exception) {
 	        Synergy.getLogger().error(String.valueOf(getClass().getSimpleName()) + " module failed to initialize: " + exception.getMessage());

@@ -35,13 +35,20 @@ public class Color {
 		return string;
 	}
     
-    public static String componentToMiniMessage(Component component) {
-        Component compacted = component.compact();
-		String string = MiniMessage.miniMessage().serialize(compacted);
-		string = string.replaceAll("\\\\<", "<").replaceAll("\\\\>", ">");
-        return string;
-    }
-    
+	public static String componentToMiniMessage(Component component) {
+	    Component compacted = component.compact();
+	    String serialized = MiniMessage.miniMessage().serialize(compacted);
+	    return (serialized.contains("<locale:") 
+	            ? MiniMessage.miniMessage().serialize(removeInteractive(compacted)) 
+	            : serialized)
+	            .replaceAll("\\\\<", "<").replaceAll("\\\\>", ">");
+	}
+
+	private static Component removeInteractive(Component c) {
+	    return c.clickEvent(null).hoverEvent(null).insertion(null)
+	            .children(c.children().stream().map(Color::removeInteractive).toList());
+	}
+
     public static String processThemeTags(String string, String theme) {
         for (String t : new String[]{theme, "default"}) {
             var section = Synergy.getConfig().getConfigurationSection("localizations.color-themes." + t);

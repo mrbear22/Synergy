@@ -22,6 +22,7 @@ public class Locale {
 	Gender gender;
 	private boolean cancelled = false;
 	private int delay = 0;
+	private BreadMaker bread;
 
 	public Locale(String string, String language) {
 		this.language = language;
@@ -57,7 +58,7 @@ public class Locale {
 	}
 
 	public Locale setExecuteInteractive(BreadMaker bread) {
-		string = Interactive.process(string, bread);
+		this.bread = bread;
 		return this;
 	}
 
@@ -71,26 +72,26 @@ public class Locale {
 
 	public Component getColoredComponent(String theme) {
 		string = Translation.translate(string, language);
+		string = bread != null ? Interactive.process(string, bread) : string;
 		string = Gendered.process(string, gender);
 		string = Color.process(string, theme);
-		string = Interactive.removeTags(string);
 		return MiniMessage.miniMessage().deserialize(string);
 	}
 
 	public String getColoredLegacy(String theme) {
 		string = Translation.translate(string, language);
+		string = bread != null ? Interactive.process(string, bread) : string;
 		string = Gendered.process(string, gender);
 		string = Color.process(string, theme);
-		string = Interactive.removeTags(string);
 		Component component = MiniMessage.miniMessage().deserialize(string);
 		return LegacyComponentSerializer.legacySection().serialize(component).replace('&', '§');
 	}
 
 	public String getStripped() {
 		string = Translation.translate(string, language);
+		string = bread != null ? Interactive.process(string, bread) : string;
 		string = Gendered.process(string, gender);
 		string = Color.removeColor(string);
-		string = Interactive.removeTags(string);
 		string = Translation.removeAllTags(string);
 		return string;
 	}

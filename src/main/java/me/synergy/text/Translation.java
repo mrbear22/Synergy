@@ -6,7 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
-import me.synergy.modules.LocalesManager;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Gendered.Gender;
 
@@ -102,13 +102,13 @@ public class Translation {
     }
     
     private static String getTranslation(String key, String language, String fallback) {
-        Map<String, String> locales = LocalesManager.getLocales().getOrDefault(language, new HashMap<>());
+        Map<String, String> locales = Locales.getLocales().getOrDefault(language, new HashMap<>());
         
         if (locales.containsKey(key)) {
             return locales.get(key);
         }
         
-        Map<String, String> defaultLocales = LocalesManager.getLocales()
+        Map<String, String> defaultLocales = Locales.getLocales()
             .getOrDefault(getDefaultLanguage(), new HashMap<>());
         if (defaultLocales.containsKey(key)) {
             return defaultLocales.get(key);

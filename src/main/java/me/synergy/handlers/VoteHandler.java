@@ -20,7 +20,7 @@ public class VoteHandler {
 
         BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
         
-        Synergy.createSynergyEvent("votifier")
+        Synergy.event("votifier")
         	.setPlayerUniqueId(bread.getUniqueId())
 	        .setOption("service", service)
 	        .setOption("username", username)
@@ -28,7 +28,7 @@ public class VoteHandler {
 
         String message = Synergy.getConfig().getString("votifier.announcement").replace("%PLAYER%", username).replace("%SERVICE%", service);
         
-        Synergy.createSynergyEvent("discord-embed")
+        Synergy.event("discord-embed")
             .setPlayerUniqueId(bread.getUniqueId())
             .setOption("chat", "global")
             .setOption("color", "#55efc4")

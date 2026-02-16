@@ -11,7 +11,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.brains.Velocity;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
-import me.synergy.modules.LocalesManager;
+import me.synergy.modules.Locales;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
@@ -28,7 +28,7 @@ public class SynergyVelocityCommand {
                     try {
                         new Config().initialize();
                         new DataManager().initialize();
-                        new LocalesManager().initialize();
+                        new Locales().initialize();
                         
                         source.sendMessage(Component.text("Synergy configuration reloaded!", NamedTextColor.GREEN));
                         Synergy.getLogger().info("Configuration reloaded by " + source);
@@ -55,6 +55,8 @@ public class SynergyVelocityCommand {
             .build();
         
         Velocity.getProxy().getCommandManager().register(meta, command);
+        
+        Locales.addDefault("reloaded", "en", "<success>Configuration and translations reloaded!");
         
         Synergy.getLogger().info("SynergyVelocityCommand has been registered!");
     }

@@ -4,7 +4,7 @@
   <groupId>archi.quest</groupId>
   <artifactId>synergy</artifactId>
   <name>Synergy</name>
-  <version>1.4.9</version>
+  <version>1.5.0</version>
   <description>Basic tools and server messaging plugin</description>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
@@ -38,6 +38,16 @@
         </executions>
         <configuration>
           <minimizeJar>false</minimizeJar>
+          <relocations>
+            <relocation>
+              <pattern>com.google.protobuf</pattern>
+              <shadedPattern>me.synergy.shaded.protobuf</shadedPattern>
+            </relocation>
+            <relocation>
+              <pattern>io.github.jwdeveloper.tiktok</pattern>
+              <shadedPattern>me.synergy.shaded.tiktok</shadedPattern>
+            </relocation>
+          </relocations>
           <filters>
             <filter>
               <artifact>*:*</artifact>

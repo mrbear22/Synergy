@@ -15,6 +15,7 @@ import java.util.zip.GZIPInputStream;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+@SuppressWarnings("restriction")
 public class LogsHandler implements HttpHandler {
     
     private static final String ADMIN_USERNAME = "admin";
@@ -458,14 +459,12 @@ public class LogsHandler implements HttpHandler {
     private static class LogEntry {
         String content;
         String fileName;
-        long timestamp;
         long parsedTimestamp;
         LocalDate parsedDate;
         
         LogEntry(String content, String fileName, long timestamp) {
             this.content = content;
             this.fileName = fileName;
-            this.timestamp = timestamp;
             this.parsedTimestamp = parseTimestampFromLog(content, timestamp);
             this.parsedDate = parseDateFromLog(content, timestamp);
         }

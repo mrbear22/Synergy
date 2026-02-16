@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Locales;
 import me.synergy.objects.LocaleBuilder;
 import me.synergy.utils.BookMessage;
 
@@ -18,12 +19,20 @@ public class VoteCommand implements CommandExecutor {
     public void initialize() {
         if (!Synergy.getConfig().getBoolean("votifier.enabled")) return;
         Synergy.getSpigot().getCommand("vote").setExecutor(this);
+		
+        Locales.addDefault("vote-monitorings-format", "en", "<primary>▶ <click:open_url:%URL%><hover:show_text:Click to vote><secondary><u>%MONITORING%</u></click>");
+        Locales.addDefault("monitorings-menu", "en", new String[] {
+			"<secondary>Vote for our server on these sites:",
+			"",
+			"%MONITORINGS%",
+			"<primary>Thank you for supporting our server!"
+		});
     }
     
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(LocaleBuilder.of("command-not-player").fallback("<red>This command can only be used by players.").build());
+            sender.sendMessage(LocaleBuilder.of("command-not-player").build());
             return false;
         }
         
@@ -44,7 +53,6 @@ public class VoteCommand implements CommandExecutor {
                 list.append(LocaleBuilder.of("vote-monitorings-format")
                     .placeholder("url", m)
                     .placeholder("monitoring", shortenDomain)
-                    .fallback("<click:open_url:'%url%'><green>%monitoring%</click>")
                     .build());
                 list.append("\n");
             } catch (URISyntaxException e) {
@@ -54,7 +62,6 @@ public class VoteCommand implements CommandExecutor {
         
         String content = LocaleBuilder.of("monitorings-menu")
             .placeholder("monitorings", list.toString())
-            .fallback("<yellow>Available voting sites:\n%monitorings%")
             .build();
         
         BookMessage.sendFakeBook(player, "Monitorings", content);

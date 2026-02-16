@@ -14,7 +14,9 @@ import com.velocitypowered.api.proxy.Player;
 import me.synergy.brains.Synergy;
 import me.synergy.brains.Velocity;
 import me.synergy.discord.Discord;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
+import me.synergy.objects.LocaleBuilder;
 import me.synergy.text.Translation;
 import me.synergy.twitch.Twitch;
 import me.synergy.web.MonobankHandler;
@@ -26,6 +28,9 @@ public class PlayerVelocityHandler {
 
     public void initialize() {
         Velocity.getProxy().getEventManager().register(Velocity.getInstance(), this);
+        Locales.addDefault("player-join-message", "en", "<secondary>[<success>+<secondary>] <primary>%player% <secondary>joined the server");
+        Locales.addDefault("player-quit-message", "en", "<secondary>[<danger>-<secondary>] <primary>%player% <secondary>left the server");
+        Locales.addDefault("player-first-time-join-message", "en", "<primary>%player% <secondary>joined for the first time!");
         Synergy.getLogger().info(getClass().getSimpleName() + " module has been initialized!");
     }
 
@@ -116,11 +121,11 @@ public class PlayerVelocityHandler {
             Velocity.getProxy().getScheduler().buildTask(Velocity.getInstance(), () -> {
                 if (Velocity.getProxy().getPlayer(player.getUniqueId()).isPresent()) {
                     kickedPlayers.remove(player.getUniqueId());
-                    Synergy.createSynergyEvent("discord-embed")
+                    Synergy.event("discord-embed")
                         .setPlayerUniqueId(player.getUniqueId())
                         .setOption("chat", "global")
                         .setOption("color", "#81ecec")
-                        .setOption("author", Synergy.translate("<lang>player-join-message<arg>" + player.getUsername() + "</arg></lang>", Translation.getDefaultLanguage())
+                        .setOption("author", Synergy.translate(LocaleBuilder.of("player-join-message").placeholder("player", player.getUsername()).build(), Translation.getDefaultLanguage())
                             .setGendered(bread.getGender())
                             .getStripped())
                         .fireEvent();
@@ -160,11 +165,11 @@ public class PlayerVelocityHandler {
         }
         
         if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages")) {
-            Synergy.createSynergyEvent("discord-embed")
+            Synergy.event("discord-embed")
                 .setPlayerUniqueId(player.getUniqueId())
                 .setOption("chat", "global")
                 .setOption("color", "#fab1a0")
-                .setOption("author", Synergy.translate("<lang>player-quit-message<arg>" + player.getUsername() + "</arg></lang>", Translation.getDefaultLanguage())
+                .setOption("author", Synergy.translate(LocaleBuilder.of("player-quit-message").placeholder("player", player.getUsername()).build(), Translation.getDefaultLanguage())
                     .setGendered(bread.getGender())
                     .getStripped())
                 .fireEvent();

@@ -9,6 +9,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.entities.Guild;
@@ -37,6 +38,10 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
 	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
 	            return;
 	        }
+	        
+	        Locales.addDefault("player-doesnt-exist", "en", "<danger>Player doesn't exist!");
+	        Locales.addDefault("confirmation-nothing-to-confirm", "en", "<danger>Nothing to confirm");
+	        Locales.addDefault("confirm-action", "en", "Confirm");
 	        
 	        Synergy.getEventManager().registerEvents(this);
 
@@ -79,7 +84,7 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
                     .filter(member -> !member.getUser().isBot())
                     .forEach(member -> Discord.getUsersTagsCache().add(member.getUser().getName()))
             );
-        	Synergy.createSynergyEvent("retrieve-users-tags").setOption("tags", String.join(",", Discord.getUsersTagsCache())).send();
+        	Synergy.event("retrieve-users-tags").setOption("tags", String.join(",", Discord.getUsersTagsCache())).send();
     	}
     }
 	

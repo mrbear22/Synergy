@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import me.synergy.brains.Bungee;
 import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
 import me.synergy.twitch.Twitch;
@@ -28,6 +29,9 @@ public class PlayerBungeeHandler implements Listener {
 
     public void initialize() {
         Bungee.getInstance().getProxy().getPluginManager().registerListener(Bungee.getInstance(), this);
+        Locales.addDefault("player-join-message", "en", "<secondary>[<success>+<secondary>] <primary>%player% <secondary>joined the server");
+        Locales.addDefault("player-quit-message", "en", "<secondary>[<danger>-<secondary>] <primary>%player% <secondary>left the server");
+        Locales.addDefault("player-first-time-join-message", "en", "<primary>%player% <secondary>joined for the first time!");
         Synergy.getLogger().info(getClass().getSimpleName() + " module has been initialized!");
     }
 
@@ -123,7 +127,7 @@ public class PlayerBungeeHandler implements Listener {
                 () -> {
                     if (Bungee.getInstance().getProxy().getPlayer(player.getUniqueId()) != null) {
                     	kickedPlayers.remove(event.getPlayer().getUniqueId());
-                        Synergy.createSynergyEvent("discord-embed")
+                        Synergy.event("discord-embed")
                             .setPlayerUniqueId(player.getUniqueId())
                             .setOption("chat", "global")
                             .setOption("color", "#81ecec")
@@ -169,7 +173,7 @@ public class PlayerBungeeHandler implements Listener {
         }
         
         if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages")) {
-	        Synergy.createSynergyEvent("discord-embed")
+	        Synergy.event("discord-embed")
 	            .setPlayerUniqueId(player.getUniqueId())
 	            .setOption("chat", "global")
 	            .setOption("color", "#fab1a0")

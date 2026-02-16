@@ -15,6 +15,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 
 import com.sun.net.httpserver.HttpHandler;
@@ -32,6 +33,31 @@ public class MonobankHandler implements SynergyListener {
         try {
             if (!Synergy.getConfig().getBoolean("monobank.enabled")) return;
             Synergy.getEventManager().registerEvents(this);
+            
+            Locales.addDefault("command_description_monobank", "en", "Monobank integration");
+            Locales.addDefault("command_usage_monobank", "en", new String[] {
+    		    "<danger>Usage: /monobank <action> [token]",
+    		    "",
+    		    "<secondary>Actions:",
+    		    "<primary>  link   <secondary>- Link account to Monobank",
+    		    "<primary>  unlink <secondary>- Remove Monobank integration",
+    		    "",
+    		    "<secondary>Arguments:", 
+    		    "<primary>  token <secondary>- Your Monobank API token",
+    		    "",
+    		    "<secondary>Examples:",
+    		    "<primary>  /monobank link your_token_here",
+    		    "<primary>  /monobank unlink",
+    		    "",
+    		    "<danger>Keep your API token secure!"
+    		});
+            
+            Locales.addDefault("monobank_link_usage", "en", "<danger>Usage: /monobank link <token>");
+            Locales.addDefault("monobank_successfully_linked", "en", "<success>Monobank account linked!");
+            Locales.addDefault("monobank_already_linked", "en", "<danger>Monobank account already linked!");
+            Locales.addDefault("monobank_successfully_unlinked", "en", "<success>Monobank account unlinked!");
+            Locales.addDefault("monobank_not_linked", "en", "<danger>No linked Monobank account!");
+            
             Synergy.getLogger().info("Monobank module initialized");
         } catch (Exception e) {
             Synergy.getLogger().error("Monobank module failed: " + e.getMessage());
@@ -182,7 +208,8 @@ public class MonobankHandler implements SynergyListener {
         }).start();
     }
     
-    public static class WebhookHandler implements HttpHandler {
+    @SuppressWarnings("restriction")
+	public static class WebhookHandler implements HttpHandler {
         
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -270,7 +297,7 @@ public class MonobankHandler implements SynergyListener {
     private static void handleDonation(String playerName, UUID playerUuid, double amount, String description, String comment, String counterName) {
         Synergy.getLogger().info("[Monobank] Processing donation: " + playerName + " - " + amount + " UAH from " + counterName);
         
-        Synergy.createSynergyEvent("monobank-donation")
+        Synergy.event("monobank-donation")
             .setPlayerUniqueId(playerUuid)
             .setOption("player-name", playerName)
             .setOption("amount", String.valueOf(amount)) // Передаємо як String

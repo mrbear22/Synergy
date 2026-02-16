@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -13,6 +14,7 @@ import org.bukkit.OfflinePlayer;
 
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.synergy.brains.Synergy;
+import me.synergy.brains.Velocity;
 import net.md_5.bungee.api.ChatColor;
 
 public class Utils {
@@ -279,16 +281,39 @@ public class Utils {
         m.appendTail(result);
         return result.toString();
     }
-
-    public static List<String> getPlayers() {
-    	List<String> players = new ArrayList<String>();
-    	if (Synergy.isRunningSpigot()) {
-    		Bukkit.getOnlinePlayers().stream().forEach(p -> players.add(p.getName()));
-    	}
-    	if (Synergy.isRunningBungee()) {
-    		Synergy.getBungee().getProxy().getServers().entrySet().stream().forEach(s -> s.getValue().getPlayers().forEach(p -> players.add(p.getName())));
-    	}
-    	return players;
+    
+    public static List<String> getOnlinePlayers() {
+        List<String> players = new ArrayList<>();
+        if (Synergy.isRunningSpigot()) {
+            Bukkit.getOnlinePlayers().forEach(p -> players.add(p.getName()));
+        }
+        if (Synergy.isRunningBungee()) {
+            Synergy.getBungee().getProxy().getServers().values()
+                .forEach(s -> s.getPlayers().forEach(p -> players.add(p.getName())));
+        }
+        if (Synergy.isRunningVelocity()) {
+            Synergy.getVelocity();
+			Velocity.getProxy().getAllServers()
+                .forEach(s -> s.getPlayersConnected().forEach(p -> players.add(p.getUsername())));
+        }
+        return players;
+    }
+    
+    public static List<UUID> getOnlinePlayerUUIDs() {
+        List<UUID> players = new ArrayList<>();
+        if (Synergy.isRunningSpigot()) {
+            Bukkit.getOnlinePlayers().forEach(p -> players.add(p.getUniqueId()));
+        }
+        if (Synergy.isRunningBungee()) {
+            Synergy.getBungee().getProxy().getServers().values()
+                .forEach(s -> s.getPlayers().forEach(p -> players.add(p.getUniqueId())));
+        }
+        if (Synergy.isRunningVelocity()) {
+            Synergy.getVelocity();
+            Velocity.getProxy().getAllServers()
+                .forEach(s -> s.getPlayersConnected().forEach(p -> players.add(p.getUniqueId())));
+        }
+        return players;
     }
     
     public static String replacePlaceholderOutputs(OfflinePlayer player, String format) {

@@ -8,6 +8,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 
 public class Twitch implements SynergyListener {
@@ -16,6 +17,41 @@ public class Twitch implements SynergyListener {
         try {
             if (!Synergy.getConfig().getBoolean("twitch.enabled")) return;
             Synergy.getEventManager().registerEvents(this);
+            
+            Locales.addDefault("command_description_twitch", "en", "Twitch integration");
+            Locales.addDefault("command_usage_twitch", "en", new String[] {
+    		    "<danger>Usage: /twitch <action> [arguments]",
+    		    "",
+    		    "<secondary>Actions:",
+    		    "<primary>  link <channel> <token> <secondary>- Link your Twitch account",
+    		    "<primary>  unlink                 <secondary>- Unlink your Twitch account", 
+    		    "<primary>  createreward <reward>  <secondary>- Create channel point reward",
+    		    "<primary>  removereward <reward>  <secondary>- Remove channel point reward",
+    		    "<primary>  testreward <reward> <input> <secondary>- Test reward redemption",
+    		    "",
+    		    "<secondary>Arguments:",
+    		    "<primary>  channel <secondary>- Your Twitch channel name",
+    		    "<primary>  token   <secondary>- Your Twitch access token",
+    		    "<primary>  reward  <secondary>- Reward name from config",
+    		    "<primary>  input   <secondary>- Test input for reward",
+    		    "",
+    		    "<secondary>Examples:",
+    		    "<primary>  /twitch link streamer123 your_token",
+    		    "<primary>  /twitch createreward subscribe",
+    		    "<primary>  /twitch testreward follow test_input",
+    		    "",
+    		    "<secondary>Obtain the access token here: <click:open_url:'https://twitchtokengenerator.com/quick/f7tCmJvs3S'><hover:show_text:Click to open><secondary><u>https://twitchtokengenerator.com/quick/f7tCmJvs3S</u></click>",
+    		    "<danger>Keep your API token secure!"
+    		});
+            
+            Locales.addDefault("twitch-invalid-credentials", "en", "<danger>Invalid Twitch credentials!");
+            Locales.addDefault("twitch-connection-failed", "en", "<danger>Failed to connect to Twitch!");
+            Locales.addDefault("twitch-failed-get-user-id", "en", "<danger>Failed to get user ID for EventSub: ");
+            Locales.addDefault("twitch-eventsub-subscription-created", "en", "<success>EventSub subscription created for rewards on channel: ");
+            Locales.addDefault("twitch-failed-create-eventsub", "en", "<danger>Failed to create EventSub subscription for rewards: ");
+            Locales.addDefault("you-have-no-linked-twitch-accounts", "en", "<danger>No linked Twitch accounts! Link: <secondary><u>/twitch link <channel> <token></u>");
+            Locales.addDefault("link-twitch-already-linked", "en", "<primary>Account already linked to <secondary>%ARGUMENT%<primary>! Unlink: <secondary><u>/twitch unlink</u>");
+            
             Synergy.getLogger().info("Twitch module initialized");
         } catch (Exception e) {
             Synergy.getLogger().error("Twitch module failed: " + e.getMessage());
@@ -115,7 +151,7 @@ public class Twitch implements SynergyListener {
                         	            Synergy.getLogger().warning("[Twitch] ["+channelName+"] Invalid input from " + viewerName + 
                         	                ". Input: '" + viewerInput + "' doesn't match regex: '" + inputRegex + "'");
                         	            
-                        	            Synergy.createSynergyEvent("send-twitch-message")
+                        	            Synergy.event("send-twitch-message")
             								.setPlayerUniqueId(bread.getUniqueId())
             								.setOption("message", "<lang>twitch-input-doesnt-match-regex</lang>")
             								.setOption("twitch-channel", channelName)

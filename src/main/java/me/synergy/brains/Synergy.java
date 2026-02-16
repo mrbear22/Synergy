@@ -10,7 +10,7 @@ import me.synergy.events.SynergyEvent;
 import me.synergy.events.SynergyEventManager;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
-import me.synergy.modules.LocalesManager;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Locale;
 import me.synergy.text.Translation;
@@ -54,7 +54,7 @@ public class Synergy {
         return getConfig().getString("synergy-plugin-messaging.servername");
     }
 
-    public static SynergyEvent createSynergyEvent(String identifier) {
+    public static SynergyEvent event(String identifier) {
         return new SynergyEvent(identifier);
     }
 
@@ -70,8 +70,8 @@ public class Synergy {
         return new Cooldown(uuid);
     }
 
-    public static LocalesManager getLocalesManager() {
-        return new LocalesManager();
+    public static Locales getLocalesManager() {
+        return new Locales();
     }
     public static Config getConfig() {
         return new Config();
@@ -131,12 +131,12 @@ public class Synergy {
 		if (isRunningSpigot()) {
 			getSpigot().dispatchCommand(command);
 		} else {
-			createSynergyEvent("dispatch-command").setOption("command", command).send();
+			event("dispatch-command").setOption("command", command).send();
 		}
 	}
 	
 	public static void broadcastMessage(String string, BreadMaker bread) {
-    	createSynergyEvent("broadcast").setPlayerUniqueId(bread.getUniqueId()).setOption("message", string).send();
+    	event("broadcast").setPlayerUniqueId(bread.getUniqueId()).setOption("message", string).send();
 	}
 
 	public static UUID findUserUUID(String option, String value) {

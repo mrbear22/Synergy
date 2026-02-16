@@ -17,6 +17,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Locales;
 import me.synergy.objects.Chat;
 import me.synergy.text.Translation;
 import me.synergy.utils.Utils;
@@ -42,6 +43,8 @@ public class ChatHandler implements Listener, SynergyListener {
         
         Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
         Synergy.getEventManager().registerEvents(this);
+        
+        Locales.addDefault("cooldown", "en", "<danger>Please wait a few seconds!");
     }
 
     @EventHandler
@@ -114,7 +117,7 @@ public class ChatHandler implements Listener, SynergyListener {
         
         if (chat.getDiscord().getChannel().length() == 19 && 
             (chat.getPermission() == null || p.hasPermission(chat.getPermission()))) {
-            Synergy.createSynergyEvent("discord-embed").setPlayerUniqueId(p.getUniqueId())
+            Synergy.event("discord-embed").setPlayerUniqueId(p.getUniqueId())
                 .setOption("channel", chat.getDiscord().getChannel())
                 .setOption("author", p.getName())
                 .setOption("title", msg.getMessage())
@@ -179,7 +182,7 @@ public class ChatHandler implements Listener, SynergyListener {
         var uuid = Synergy.getDataManager().findUserUUID("discord", event.getOption("discord-user-id").getAsString());
         
         if (uuid == null) {
-            Synergy.createSynergyEvent("discord-embed")
+            Synergy.event("discord-embed")
                 .setOption("channel", channelId)
                 .setOption("title", Synergy.translate("<lang>you-have-to-link-account</lang>", Translation.getDefaultLanguage()).getStripped())
                 .setOption("color", "#fab1a0").send();
@@ -187,7 +190,7 @@ public class ChatHandler implements Listener, SynergyListener {
         }
         
         if (Synergy.getBread(uuid).isMuted()) {
-            Synergy.createSynergyEvent("discord-embed")
+            Synergy.event("discord-embed")
                 .setOption("channel", channelId)
                 .setOption("title", Synergy.translate("<lang>you-are-muted</lang>", Translation.getDefaultLanguage()).getStripped())
                 .setOption("color", "#fab1a0").send();

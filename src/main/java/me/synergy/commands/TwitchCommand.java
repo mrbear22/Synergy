@@ -102,7 +102,7 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
 		    		return false; // Show usage from plugin.yml
     	    	}
 		    	
-	    		Synergy.createSynergyEvent("create-twitch-reward")
+	    		Synergy.event("create-twitch-reward")
 	    			   .setPlayerUniqueId(player.getUniqueId())
 	    			   .setOption("title", Synergy.getConfig().getString("twitch.rewards." + args[1] + ".title"))
 	    			   .setOption("cost", String.valueOf(Synergy.getConfig().getInt("twitch.rewards." + args[1] + ".cost")))
@@ -118,10 +118,10 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
 		    	} 
 		    	
 		    	if (args.length < 2) {
-		    		return false; // Show usage from plugin.yml
+		    		return false;
     	    	}
 		    	
-	    		Synergy.createSynergyEvent("remove-twitch-reward")
+	    		Synergy.event("remove-twitch-reward")
 	    			   .setPlayerUniqueId(player.getUniqueId())
 	    			   .setOption("title", Synergy.getConfig().getString("twitch.rewards." + args[1] + ".title"))
 	    			   .send();
@@ -134,10 +134,10 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
 		    	} 
 		    	
 		    	if (args.length < 3) {
-		    		return false; // Show usage from plugin.yml
+		    		return false;
     	    	}
 		    	
-	            Synergy.createSynergyEvent("twitch-reward-redeemed")
+	            Synergy.event("twitch-reward-redeemed")
 	                .setPlayerUniqueId(bread.getUniqueId())
 	                .setOption("reward-title", Synergy.getConfig().getString("twitch.rewards." + args[1] + ".title"))
 	                .setOption("viewer-name", "test")
@@ -149,11 +149,11 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
 	            
             case "link":
     	    	if (args.length < 3) {
-    	    		return false; // Show usage from plugin.yml
+    	    		return false;
     	    	}
     	    	
     	    	if (!bread.getData("twitch-username").isSet()) {
-    	    		Synergy.createSynergyEvent("make-twitch-link")
+    	    		Synergy.event("make-twitch-link")
     	    			   .setPlayerUniqueId(player.getUniqueId())
     	    			   .setOption("tag", args[1])
     	    			   .setOption("token", args[2])
@@ -165,7 +165,7 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
                 
             case "unlink":
             	if (bread.getData("twitch-username").isSet()) {
-            		Synergy.createSynergyEvent("remove-twitch-link").setPlayerUniqueId(player.getUniqueId()).send();
+            		Synergy.event("remove-twitch-link").setPlayerUniqueId(player.getUniqueId()).send();
             	} else {
             		bread.sendMessage("<lang>you-have-no-linked-twitch-accounts</lang>");
             	}

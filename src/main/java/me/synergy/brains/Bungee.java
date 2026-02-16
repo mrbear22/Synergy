@@ -16,7 +16,7 @@ import me.synergy.handlers.VoteHandler;
 import me.synergy.integrations.PlanAPI;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
-import me.synergy.modules.LocalesManager;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.twitch.Twitch;
 import me.synergy.web.MonobankHandler;
@@ -42,7 +42,7 @@ public class Bungee extends Plugin implements Listener {
     	
 	    new Config().initialize();
 	    new DataManager().initialize();
-        new LocalesManager().initialize();
+        new Locales().initialize();
 	    new Discord().initialize();
 	    new Twitch().initialize();
         new MonobankHandler().initialize();

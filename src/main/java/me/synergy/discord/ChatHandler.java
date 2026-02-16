@@ -10,6 +10,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Locales;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -29,6 +30,10 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
 	        
 	        Synergy.getEventManager().registerEvents(this);
 
+	        Locales.addDefault("message-cant-be-empty", "en", "<danger>Message can't be empty!");
+	        Locales.addDefault("message-recipients", "en", "Players who saw your message: %RECIPIENTS%");
+	        Locales.addDefault("noone-hears-you", "en", "<danger>No one can hear you. Use ! for global chat.");
+	        
 	        Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
 	    } catch (Exception exception) {
 	        Synergy.getLogger().error(String.valueOf(getClass().getSimpleName()) + " module failed to initialize: " + exception.getMessage());
@@ -128,7 +133,7 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
         	return;	
         }
 
-        Synergy.createSynergyEvent("discord-chat")
+        Synergy.event("discord-chat")
 		       .setOption("player", user.getEffectiveName())
 		       .setOption("discord-channel-id", channelId)
 		       .setOption("message", message.getContentDisplay())

@@ -8,7 +8,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
+import me.synergy.objects.LocaleBuilder;
 import me.synergy.text.Gendered;
 
 public class PronounCommand implements CommandExecutor, TabCompleter {
@@ -23,6 +25,25 @@ public class PronounCommand implements CommandExecutor, TabCompleter {
         Synergy.getSpigot().getCommand("iamgirl").setExecutor(this);
         Synergy.getSpigot().getCommand("gender").setExecutor(this);
         Synergy.getSpigot().getCommand("pronoun").setTabCompleter(this);
+        
+        Locales.addDefault("command_description_pronoun", "en", "Set your pronouns");
+        Locales.addDefault("command_usage_pronoun", "en", new String[] {
+		    "<danger>Usage: /pronoun [pronoun_type]",
+		    "",
+		    "<secondary>Arguments:",
+		    "<primary>  pronoun_type <secondary>- (Optional) Preferred pronoun set",
+		    "",
+		    "<secondary>Available pronouns:",
+		    "<primary>  he   <secondary>- He/Him pronouns",
+		    "<primary>  she  <secondary>- She/Her pronouns", 
+		    "<primary>  they <secondary>- They/Them pronouns",
+		    "",
+		    "<secondary>Examples:",
+		    "<primary>  /pronoun she <secondary>- Set She/Her pronouns"
+		});
+        
+        Locales.addDefault("your-gender", "en", "<primary>Your gender: <secondary>%gender%");
+        Locales.addDefault("invalid-pronoun", "en", "<danger>Invalid pronoun! Use available options.");
 	}
     
     @Override
@@ -37,7 +58,7 @@ public class PronounCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("<lang>command-not-player</lang>");
+            sender.sendMessage(LocaleBuilder.of("command-not-player").build());
             return false;
         }
         
@@ -53,7 +74,7 @@ public class PronounCommand implements CommandExecutor, TabCompleter {
                 } else if (args.length == 0) {
                     return false;
                 } else {
-                    sender.sendMessage("<lang>invalid-gender</lang>"); 
+                    sender.sendMessage(LocaleBuilder.of("invalid-gender").build()); 
                     return false;
                 }
                 break;
@@ -64,10 +85,10 @@ public class PronounCommand implements CommandExecutor, TabCompleter {
                 bread.setData("gender", "MALE");
                 break;
             default:
-                sender.sendMessage("<lang>unknown-command</lang>");
+                sender.sendMessage(LocaleBuilder.of("unknown-command").build());
                 return false;
         }
-        sender.sendMessage("<lang>your-gender<arg>" + bread.getGender() + "</arg></lang>");
+        sender.sendMessage(LocaleBuilder.of("your-gender").placeholder("gender", bread.getGender()).build());
         return true;
     }
 }

@@ -3,7 +3,7 @@ package me.synergy.commands;
 import me.synergy.brains.Bungee;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
-import me.synergy.modules.LocalesManager;
+import me.synergy.modules.Locales;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.plugin.Command;
 
@@ -25,7 +25,7 @@ public class SynergyBungeeCommand extends Command {
 				//new Discord().shutdown();
 				new Config().initialize();
 				new DataManager().initialize();
-				new LocalesManager().initialize();
+				new Locales().initialize();
 				//new Discord().initialize();
 			}
 		}

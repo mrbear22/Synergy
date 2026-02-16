@@ -49,7 +49,10 @@ public class Config {
             addDefault("twitch.client-id", "client-id");
 
             addDefault("monobank.enabled", false);
-
+            
+            addDefault("tiktok.enabled", false);
+            addDefault("tiktok.listener", false);
+            
             addDefault("discord.enabled", false);
             addDefault("discord.bot-token", "token");
             addDefault("discord.guild-id", "00000000000000000");
@@ -121,6 +124,43 @@ public class Config {
 	                addDefault("twitch.rewards.wither.input-regex", "[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9]");
 	                addDefault("monobank.rewards.wither.commands", new String[] {"execute at %target_name% run summon minecraft:wither ~ ~2 ~", "execute at %target_name% run title @a[distance=..500] title {\"text\":\"%counter_name% has spawned a Wither\"}"});
             	}
+            	
+                if (getConfigurationSection("tiktok.rewards").isEmpty()) {
+                    addDefault("tiktok.rewards.small.title", "Small Gift");
+                    addDefault("tiktok.rewards.small.description", "Common gifts");
+                    addDefault("tiktok.rewards.small.gifts", new String[] {"Rose", "TikTok", "Heart", "GG"});
+                    addDefault("tiktok.rewards.small.commands", new String[] {
+                        "say &e%donater_name% &7sent &e%gift_name% &7to &e%target_name%!",
+                        "give %target_name% diamond 1"
+                    });
+                    
+                    addDefault("tiktok.rewards.medium.title", "Medium Gift");
+                    addDefault("tiktok.rewards.medium.description", "Valuable gifts");
+                    addDefault("tiktok.rewards.medium.gifts", new String[] {"Finger Heart", "Corgi", "Doughnut"});
+                    addDefault("tiktok.rewards.medium.commands", new String[] {
+                        "say &6%donater_name% &7sent &6%combo_count%x %gift_name% &7to &6%target_name%!",
+                        "give %target_name% diamond 5",
+                        "execute at %target_name% run summon firework_rocket ~ ~2 ~"
+                    });
+                    
+                    addDefault("tiktok.rewards.large.title", "Large Gift");
+                    addDefault("tiktok.rewards.large.description", "Premium gifts");
+                    addDefault("tiktok.rewards.large.gifts", new String[] {"Lion", "Breakthrough Star", "Drama Queen"});
+                    addDefault("tiktok.rewards.large.commands", new String[] {
+                        "broadcast &6&l%donater_name% &e&lsent a HUGE gift &6&l%gift_name% &e&lto &6&l%target_name%!",
+                        "give %target_name% diamond 10",
+                        "execute at %target_name% run summon firework_rocket ~ ~2 ~",
+                        "execute at %target_name% run summon firework_rocket ~1 ~2 ~1",
+                        "execute at %target_name% run summon firework_rocket ~-1 ~2 ~-1"
+                    });
+                    
+                    // Default для всіх інших подарунків
+                    addDefault("tiktok.rewards.default.title", "Gift");
+                    addDefault("tiktok.rewards.default.description", "Any other gift");
+                    addDefault("tiktok.rewards.default.commands", new String[] {
+                        "say &7%donater_name% &7sent &7%gift_name% &7to &7%target_name%!"
+                    });
+                }
 	                
                 addDefault("votifier.rewards", new String[] {"eco give %PLAYER% 1"});
                 addDefault("votifier.monitorings", new String[] {"https://example.com/vote/example"});

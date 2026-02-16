@@ -13,7 +13,7 @@ public class ChatHandler {
         String message = event.getMessage();
         String username = event.getUser().getName();
         
-        Synergy.createSynergyEvent("twitch-chat")
+        Synergy.event("twitch-chat")
                .setOption("player", username)
                .setOption("message", message)
                .setOption("twitch-channel", channelName)

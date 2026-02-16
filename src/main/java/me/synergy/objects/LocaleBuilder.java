@@ -2,15 +2,12 @@ package me.synergy.objects;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import me.synergy.brains.Synergy;
 import net.kyori.adventure.text.Component;
 
 public class LocaleBuilder {
     
     private final String key;
     private final Map<String, String> arguments;
-    private String fallback;
     
     private LocaleBuilder(String key) {
         this.key = key;
@@ -28,11 +25,6 @@ public class LocaleBuilder {
         return this;
     }
     
-    public LocaleBuilder fallback(String fallback) {
-        this.fallback = fallback;
-        return this;
-    }
-    
     public String build() {
         StringBuilder sb = new StringBuilder("<locale:");
         sb.append(key);
@@ -44,23 +36,18 @@ public class LocaleBuilder {
             
             String value = entry.getValue();
             if (needsQuotes(value)) {
-                sb.append("\"").append(escapeQuotes(value)).append("\"");
+                sb.append("\"").append(escapeValue(value)).append("\"");
             } else {
                 sb.append(value);
             }
         }
         
-        if (fallback != null) {
-            sb.append(" fallback=\"").append(escapeQuotes(fallback)).append("\"");
-        }
-        
         sb.append(">");
-        Synergy.getLogger().warning(sb.toString());
         return sb.toString();
     }
     
     public Component component() {
-    	return Component.text(build());
+        return Component.text(build());
     }
     
     @Override
@@ -72,7 +59,7 @@ public class LocaleBuilder {
         return value.contains(" ") || value.contains(">") || value.contains("\"");
     }
     
-    private String escapeQuotes(String value) {
-        return value.replace("\"", "\\\"");
+    private String escapeValue(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

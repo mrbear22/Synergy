@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
 import me.synergy.utils.Utils;
@@ -51,6 +52,35 @@ public class Discord {
 
     public void initialize() {
         try {
+        	
+        	Locales.addDefault("discord-confirm-link", "en", "Confirm linking to your `%ACCOUNT%` game account. Ignore if not yours.");
+        	Locales.addDefault("discord-link-check-pm", "en", new String[] {
+    			"<success>Check your private messages and confirm linking.",
+    			"<secondary>Or go to Discord: <primary><u>%INVITE%</u> <secondary>and use <secondary><u>/link</u>"
+    		});
+        	Locales.addDefault("discord-use-link-cmd", "en", "<primary>Go to Discord: <primary><u>%INVITE%</u> <primary>and use <secondary><u>/link</u>");
+        	Locales.addDefault("hightlights-comments", "en", "Comments");
+        	Locales.addDefault("check-vault-balance", "en", "Check your balance");
+        	Locales.addDefault("vault-balance-title", "en", "**Your balance**");
+        	Locales.addDefault("vault-balance-field", "en", "`%AMOUNT%` votes");
+        	Locales.addDefault("you-have-to-link-account", "en", "Please link your account: /link");
+        	Locales.addDefault("link-discord-already-linked", "en", "<primary>Account already linked to <secondary>%ACCOUNT%<primary>! Unlink it using <secondary><u>/discord unlink</u>");
+        	Locales.addDefault("link-minecraft-already-linked", "en", "<primary>Account already linked to <secondary>%ACCOUNT%<primary>! Unlink it using <secondary><u>/unlink</u>");
+        	Locales.addDefault("you-have-no-linked-accounts", "en", "<danger>No linked accounts! Link: <secondary><u>/discord link {usertag}</u>");
+        	Locales.addDefault("link-minecraft-unlinked", "en", "<success>Account unlinked. Relink: <secondary><u>/link {usertag}</u>");
+        	Locales.addDefault("link-discord-unlinked", "en", "<success>Account unlinked. Relink: <secondary><u>/discord link {usertag}</u>");
+    		Locales.addDefault("link-minecraft-title", "en", "Link Minecraft account");
+    		Locales.addDefault("unlink-minecraft-title", "en", "Unlink Minecraft account");
+    		Locales.addDefault("link-minecraft-your-username", "en", "Your Minecraft username");
+    		Locales.addDefault("link-discord-confirmation", "en", "<primary>Confirm linking to Discord: <secondary>%ACCOUNT% <primary>using <click:run_command:/discord confirm><hover:show_text:Confirm><secondary><u>/discord confirm</u></click>");
+    		Locales.addDefault("link-minecraft-confirmation", "en", "Confirm your account in-game");
+    		Locales.addDefault("discord-link-success", "en", "<success>Account <secondary>%ACCOUNT%<success> successfully linked!");
+    		Locales.addDefault("online-players-list", "en", "Online players");
+    		Locales.addDefault("create-post", "en", "Create new post");
+    		Locales.addDefault("service-unavailable", "en", "Service unavailable. Try again later");
+    		Locales.addDefault("discord-embed-new", "en", "Create new post");
+    		Locales.addDefault("discord-embed-edit", "en", "Edit existing post");
+        	
             if (!Synergy.getConfig().getBoolean("discord.enabled")) {
                 return;
             }
@@ -178,7 +208,7 @@ public class Discord {
             if (Synergy.isRunningSpigot()) {
             	status = PlaceholdersAPI.processPlaceholders(null, status);
             }
-            status = status.replace("%online%", String.valueOf(Utils.getPlayers().size()));
+            status = status.replace("%online%", String.valueOf(Utils.getOnlinePlayers().size()));
             builder.setActivity(Activity.customStatus(status));
         }
 
@@ -205,7 +235,7 @@ public class Discord {
 
             String customStatusText = activities.get(index);
             customStatusText = PlaceholdersAPI.processPlaceholders(null, customStatusText);
-            customStatusText = customStatusText.replace("%online%", String.valueOf(Utils.getPlayers().size()));
+            customStatusText = customStatusText.replace("%online%", String.valueOf(Utils.getOnlinePlayers().size()));
 
             Discord.JDA.getPresence().setActivity(Activity.customStatus(customStatusText));
         }, 0, 60, TimeUnit.SECONDS);
@@ -231,7 +261,7 @@ public class Discord {
     public static Set<String> getUsersTagsCache() {
         if (System.currentTimeMillis() - LAST_CACHE_UPDATE >= CACHE_UPDATE_INTERVAL) {
         	LAST_CACHE_UPDATE = System.currentTimeMillis();
-        	Synergy.createSynergyEvent("retrieve-users-tags").send();
+        	Synergy.event("retrieve-users-tags").send();
         }
         return USERS_TAGS_CACHE;
     }

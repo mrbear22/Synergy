@@ -27,7 +27,7 @@ import me.synergy.handlers.VoteHandler;
 import me.synergy.integrations.PlanAPI;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
-import me.synergy.modules.LocalesManager;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.web.WebServer;
 
@@ -59,7 +59,7 @@ public class Velocity {
 	    server.getChannelRegistrar().register(IDENTIFIER);
 	    new Config().initialize();
 	    new DataManager().initialize();
-        new LocalesManager().initialize();
+        new Locales().initialize();
 	    new Discord().initialize();
 	    new PlayerVelocityHandler().initialize();
 	    new SynergyVelocityCommand().initialize();

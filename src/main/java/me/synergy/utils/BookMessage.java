@@ -24,7 +24,6 @@ public class BookMessage {
         
         meta.pages(Arrays.stream(content.split("%np%"))
             .map(page -> Synergy.translate(page, bread.getLanguage())
-                .setPlaceholders(bread)
                 .setGendered(bread.getGender())
                 .getColoredComponent(bread.getTheme()))
             .toList());

@@ -35,13 +35,13 @@ public class EssentialsAPI implements Listener, SynergyListener {
 	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onMute(MuteStatusChangeEvent event) {
-		Synergy.createSynergyEvent("discord-broadcast").setOption("message", "<lang>essentials-player-muted<arg>"+event.getAffected().getName()+"</arg><arg>"+event.getReason()+"</arg></lang>").send();
+		Synergy.event("discord-broadcast").setOption("message", "<lang>essentials-player-muted<arg>"+event.getAffected().getName()+"</arg><arg>"+event.getReason()+"</arg></lang>").send();
 	}
 	
 	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onJail(JailStatusChangeEvent event) {
-		Synergy.createSynergyEvent("discord-broadcast").setOption("message", "<lang>essentials-player-jailed<arg>"+event.getAffected().getName()+"</arg></lang>").send();
+		Synergy.event("discord-broadcast").setOption("message", "<lang>essentials-player-jailed<arg>"+event.getAffected().getName()+"</arg></lang>").send();
 	}
 
 }

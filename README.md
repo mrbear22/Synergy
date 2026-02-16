@@ -101,7 +101,7 @@ Send events across your network with ease:
 // Trigger an event from any server
 @Override
 public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-    Synergy.createSynergyEvent("broadcast-message")
+    Synergy.event("broadcast-message")
            .setOption("message", String.join(" ", args))
            .send();      
     return true;
@@ -145,7 +145,7 @@ Send events from any server (Spigot, Velocity, BungeeCord) and handle them on al
 
 ```java
 // Send event from Server A
-Synergy.createSynergyEvent("player-achievement")
+Synergy.event("player-achievement")
        .setPlayerUniqueId(player.getUniqueId())
        .setOption("achievement", "dragon_slayer")
        .setOption("server", "survival")
@@ -171,7 +171,7 @@ public void onSynergyEvent(SynergyEvent e) {
 **Global Announcements**
 ```java
 // From lobby server
-Synergy.createSynergyEvent("network-broadcast")
+Synergy.event("network-broadcast")
        .setOption("message", "<rainbow>Server restart in 5 minutes!")
        .send();
 ```
@@ -179,7 +179,7 @@ Synergy.createSynergyEvent("network-broadcast")
 **Cross-Server Player Data Sync**
 ```java
 // Update player currency across all servers
-Synergy.createSynergyEvent("economy-update")
+Synergy.event("economy-update")
        .setPlayerUniqueId(uuid)
        .setOption("balance", "1000")
        .setOption("action", "set")
@@ -189,7 +189,7 @@ Synergy.createSynergyEvent("economy-update")
 **Discord Integration**
 ```java
 // Send embed to Discord from any server
-Synergy.createSynergyEvent("discord-embed")
+Synergy.event("discord-embed")
        .setOption("channel", "announcements")
        .setOption("title", "New Player Joined!")
        .setOption("description", player.getName() + " joined the network")
@@ -201,7 +201,7 @@ Synergy.createSynergyEvent("discord-embed")
 **Punishment Synchronization**
 ```java
 // Ban player across entire network
-Synergy.createSynergyEvent("global-ban")
+Synergy.event("global-ban")
        .setPlayerUniqueId(uuid)
        .setOption("reason", "Cheating")
        .setOption("duration", "7d")

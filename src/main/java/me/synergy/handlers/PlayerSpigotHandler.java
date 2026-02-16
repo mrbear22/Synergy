@@ -14,6 +14,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Chat;
 import me.synergy.objects.LocaleBuilder;
@@ -28,6 +29,9 @@ public class PlayerSpigotHandler implements Listener {
     
     public void initialize() {
         Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
+        Locales.addDefault("player-join-message", "en", "<secondary>[<success>+<secondary>] <primary>%player% <secondary>joined the server");
+        Locales.addDefault("player-quit-message", "en", "<secondary>[<danger>-<secondary>] <primary>%player% <secondary>left the server");
+        Locales.addDefault("player-first-time-join-message", "en", "<primary>%player% <secondary>joined for the first time!");
     }
 
     @EventHandler
@@ -73,7 +77,7 @@ public class PlayerSpigotHandler implements Listener {
         
         String channel = new Chat("global").getDiscord().getChannel();
     	if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages") && channel.length() == 19) {
-    		Synergy.createSynergyEvent("discord-embed")
+    		Synergy.event("discord-embed")
 				   .setPlayerUniqueId(player.getUniqueId())
 				   .setOption("chat", "global")
 				   .setOption("color", "#fab1a0")
@@ -159,7 +163,7 @@ public class PlayerSpigotHandler implements Listener {
 
         String channel = new Chat("global").getDiscord().getChannel();
 		if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages") && channel.length() == 19) {
-        	Synergy.createSynergyEvent("discord-embed").setPlayerUniqueId(player.getUniqueId())
+        	Synergy.event("discord-embed").setPlayerUniqueId(player.getUniqueId())
 		           .setOption("channel", channel)
 		           .setOption("color", "#81ecec")
 		           .setOption("author", Synergy.translate("<lang>player-join-message<arg>"+player.getName()+"</arg></lang>", Translation.getDefaultLanguage())

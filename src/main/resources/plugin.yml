@@ -33,6 +33,9 @@ commands:
   twitch:
     description: <lang>command_description_twitch</lang>
     usage: <lang>command_usage_twitch</lang>
+  tiktok:
+    description: <lang>command_description_tiktok</lang>
+    usage: <lang>command_usage_tiktok</lang>
   monobank:
     description: <lang>command_description_monobank</lang>
     usage: <lang>command_usage_monobank</lang>

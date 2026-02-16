@@ -27,6 +27,7 @@ import me.synergy.commands.MonobankCommand;
 import me.synergy.commands.PronounCommand;
 import me.synergy.commands.SynergyCommand;
 import me.synergy.commands.ThemeCommand;
+import me.synergy.commands.TikTokCommand;
 import me.synergy.commands.TwitchCommand;
 import me.synergy.commands.VoteCommand;
 import me.synergy.discord.Discord;
@@ -44,12 +45,13 @@ import me.synergy.integrations.PlanAPI;
 import me.synergy.integrations.VaultAPI;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
-import me.synergy.modules.LocalesManager;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.twitch.Twitch;
 import me.synergy.utils.RepeatingTask;
 import me.synergy.utils.UpdateChecker;
 import me.synergy.web.MonobankHandler;
+import me.synergy.web.TikTokHandler;
 import me.synergy.web.WebServer;
 import net.milkbowl.vault.chat.Chat;
 import net.milkbowl.vault.economy.Economy;
@@ -73,7 +75,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
 
         new Config().initialize();
         new DataManager().initialize();
-        new LocalesManager().initialize();
+        new Locales().initialize();
         new SynergyCommand().initialize();
         new ChatCommand().initialize();
         new VoteCommand().initialize();
@@ -93,7 +95,9 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
         new ThemeCommand().initialize();
 		new VoteHandler().initialize();
 		new DynamicCommands().initialize();
-
+        new TikTokHandler().initialize();
+        new TikTokCommand().initialize();
+		
 		if (Synergy.isDependencyAvailable("ProtocolLib")) {
 			PROTOCOLMANAGER = ProtocolLibrary.getProtocolManager();
 	        new LocalesHandler().initialize();

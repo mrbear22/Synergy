@@ -69,7 +69,7 @@ public class VoteSpigotHandler {
                 
                 BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
                 
-                Synergy.createSynergyEvent("votifier")
+                Synergy.event("votifier")
 	            	.setPlayerUniqueId(bread.getUniqueId())
 	    	        .setOption("service", service)
 	    	        .setOption("username", username)
@@ -99,15 +99,13 @@ public class VoteSpigotHandler {
                     player.sendMessage(LocaleBuilder.of("votifier-message")
                     		.placeholder("player", username)
                     		.placeholder("service", service)
-                    		.fallback("You've successfully voted on %service%. Thank you!")
-                    		.build()
+                    		.component()
                     );
                 } else {
                     player.sendMessage(LocaleBuilder.of("votifier-announcement")
                     		.placeholder("player", username)
                     		.placeholder("service", service)
-                    		.fallback("%player% successfully voted on %service%!")
-                    		.build()
+                    		.component()
                     );
                 }
             }

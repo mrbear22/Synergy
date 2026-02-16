@@ -47,7 +47,7 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
     private void handleRoleChange(String userId, String guildId) {
         UUID uuid = Discord.getUniqueIdByDiscordId(userId);
         if (uuid != null) {
-            onSynergyEvent(Synergy.createSynergyEvent("sync-roles-from-discord-to-mc")
+            onSynergyEvent(Synergy.event("sync-roles-from-discord-to-mc")
                 .setPlayerUniqueId(uuid)
                 .setOption("guild", guildId));
         }
@@ -77,14 +77,14 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
             }
 
             if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc")) {
-                Synergy.createSynergyEvent("sync-roles-from-discord-to-mc")
+                Synergy.event("sync-roles-from-discord-to-mc")
                     .setPlayerUniqueId(player.getUniqueId())
                     .send();
             }
         }
 
         private void syncMcToDiscord(Player player) {
-            SynergyEvent event = Synergy.createSynergyEvent("sync-roles").setPlayerUniqueId(player.getUniqueId());
+            SynergyEvent event = Synergy.event("sync-roles").setPlayerUniqueId(player.getUniqueId());
             Set<Map.Entry<String, Object>> roles = Synergy.getConfig().getConfigurationSection("discord-roles-sync.roles").entrySet();
             List<String> groups = Arrays.asList(Synergy.getSpigot().getPermissions().getPlayerGroups(player));
             
@@ -131,7 +131,7 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
 
         String discordId = Discord.getDiscordIdByUniqueId(event.getPlayerUniqueId());
         if (discordId == null || "0000000000000000000".equals(discordId)) {
-            Synergy.createSynergyEvent("sync-groups").setPlayerUniqueId(event.getPlayerUniqueId()).send();
+            Synergy.event("sync-groups").setPlayerUniqueId(event.getPlayerUniqueId()).send();
             return;
         }
 
@@ -141,7 +141,7 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
         Member member = guild.getMemberById(discordId);
         if (member == null) return;
 
-        SynergyEvent synergyEvent = Synergy.createSynergyEvent("sync-groups")
+        SynergyEvent synergyEvent = Synergy.event("sync-groups")
             .setPlayerUniqueId(event.getPlayerUniqueId());
         member.getRoles().forEach(role -> synergyEvent.setOption(role.getId(), "true"));
         synergyEvent.send();

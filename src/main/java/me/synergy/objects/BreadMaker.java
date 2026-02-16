@@ -30,7 +30,7 @@ public class BreadMaker {
 	}
 
 	public void sendMessage(String message) {
-		Synergy.createSynergyEvent("system-chat").setPlayerUniqueId(uuid).setOption("message", message).send();
+		Synergy.event("system-chat").setPlayerUniqueId(uuid).setOption("message", message).send();
 	}
 
 	public UUID getUniqueId() {

@@ -16,6 +16,7 @@ import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
 
@@ -30,6 +31,26 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
         Synergy.getSpigot().getCommand("discord").setExecutor(this);
         Synergy.getSpigot().getCommand("discord").setTabCompleter(this);
         Synergy.getEventManager().registerEvents(this);
+        
+        Locales.addDefault("command_description_discord", "en", "Discord integration");
+        Locales.addDefault("command_usage_discord", "en", new String[] {
+		    "<danger>Usage: /discord <action> [discord_account]",
+		    "",
+		    "<secondary>Actions:",
+		    "<primary>  link    <secondary>- Link Minecraft to Discord",
+		    "<primary>  unlink  <secondary>- Unlink Discord account", 
+		    "<primary>  confirm <secondary>- Confirm linking process",
+		    "",
+		    "<secondary>Arguments:",
+		    "<primary>  discord_account <secondary>- Your Discord username or ID",
+		    "",
+		    "<secondary>Examples:",
+		    "<primary>  /discord link YourUsername",
+		    "<primary>  /discord confirm",
+		    "<primary>  /discord unlink",
+		    "",
+		    "<secondary>Join our Discord: <click:open_url:'%INVITE%'><hover:show_text:Click to open><secondary><u>%INVITE%</u></click>"
+		});
     }
 
     @SynergyHandler
@@ -84,23 +105,23 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
                 if (args.length < 2) {
                     return false;
                 }
-                Synergy.createSynergyEvent("make-discord-link")
+                Synergy.event("make-discord-link")
                     .setPlayerUniqueId(player.getUniqueId())
                     .setOption("tag", args[1])
                     .send();
                 break;
                 
             case "confirm":
-                Synergy.createSynergyEvent("confirm-discord-link")
+                Synergy.event("confirm-discord-link")
                     .setPlayerUniqueId(player.getUniqueId())
                     .send();
                 break;
                 
             case "unlink":
-                Synergy.createSynergyEvent("remove-discord-link")
+                Synergy.event("remove-discord-link")
                     .setPlayerUniqueId(player.getUniqueId())
                     .send();
-                Synergy.createSynergyEvent("sync-roles-from-discord-to-mc")
+                Synergy.event("sync-roles-from-discord-to-mc")
 	                .setPlayerUniqueId(player.getUniqueId())
 	                .send();
                 if (Synergy.getConfig().getBoolean("discord.kick-player.if-has-no-link.enabled")) {

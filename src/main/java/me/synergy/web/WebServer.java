@@ -18,6 +18,7 @@ import com.sun.net.httpserver.HttpHandler;
 
 import me.synergy.brains.Synergy;
 
+@SuppressWarnings("restriction")
 public class WebServer {
     
     // JVM system properties для HttpServer таймаутів
@@ -27,7 +28,7 @@ public class WebServer {
         System.setProperty("sun.net.httpserver.nodelay", "true");
     }
 
-    private static HttpServer server;
+	private static HttpServer server;
     private static ThreadPoolExecutor executor;
     private static int port = Synergy.getConfig().getInt("web-server.port");
     private static String serverAddress = Synergy.getConfig().getString("web-server.domain");
@@ -48,7 +49,7 @@ public class WebServer {
         }
     }
 
-    public void start() {
+	public void start() {
         try {
             // Створюємо сервер з backlog 0 (використовує системне значення за замовчуванням)
             server = HttpServer.create(new InetSocketAddress(port), 0);
@@ -153,7 +154,7 @@ public class WebServer {
         return fullAddress;
     }
 
-    private class WebServerStatusHandler implements HttpHandler {
+	private class WebServerStatusHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             // Швидкий статус з правильними заголовками
@@ -167,7 +168,7 @@ public class WebServer {
         }
     }
 
-    private class PublicHtmlHandler implements HttpHandler {
+	private class PublicHtmlHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             String path = exchange.getRequestURI().getPath();
