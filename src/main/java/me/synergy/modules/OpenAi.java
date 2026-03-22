@@ -11,12 +11,12 @@ import me.synergy.brains.Synergy;
 
 public class OpenAi {
   public List<CompletionChoice> newPrompt(String args) {
-    OpenAiService service = new OpenAiService(Synergy.getConfig().getString("openai.token"), Duration.ofSeconds(30L));
+    OpenAiService service = new OpenAiService(Config.getString("openai.token"), Duration.ofSeconds(30L));
     CompletionRequest completionRequest = CompletionRequest.builder()
-      .model(Synergy.getConfig().getString("openai.model"))
+      .model(Config.getString("openai.model"))
       .prompt(args)
-      .maxTokens(Synergy.getConfig().getInt("openai.response-size"))
-      .temperature(Double.valueOf(Synergy.getConfig().getDouble("openai.temperature")))
+      .maxTokens(Config.getInt("openai.response-size"))
+      .temperature(Double.valueOf(Config.getDouble("openai.temperature")))
       .build();
     List<CompletionChoice> choices = service.createCompletion(completionRequest).getChoices();
     service.shutdownExecutor();

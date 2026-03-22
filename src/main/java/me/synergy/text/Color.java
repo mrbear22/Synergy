@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -51,10 +52,10 @@ public class Color {
 
     public static String processThemeTags(String string, String theme) {
         for (String t : new String[]{theme, "default"}) {
-            var section = Synergy.getConfig().getConfigurationSection("localizations.color-themes." + t);
+            var section = Config.getConfigurationSection("localizations.color-themes." + t);
             if (section != null) {
                 for (var entry : section.entrySet()) {
-                    String value = Synergy.getConfig().getString("localizations.color-themes." + t + "." + entry.getKey());
+                    String value = Config.getString("localizations.color-themes." + t + "." + entry.getKey());
                     string = string.replace("<" + entry.getKey() + ">", value)
                                    .replace("</" + entry.getKey() + ">", value.replace("<", "</"));
                 }
@@ -64,11 +65,11 @@ public class Color {
     }
     
     public static String processColorReplace(String string, String theme) {
-        var section = Synergy.getConfig().getConfigurationSection("localizations.color-replace");
+        var section = Config.getConfigurationSection("localizations.color-replace");
         if (section != null) {
             for (var entry : section.entrySet()) {
                 String value = processThemeTags(
-                    Synergy.getConfig().getString("localizations.color-replace." + entry.getKey()), theme
+                    Config.getString("localizations.color-replace." + entry.getKey()), theme
                 );
                 string = string.replace("<" + entry.getKey() + ">", value)
                                .replace("</" + entry.getKey() + ">", value.replace("<", "</"));
@@ -78,7 +79,7 @@ public class Color {
     }
     
     public static String processCustomColorCodes(String string) {
-        var section = Synergy.getConfig().getConfigurationSection("chat-manager.custom-color-tags");
+        var section = Config.getConfigurationSection("chat-manager.custom-color-tags");
         if (section != null) {
             for (var entry : section.entrySet()) {
                 string = string.replace(entry.getKey(), String.valueOf(entry.getValue()));

@@ -72,6 +72,7 @@ public class Locale {
 
 	public Component getColoredComponent(String theme) {
 		string = Translation.translate(string, language);
+		string = string.replace("<clear_chat>", System.lineSeparator().repeat(30));
 		string = bread != null ? Interactive.process(string, bread) : string;
 		string = Gendered.process(string, gender);
 		string = Color.process(string, theme);
@@ -80,6 +81,7 @@ public class Locale {
 
 	public String getColoredLegacy(String theme) {
 		string = Translation.translate(string, language);
+		string = string.replace("<clear_chat>", System.lineSeparator().repeat(30));
 		string = bread != null ? Interactive.process(string, bread) : string;
 		string = Gendered.process(string, gender);
 		string = Color.process(string, theme);
@@ -89,6 +91,7 @@ public class Locale {
 
 	public String getStripped() {
 		string = Translation.translate(string, language);
+		string = string.replace("<clear_chat>", System.lineSeparator().repeat(30));
 		string = bread != null ? Interactive.process(string, bread) : string;
 		string = Gendered.process(string, gender);
 		string = Color.removeColor(string);
@@ -99,7 +102,6 @@ public class Locale {
 	private void processSpecialTags() {
 		cancelled = string.contains("<cancel_message>");
 		string = string.replace("<cancel_message>", "");
-		string = string.replace("<clear_chat>", System.lineSeparator().repeat(30));
 		Matcher matcher = Pattern.compile("<delay:(\\d+)>").matcher(string);
 		if (matcher.find()) {
 			delay = Integer.parseInt(matcher.group(1));

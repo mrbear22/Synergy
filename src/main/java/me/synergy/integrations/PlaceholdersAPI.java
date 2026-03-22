@@ -116,33 +116,48 @@ public class PlaceholdersAPI {
         @Override
         public String onPlaceholderRequest(Player player, String identifier) {
 
-        	if (player == null) {
-        		return identifier;
-        	}
-        	
-            Cache cache = new Cache(player.getUniqueId());
-            
-            if (!cache.isExpired("placeholder:"+identifier)) {
-                return cache.get("placeholder:"+identifier).getAsString();
+            if (player == null) {
+                return identifier;
             }
 
-            BreadMaker bread = (player == null) ? null : Synergy.getBread(player.getUniqueId());
+            int lineIndex = -1;
+            String baseIdentifier = identifier;
+
+            int lastUnderscore = identifier.lastIndexOf('_');
+            if (lastUnderscore != -1) {
+                String suffix = identifier.substring(lastUnderscore + 1);
+                try {
+                    lineIndex = Integer.parseInt(suffix);
+                    baseIdentifier = identifier.substring(0, lastUnderscore);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+
+            Cache cache = new Cache(player.getUniqueId());
+
+            if (!cache.isExpired("placeholder:" + identifier)) {
+                return cache.get("placeholder:" + identifier).getAsString();
+            }
+
+            BreadMaker bread = Synergy.getBread(player.getUniqueId());
             String language = (bread == null) ? Translation.getDefaultLanguage() : bread.getLanguage();
-            String theme = (bread == null) ? Color.getDefaultTheme() : bread.getTheme();
-            Gender gender = (bread == null) ? Gender.MALE : bread.getGender();
-            
-            //String result = new Locale("<locale:" + identifier + ">", language).setGendered(gender).getLegacyColored(theme);
-           
-            String result = Translation.translate("<locale:" + identifier + ">", language);
+            String theme    = (bread == null) ? Color.getDefaultTheme()          : bread.getTheme();
+            Gender gender   = (bread == null) ? Gender.MALE                      : bread.getGender();
+
+            String result = Translation.translate("<locale:" + baseIdentifier + ">", language);
             result = Gendered.process(result, gender);
             result = Interactive.removeTags(result);
             result = Color.processThemeTags(result, theme);
             result = Color.processColorReplace(result, theme);
             result = Color.processCustomColorCodes(result);
-            
-            
-            
-            cache.add("placeholder:"+identifier, result, 10);
+            result = PlaceholderAPI.setPlaceholders(player, result);
+
+            if (lineIndex >= 0) {
+                String[] lines = result.split("\n", -1);
+                result = (lineIndex < lines.length) ? lines[lineIndex] : "";
+            }
+
+            cache.add("placeholder:" + identifier, result, 10);
 
             return result;
         }

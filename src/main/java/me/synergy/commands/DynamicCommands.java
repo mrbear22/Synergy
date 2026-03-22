@@ -11,6 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import me.synergy.brains.Spigot;
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
@@ -29,7 +30,7 @@ public class DynamicCommands implements CommandExecutor {
             return;
         }
         
-        commands = Synergy.getConfig().getConfigurationSection("commands").keySet();
+        commands = Config.getConfigurationSection("commands").keySet();
         for (String cmd : commands) {
             registerCommand(cmd);
         }
@@ -63,7 +64,7 @@ public class DynamicCommands implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!commands.contains(command.getName())) return false;
         
-        Object messageObj = Synergy.getConfig().get("commands." + command.getName() + ".message");
+        Object messageObj = Config.get("commands." + command.getName() + ".message");
         if (messageObj == null) return false;
         
         if (messageObj instanceof java.util.List) {

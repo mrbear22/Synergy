@@ -9,6 +9,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.DeepLTranslator;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.LocaleBuilder;
 import me.synergy.utils.Timings;
@@ -309,7 +310,7 @@ public class SynergyCommand implements CommandExecutor {
                     .build());
             }
 
-            long delayTicks = Synergy.getConfig().getInt("deepl.request-delay-ms", 200) / 50;
+            long delayTicks = Config.getInt("deepl.request-delay-ms", 200) / 50;
             Synergy.getSpigot().getServer().getScheduler().runTaskLaterAsynchronously(
                 Synergy.getSpigot(),
                 () -> processTranslationWithDelay(sender, translator, englishTranslations, keys, 
@@ -323,7 +324,7 @@ public class SynergyCommand implements CommandExecutor {
                 .placeholder("error", e.getMessage())
                 .build());
             
-            long delayTicks = Synergy.getConfig().getInt("deepl.request-delay-ms", 200) / 50;
+            long delayTicks = Config.getInt("deepl.request-delay-ms", 200) / 50;
             Synergy.getSpigot().getServer().getScheduler().runTaskLaterAsynchronously(
                 Synergy.getSpigot(),
                 () -> processTranslationWithDelay(sender, translator, englishTranslations, keys, 

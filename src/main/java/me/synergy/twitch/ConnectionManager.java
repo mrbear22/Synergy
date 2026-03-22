@@ -11,6 +11,7 @@ import com.github.twitch4j.eventsub.subscriptions.SubscriptionTypes;
 import com.github.twitch4j.helix.domain.User;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 
 public class ConnectionManager {
 
@@ -25,7 +26,7 @@ public class ConnectionManager {
             return true;
         }
         
-        if (Synergy.getConfig().getString("twitch.client-id").equals("client-id")) {
+        if (Config.getString("twitch.client-id").equals("client-id")) {
             return true;
         }
         
@@ -33,7 +34,7 @@ public class ConnectionManager {
             OAuth2Credential credential = new OAuth2Credential("twitch", accessToken);
             
             TwitchClient client = TwitchClientBuilder.builder()
-                    .withClientId(Synergy.getConfig().getString("twitch.client-id"))
+                    .withClientId(Config.getString("twitch.client-id"))
                     .withEnableHelix(true)
                     .withEnableChat(true)
                     .withEnableEventSocket(true)
@@ -85,7 +86,7 @@ public class ConnectionManager {
             return;
         }
 
-        if (Synergy.getConfig().getString("twitch.client-id").equals("client-id")) {
+        if (Config.getString("twitch.client-id").equals("client-id")) {
             return;
         }
         

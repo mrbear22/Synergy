@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
@@ -81,7 +82,7 @@ public class Discord {
     		Locales.addDefault("discord-embed-new", "en", "Create new post");
     		Locales.addDefault("discord-embed-edit", "en", "Edit existing post");
         	
-            if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+            if (!Config.getBoolean("discord.enabled")) {
                 return;
             }
 
@@ -185,10 +186,10 @@ public class Discord {
     }
     
     public JDABuilder botBuilder() {
-        List<String> activities = Synergy.getConfig().getStringList("discord.activities");
+        List<String> activities = Config.getStringList("discord.activities");
 
         JDABuilder builder = JDABuilder.create(
-                Synergy.getConfig().getString("discord.bot-token"),
+                Config.getString("discord.bot-token"),
                 Arrays.asList(INTENTS)
         )
         .enableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE)
@@ -227,7 +228,7 @@ public class Discord {
     
     private void activityStatus() {
         REPEATING_TASK.scheduleAtFixedRate(() -> {
-            List<String> activities = Synergy.getConfig().getStringList("discord.activities");
+            List<String> activities = Config.getStringList("discord.activities");
             if (activities.isEmpty()) return;
 
             long currentTimeSeconds = System.currentTimeMillis() / 1000;
@@ -243,7 +244,7 @@ public class Discord {
 
     
     public static Guild getGuild() {
-    	return JDA.getGuildById(Synergy.getConfig().getString("discord.guild-id"));
+    	return JDA.getGuildById(Config.getString("discord.guild-id"));
     }
     
     public static Member getMember(BreadMaker bread) {
@@ -267,9 +268,9 @@ public class Discord {
     }
 
     public static String getDiscordIdByUniqueId(UUID uuid) {
-    	BreadMaker bread = Synergy.getBread(uuid);
-    	String discord = bread.getData("discord").getAsString();
-        return discord;
+        BreadMaker bread = Synergy.getBread(uuid);
+        String discord = bread.getData("discord").getAsString();
+        return (discord == null || discord.isEmpty()) ? null : discord;
     }
     
     public static UUID getUniqueIdByDiscordId(String id) {
@@ -277,7 +278,7 @@ public class Discord {
     }
     
     public static String getBotName() {
-        return Synergy.getConfig().getString("discord.gpt-bot.name");
+        return Config.getString("discord.gpt-bot.name");
     }
 
     public static MessageEmbed info(String message) {

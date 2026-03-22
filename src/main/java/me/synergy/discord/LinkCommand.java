@@ -9,6 +9,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
@@ -35,7 +36,7 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
 
 	public LinkCommand() {
         try {
-	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+	        if (!Config.getBoolean("discord.enabled")) {
 	            return;
 	        }
 	        
@@ -355,12 +356,12 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
         	                            .addActionRow(
         	                                    Button.success(user.getId() + ":confirm:" + uuid, Synergy.translate("<lang>confirm-action</lang>", bread.getLanguage()).getStripped()))
         	                            .queue();
-        	                    bread.sendMessage(Translation.translate("<lang>discord-link-check-pm</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
+        	                    bread.sendMessage(Translation.translate("<lang>discord-link-check-pm</lang>", bread.getLanguage()).replace("%INVITE%", Config.getString("discord.invite-link")));
         	                } else {
-        	                	bread.sendMessage(Translation.translate("<lang>discord-use-link-cmd</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
+        	                	bread.sendMessage(Translation.translate("<lang>discord-use-link-cmd</lang>", bread.getLanguage()).replace("%INVITE%", Config.getString("discord.invite-link")));
         	                }
         	            } else {
-        	            	bread.sendMessage(Translation.translate("<lang>discord-use-link-cmd</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
+        	            	bread.sendMessage(Translation.translate("<lang>discord-use-link-cmd</lang>", bread.getLanguage()).replace("%INVITE%", Config.getString("discord.invite-link")));
         	            }
         	            return;
         	        }
@@ -368,7 +369,7 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
         	}
         } catch (Exception c) {
         	c.printStackTrace();
-        	bread.sendMessage(Translation.translate("<lang>discord-use-link-cmd</lang>", bread.getLanguage()).replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link")));
+        	bread.sendMessage(Translation.translate("<lang>discord-use-link-cmd</lang>", bread.getLanguage()).replace("%INVITE%", Config.getString("discord.invite-link")));
         }
     }
     

@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.URL;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
@@ -20,7 +21,7 @@ import net.dv8tion.jda.api.utils.FileUpload;
 public class EmbedCommand extends ListenerAdapter {
 
 	public EmbedCommand() {
-        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+        if (!Config.getBoolean("discord.enabled")) {
             return;
         }
 	}

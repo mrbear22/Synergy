@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import me.synergy.brains.Bungee;
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.objects.BreadMaker;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -15,7 +16,7 @@ public class ListCommand extends ListenerAdapter {
 
 	public ListCommand() {
         try {
-	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+	        if (!Config.getBoolean("discord.enabled")) {
 	            return;
 	        }
 

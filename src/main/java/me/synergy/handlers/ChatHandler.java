@@ -17,6 +17,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.Chat;
 import me.synergy.text.Translation;
@@ -37,7 +38,7 @@ public class ChatHandler implements Listener, SynergyListener {
     }
 
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("chat-manager.enabled")) return;
+        if (!Config.getBoolean("chat-manager.enabled")) return;
         
         Chat.registerAll();
         
@@ -93,7 +94,7 @@ public class ChatHandler implements Listener, SynergyListener {
         
         var format = formatMessage(chat, msg, p);
         
-        if (Synergy.getConfig().getBoolean("chat-manager.use-interactive-tags")) {
+        if (Config.getBoolean("chat-manager.use-interactive-tags")) {
             event.viewers().forEach(a -> {
                 if (a instanceof Player r) {
                     var b = Synergy.getBread(r.getUniqueId());
@@ -124,7 +125,7 @@ public class ChatHandler implements Listener, SynergyListener {
                 .setOption("color", chat.getColor().substring(1, chat.getColor().length() - 1)).send();
         }
         
-        if (Synergy.getConfig().getBoolean("chat-manager.warn-if-nobody-in-chat") && 
+        if (Config.getBoolean("chat-manager.warn-if-nobody-in-chat") && 
             event.viewers().size() < 2 && !"global".equals(chat.getName())) {
             p.sendMessage(Synergy.translate("<lang>noone-hears-you</lang>", bread.getLanguage())
                 .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
@@ -219,7 +220,7 @@ public class ChatHandler implements Listener, SynergyListener {
         }
     }
 
-    private String formatMessage(MessageSource source, Message msg, Object player) {
+    public static String formatMessage(MessageSource source, Message msg, Object player) {
         var format = source.getFormat()
             .replace("%CHAT%", source.getTag())
             .replace("%COLOR%", source.getColor())
@@ -242,7 +243,7 @@ public class ChatHandler implements Listener, SynergyListener {
     }
     
     private static Set<Chat> getChats() {
-        return Synergy.getConfig().getConfigurationSection("chat-manager.chats").keySet().stream()
+        return Config.getConfigurationSection("chat-manager.chats").keySet().stream()
             .map(Chat::new).collect(Collectors.toSet());
     }
     
@@ -253,7 +254,7 @@ public class ChatHandler implements Listener, SynergyListener {
             .orElse(new Chat("local").isEnabled() ? "local" : "global");
     }
 
-    static class Message {
+    public static class Message {
         private final String raw;
         private final String processed;
 

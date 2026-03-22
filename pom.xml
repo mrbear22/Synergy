@@ -3,12 +3,12 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>archi.quest</groupId>
 	<artifactId>synergy</artifactId>
-	<version>1.5.1</version>
+	<version>1.5.2</version>
 	<name>Synergy</name>
 	<description>Basic tools and server messaging plugin</description>
 	<properties>
-	  <maven.compiler.source>17</maven.compiler.source>
-	  <maven.compiler.target>17</maven.compiler.target>
+	  <maven.compiler.source>21</maven.compiler.source>
+	  <maven.compiler.target>21</maven.compiler.target>
 	</properties>
 	<distributionManagement>
 		<repository>
@@ -141,12 +141,12 @@
 	    </repository>
 	</repositories>
 	<dependencies>
-	    <dependency>
-	        <groupId>io.papermc.paper</groupId>
-	        <artifactId>paper-api</artifactId>
-	        <version>1.20.4-R0.1-SNAPSHOT</version>
-	        <scope>provided</scope>
-	    </dependency>
+		<dependency>
+		    <groupId>io.papermc.paper</groupId>
+		    <artifactId>paper-api</artifactId>
+		    <version>1.21.1-R0.1-SNAPSHOT</version>
+		    <scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>com.velocitypowered</groupId>
 			<artifactId>velocity-api</artifactId>
@@ -247,10 +247,11 @@
 	        <artifactId>adventure-text-serializer-gson</artifactId>
 	        <version>4.14.0</version>
 	    </dependency>
-	    <dependency>
-	        <groupId>com.github.jwdeveloper.TikTok-Live-Java</groupId>
-	        <artifactId>Client</artifactId>
-	        <version>1.10.0-Release</version>
-	    </dependency>
+		<dependency>
+		    <groupId>com.github.jwdeveloper.TikTok-Live-Java</groupId>
+		    <artifactId>Client</artifactId>
+		    <version>1.11.9-Release</version>
+		    <scope>compile</scope>
+		</dependency>
 	</dependencies>
 </project>

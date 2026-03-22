@@ -8,16 +8,16 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.LocaleBuilder;
 import me.synergy.text.Gendered;
-
 public class PronounCommand implements CommandExecutor, TabCompleter {
 	public PronounCommand() {}
 	
     public void initialize() {
-    	if (!Synergy.getConfig().getBoolean("localizations.genders")) {
+    	if (!Config.getBoolean("localizations.genders")) {
 	    	return;
 	    }
         Synergy.getSpigot().getCommand("pronoun").setExecutor(this);
@@ -45,12 +45,26 @@ public class PronounCommand implements CommandExecutor, TabCompleter {
         Locales.addDefault("your-gender", "en", "<primary>Your gender: <secondary>%gender%");
         Locales.addDefault("invalid-pronoun", "en", "<danger>Invalid pronoun! Use available options.");
 	}
+
+    private String getPermissionForGender(String gender) {
+        switch (gender.toUpperCase()) {
+            case "MALE":   return "synergy.gender.male";
+            case "FEMALE": return "synergy.gender.female";
+            default:       return "synergy.gender.nonbinary";
+        }
+    }
     
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
     	if (args.length < 2) {
-	        Set<String> pronouns = Gendered.getGendersAsStringSet();
-	        return new ArrayList<>(pronouns);
+            List<String> allowed = new ArrayList<>();
+            for (String pronoun : Gendered.getGendersAsStringSet()) {
+                String perm = getPermissionForGender(pronoun);
+                if (sender.hasPermission(perm)) {
+                    allowed.add(pronoun);
+                }
+            }
+            return allowed;
     	}
     	return null;
     }
@@ -70,7 +84,12 @@ public class PronounCommand implements CommandExecutor, TabCompleter {
             case "pronoun":
             case "gender":
                 if (args.length > 0 && pronouns.contains(args[0].toUpperCase())) {
-                    bread.setData("gender", args[0].toUpperCase());
+                    String gender = args[0].toUpperCase();
+                    if (!player.hasPermission(getPermissionForGender(gender))) {
+                        sender.sendMessage(LocaleBuilder.of("no-permission").build());
+                        return false;
+                    }
+                    bread.setData("gender", gender);
                 } else if (args.length == 0) {
                     return false;
                 } else {
@@ -79,9 +98,17 @@ public class PronounCommand implements CommandExecutor, TabCompleter {
                 }
                 break;
             case "iamgirl":
+                if (!player.hasPermission("synergy.gender.female")) {
+                    sender.sendMessage(LocaleBuilder.of("no-permission").build());
+                    return false;
+                }
                 bread.setData("gender", "FEMALE");
                 break;
             case "iamboy":
+                if (!player.hasPermission("synergy.gender.male")) {
+                    sender.sendMessage(LocaleBuilder.of("no-permission").build());
+                    return false;
+                }
                 bread.setData("gender", "MALE");
                 break;
             default:

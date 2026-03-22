@@ -15,6 +15,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.member.*;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -56,7 +57,7 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
     public static class PlayerListener implements Listener {
 
         public void initialize() {
-            if (!Synergy.getConfig().getBoolean("discord-roles-sync.enabled")) return;
+            if (!Config.getBoolean("discord-roles-sync.enabled")) return;
             
             Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
             new BukkitRunnable() {
@@ -70,13 +71,13 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
         }
 
         private void handle(Player player) {
-            if (!Synergy.getConfig().getBoolean("discord-roles-sync.enabled")) return;
+            if (!Config.getBoolean("discord-roles-sync.enabled")) return;
 
-            if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-form-mc-to-discord")) {
+            if (Config.getBoolean("discord-roles-sync.sync-roles-form-mc-to-discord")) {
                 Bukkit.getScheduler().runTaskAsynchronously(Synergy.getSpigot(), () -> syncMcToDiscord(player));
             }
 
-            if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc")) {
+            if (Config.getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc")) {
                 Synergy.event("sync-roles-from-discord-to-mc")
                     .setPlayerUniqueId(player.getUniqueId())
                     .send();
@@ -85,7 +86,7 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
 
         private void syncMcToDiscord(Player player) {
             SynergyEvent event = Synergy.event("sync-roles").setPlayerUniqueId(player.getUniqueId());
-            Set<Map.Entry<String, Object>> roles = Synergy.getConfig().getConfigurationSection("discord-roles-sync.roles").entrySet();
+            Set<Map.Entry<String, Object>> roles = Config.getConfigurationSection("discord-roles-sync.roles").entrySet();
             List<String> groups = Arrays.asList(Synergy.getSpigot().getPermissions().getPlayerGroups(player));
             
             roles.forEach(role -> event.setOption(
@@ -108,18 +109,18 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
     public void onSynergyEvent(SynergyEvent event) {
         switch (event.getIdentifier()) {
             case "sync-roles-from-discord-to-mc":
-                if (Synergy.getConfig().getBoolean("discord.enabled")) {
+                if (Config.getBoolean("discord.enabled")) {
                     syncDiscordToMc(event);
                 }
                 break;
             case "sync-groups":
-                if (Synergy.getConfig().getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc") 
+                if (Config.getBoolean("discord-roles-sync.sync-roles-from-discord-to-mc") 
                     && Synergy.isRunningSpigot()) {
                     syncGroups(event);
                 }
                 break;
             case "sync-roles":
-                if (Synergy.getConfig().getBoolean("discord.enabled")) {
+                if (Config.getBoolean("discord.enabled")) {
                     syncMcRolesToDiscord(event);
                 }
                 break;
@@ -197,19 +198,19 @@ public class RolesHandler extends ListenerAdapter implements SynergyListener {
     }
 
     private void executeCommand(String configKey, String playerName, String group) {
-        String command = Synergy.getConfig().getString(configKey)
+        String command = Config.getString(configKey)
             .replace("%PLAYER%", playerName)
             .replace("%GROUP%", group);
         Synergy.dispatchCommand(command);
     }
 
     public static String getRoleIdByGroup(String group) {
-        return Synergy.getConfig().getString("discord-roles-sync.roles." + group);
+        return Config.getString("discord-roles-sync.roles." + group);
     }
 
     public static String getGroupByRoleId(String id) {
-        return Synergy.getConfig().getConfigurationSection("discord-roles-sync.roles").keySet().stream()
-            .filter(r -> Synergy.getConfig().getString("discord-roles-sync.roles." + r).equals(id))
+        return Config.getConfigurationSection("discord-roles-sync.roles").keySet().stream()
+            .filter(r -> Config.getString("discord-roles-sync.roles." + r).equals(id))
             .findFirst()
             .orElse(null);
     }

@@ -12,6 +12,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.LocaleBuilder;
@@ -20,7 +21,7 @@ import me.synergy.utils.BookMessage;
 public class LanguageCommand implements CommandExecutor, TabCompleter {
     
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("localizations.enabled")) {
+        if (!Config.getBoolean("localizations.enabled")) {
             return;
         }
         Synergy.getSpigot().getCommand("language").setExecutor(this);

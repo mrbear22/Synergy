@@ -1,8 +1,10 @@
 package me.synergy.handlers;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.WritableBookMeta;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -11,15 +13,19 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.AdventureComponentConverter;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Locale;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public class LocalesHandler {
 
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("localizations.enabled")) return;
+        if (!Config.getBoolean("localizations.enabled")) return;
         
         if (!Synergy.isDependencyAvailable("ProtocolLib")) {
             Synergy.getLogger().warning("ProtocolLib is required to initialize " + getClass().getSimpleName() + " module!");
@@ -54,6 +60,9 @@ public class LocalesHandler {
         
         manager.addPacketListener(createListener(ListenerPriority.NORMAL, this::processInventoryItems,
             PacketType.Play.Server.WINDOW_ITEMS, PacketType.Play.Server.SET_SLOT));
+        
+        manager.addPacketListener(createListener(ListenerPriority.NORMAL, this::processEntityMetadata,
+        	    PacketType.Play.Server.ENTITY_METADATA));
     }
 
     private PacketAdapter createListener(ListenerPriority priority, PacketProcessor processor, PacketType... types) {
@@ -140,6 +149,51 @@ public class LocalesHandler {
         }
     }
     
+    private void processEntityMetadata(PacketEvent event) {
+        var packet = event.getPacket();
+        var bread = Synergy.getBread(event.getPlayer().getUniqueId());
+
+        var modifier = packet.getDataValueCollectionModifier();
+        if (modifier == null || modifier.size() == 0) return;
+
+        var dataValues = modifier.read(0);
+        if (dataValues == null) return;
+
+        boolean modified = false;
+
+        for (var dataValue : dataValues) {
+            if (dataValue == null || dataValue.getIndex() != 2) continue;
+
+            try {
+                var raw = dataValue.getValue();
+                if (!(raw instanceof java.util.Optional<?> opt) || opt.isEmpty()) continue;
+
+                var inner = opt.get();
+                if (!(inner instanceof com.comphenix.protocol.wrappers.WrappedChatComponent wrapped)) continue;
+
+                if (wrapped.getJson() == null) continue;
+
+                var locale = new Locale(AdventureComponentConverter.fromWrapper(wrapped), bread.getLanguage())
+                    .setPlaceholders(bread)
+                    .setGendered(null)
+                    .setExecuteInteractive(bread);
+
+                var translated = AdventureComponentConverter.fromComponent(
+                    locale.getColoredComponent(bread.getTheme()));
+
+                dataValue.setValue(java.util.Optional.of(translated));
+                modified = true;
+
+            } catch (Exception e) {
+                Synergy.getLogger().error("Error translating hologram metadata: " + e.getMessage());
+            }
+        }
+
+        if (modified) {
+            modifier.write(0, dataValues);
+        }
+    }
+    
     @SuppressWarnings("deprecation")
 	private ItemStack translateItem(ItemStack item, BreadMaker bread) {
         if (item == null || !item.hasItemMeta()) return item;
@@ -157,16 +211,17 @@ public class LocalesHandler {
                     .setPlaceholders(bread).setGendered(bread.getGender()).getColoredLegacy(bread.getTheme()))
                 .toList());
         
-        if (meta instanceof BookMeta book) {
+        if (meta instanceof BookMeta book && item.getType() == Material.WRITTEN_BOOK) {
             var original = (BookMeta) item.getItemMeta();
-            if (original.hasTitle()) 
+            if (original.hasTitle())
                 book.title(Synergy.translate(original.title(), bread.getLanguage())
                     .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
-            if (original.hasAuthor()) 
+            if (original.hasAuthor())
                 book.author(Synergy.translate(original.author(), bread.getLanguage())
                     .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
-            if (original.hasPages()) 
-                book.pages(original.pages().stream()
+            if (original.hasPages())
+            	original.getPages().forEach(p -> Synergy.getLogger().info("PAGE RAW: " + p));
+                book.pages(original.getPages().stream()
                     .map(page -> Synergy.translate(page, bread.getLanguage())
                         .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()))
                     .toList());

@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.LocaleBuilder;
 import me.synergy.utils.BookMessage;
@@ -17,7 +18,7 @@ import me.synergy.utils.BookMessage;
 public class VoteCommand implements CommandExecutor {
     
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("votifier.enabled")) return;
+        if (!Config.getBoolean("votifier.enabled")) return;
         Synergy.getSpigot().getCommand("vote").setExecutor(this);
 		
         Locales.addDefault("vote-monitorings-format", "en", "<primary>▶ <click:open_url:%URL%><hover:show_text:Click to vote><secondary><u>%MONITORING%</u></click>");
@@ -42,7 +43,7 @@ public class VoteCommand implements CommandExecutor {
         }
         
         Player player = (Player) sender;
-        List<String> monitorings = Synergy.getConfig().getStringList("votifier.monitorings");
+        List<String> monitorings = Config.getStringList("votifier.monitorings");
         
         StringBuilder list = new StringBuilder();
         

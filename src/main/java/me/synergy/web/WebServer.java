@@ -17,6 +17,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 
 @SuppressWarnings("restriction")
 public class WebServer {
@@ -30,14 +31,14 @@ public class WebServer {
 
 	private static HttpServer server;
     private static ThreadPoolExecutor executor;
-    private static int port = Synergy.getConfig().getInt("web-server.port");
-    private static String serverAddress = Synergy.getConfig().getString("web-server.domain");
+    private static int port = Config.getInt("web-server.port");
+    private static String serverAddress = Config.getString("web-server.domain");
     private static String fullAddress = "http://" + serverAddress + ":" + port;
     private static boolean isRunning = false;
     public static final long MONITOR_INTERVAL_SECONDS = 60L;
 
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("web-server.enabled")) {
+        if (!Config.getBoolean("web-server.enabled")) {
             return;
         }
         start();

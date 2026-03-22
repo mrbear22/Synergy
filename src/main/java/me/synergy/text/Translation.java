@@ -6,6 +6,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Gendered.Gender;
@@ -18,7 +19,7 @@ public class Translation {
     private static final Pattern LANG_ARG = Pattern.compile("<arg>(.*?)</arg>");
     
     public static String getDefaultLanguage() {
-        try { return Synergy.getConfig().getString("localizations.default-language"); } 
+        try { return Config.getString("localizations.default-language"); } 
         catch (Exception e) { return "en"; }
     }
     

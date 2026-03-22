@@ -47,3 +47,6 @@ commands:
     description: <lang>command_description_pronoun</lang>
     usage: <lang>command_usage_pronoun</lang>
     aliases: [gender, iamgirl, iamboy]
+  delayed:
+    description: <lang>command_description_delayed</lang>
+    usage: <lang>command_usage_delayed</lang>

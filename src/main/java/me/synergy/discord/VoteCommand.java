@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -15,7 +16,7 @@ public class VoteCommand extends ListenerAdapter {
 
 	public VoteCommand() {
 		try {
-	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+	        if (!Config.getBoolean("discord.enabled")) {
 	            return;
 	        }
 	        
@@ -51,7 +52,7 @@ public class VoteCommand extends ListenerAdapter {
     	EmbedBuilder embed = new EmbedBuilder();
         embed.setTitle(Synergy.translate("<lang>vote-monitorings</lang>", language).getStripped());
         StringBuilder links = new StringBuilder();
-        for (String link : Synergy.getConfig().getStringList("votifier.monitorings")) {
+        for (String link : Config.getStringList("votifier.monitorings")) {
         	try {
             	String domain = new URI(link).getHost();
         		String format = Synergy.translate("<lang>vote-monitorings-format-stripped</lang>", language).getStripped().replace("%MONITORING%", domain).replace("%URL%", link) + "\n";

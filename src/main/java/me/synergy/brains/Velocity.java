@@ -29,6 +29,8 @@ import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
+import me.synergy.utils.UpdateChecker;
+import me.synergy.web.TikTokHandler;
 import me.synergy.web.WebServer;
 
 @Plugin(id = "synergy", name = "Synergy", version = "0.0.2-SNAPSHOT",
@@ -66,9 +68,14 @@ public class Velocity {
 		new VoteHandler().initialize();
 	    new WebServer().initialize();
         new RolesHandler().initialize();
+		new TikTokHandler().initialize();
     	if (Synergy.isDependencyAvailable("Plan")) {
     		new PlanAPI().initialize();
     	}
+    	
+    	new UpdateChecker("mrbear22", "Synergy").checkForUpdates();
+    	
+    	Config.save();
 		
     }
 

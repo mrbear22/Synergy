@@ -9,6 +9,7 @@ import com.github.twitch4j.TwitchClientBuilder;
 import com.github.twitch4j.helix.domain.User;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 
 public class LinksManager {
 
@@ -92,7 +93,7 @@ public class LinksManager {
         try {
             OAuth2Credential credential = new OAuth2Credential("twitch", token);
             testClient = TwitchClientBuilder.builder()
-                    .withClientId(Synergy.getConfig().getString("twitch.client-id"))
+                    .withClientId(Config.getString("twitch.client-id"))
                     .withEnableHelix(true)
                     .withDefaultAuthToken(credential)
                     .build();

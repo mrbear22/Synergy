@@ -11,6 +11,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.LocaleBuilder;
@@ -19,7 +20,7 @@ import me.synergy.utils.BookMessage;
 public class ThemeCommand implements CommandExecutor, TabCompleter {
     
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("localizations.enabled")) return;
+        if (!Config.getBoolean("localizations.enabled")) return;
         Synergy.getSpigot().getCommand("theme").setExecutor(this);
         Synergy.getSpigot().getCommand("theme").setTabCompleter(this);
         Locales.addDefault("themes", "en", new String[] {
@@ -43,7 +44,7 @@ public class ThemeCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length < 2) {
-            Set<String> themes = Synergy.getConfig().getConfigurationSection("localizations.color-themes").keySet();
+            Set<String> themes = Config.getConfigurationSection("localizations.color-themes").keySet();
             return new ArrayList<>(themes);
         }
         return null;
@@ -58,7 +59,7 @@ public class ThemeCommand implements CommandExecutor, TabCompleter {
         
         Player player = (Player) sender;
         BreadMaker bread = new BreadMaker(player.getUniqueId());
-        Set<String> themes = Synergy.getConfig().getConfigurationSection("localizations.color-themes").keySet();
+        Set<String> themes = Config.getConfigurationSection("localizations.color-themes").keySet();
         
         if (args.length > 0 && (themes.contains(args[0].toLowerCase()) || args[0].equalsIgnoreCase("auto"))) {
             bread.setData("theme", args[0].equalsIgnoreCase("auto") ? null : args[0].toLowerCase());

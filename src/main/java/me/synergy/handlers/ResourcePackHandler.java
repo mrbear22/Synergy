@@ -9,6 +9,7 @@ import org.bukkit.event.player.PlayerResourcePackStatusEvent;
 
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 
 public class ResourcePackHandler implements Listener, SynergyListener {
 
@@ -34,8 +35,8 @@ public class ResourcePackHandler implements Listener, SynergyListener {
     @SuppressWarnings("deprecation")
 	@EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        if (Synergy.getConfig().getBoolean("web-server.custom-texturepack")) {
-        	event.getPlayer().setResourcePack(Synergy.getConfig().getString("web-server.custom-texturepack-url"));
+        if (Config.getBoolean("web-server.custom-texturepack")) {
+        	event.getPlayer().setResourcePack(Config.getString("web-server.custom-texturepack-url"));
         }
     }
 }

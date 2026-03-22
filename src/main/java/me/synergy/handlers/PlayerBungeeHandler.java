@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import me.synergy.brains.Bungee;
 import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
@@ -42,14 +43,14 @@ public class PlayerBungeeHandler implements Listener {
         bread.setData("name", event.getPlayer().getName());
         ProxiedPlayer player = event.getPlayer();
       
-        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+        if (!Config.getBoolean("discord.enabled")) {
             return;
         }
 
-        if (Synergy.getConfig().getBoolean("discord.kick-player.if-banned.enabled")) {
+        if (Config.getBoolean("discord.kick-player.if-banned.enabled")) {
             if (Discord.isBanned(bread)) {
                 kickedPlayers.add(player.getUniqueId());
-                bread.kick(Synergy.getConfig().getString("discord.kick-player.if-banned.message"));
+                bread.kick(Config.getString("discord.kick-player.if-banned.message"));
                 return;
             }
         }
@@ -62,7 +63,7 @@ public class PlayerBungeeHandler implements Listener {
         bread.setData("name", event.getPlayer().getName());
         ProxiedPlayer player = event.getPlayer();
 
-        if (Synergy.getConfig().getBoolean("twitch.enabled") && bread.getData("twitch-username").isSet()) {
+        if (Config.getBoolean("twitch.enabled") && bread.getData("twitch-username").isSet()) {
         	try {
 				Twitch.getConnectionManager().connect(
 				    bread.getData("twitch-username").getAsString(), 
@@ -73,7 +74,7 @@ public class PlayerBungeeHandler implements Listener {
 			}
         }
 
-        if (Synergy.getConfig().getBoolean("monobank.enabled") && bread.getData("monobank").isSet()) {
+        if (Config.getBoolean("monobank.enabled") && bread.getData("monobank").isSet()) {
         	try {
 				MonobankHandler.connect(
 				    bread.getName(), 
@@ -84,31 +85,31 @@ public class PlayerBungeeHandler implements Listener {
 			}
         }
         
-        if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.kick-player.if-banned.enabled")) {
+        if (Config.getBoolean("discord.enabled") && Config.getBoolean("discord.kick-player.if-banned.enabled")) {
             if (Discord.isBanned(bread)) {
                 kickedPlayers.add(player.getUniqueId());
-                bread.kick(Synergy.getConfig().getString("discord.kick-player.if-banned.message"));
+                bread.kick(Config.getString("discord.kick-player.if-banned.message"));
                 return;
             }
         }
 
-        if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.kick-player.if-missing.enabled")) {
-            if (Discord.isMissing(bread)) {
+        if (Config.getBoolean("discord.enabled") && Config.getBoolean("discord.kick-player.if-missing.enabled")) {
+            if (Discord.isMissing(bread) && (bread.getData("discord").isSet() && !bread.getData("discord").getAsString().equals("00000"))) {
                 kickedPlayers.add(player.getUniqueId());
-                bread.kick(Synergy.getConfig().getString("discord.kick-player.if-missing.message"));
+                bread.kick(Config.getString("discord.kick-player.if-missing.message"));
                 return;
             }
         }
 
-        if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.kick-player.if-muted.enabled")) {
+        if (Config.getBoolean("discord.enabled") && Config.getBoolean("discord.kick-player.if-muted.enabled")) {
             if (Discord.isMuted(bread)) {
                 kickedPlayers.add(player.getUniqueId());
-                bread.kick(Synergy.getConfig().getString("discord.kick-player.if-muted.message"));
+                bread.kick(Config.getString("discord.kick-player.if-muted.message"));
                 return;
             }
         }
 
-        if (Synergy.getConfig().getBoolean("discord.enabled") && bread.getData("confirm-discord").isSet()) {
+        if (Config.getBoolean("discord.enabled") && bread.getData("confirm-discord").isSet()) {
             ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
             scheduler.schedule(() -> {
                 User user = Synergy.getDiscord().getUserById(bread.getData("confirm-discord").getAsString());
@@ -120,7 +121,7 @@ public class PlayerBungeeHandler implements Listener {
             }, 2, TimeUnit.SECONDS);
         }
 
-        if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages")) {
+        if (Config.getBoolean("discord.enabled") && Config.getBoolean("discord.player-join-leave-messages")) {
         	kickedPlayers.add(player.getUniqueId());
             Bungee.getInstance().getProxy().getScheduler().schedule(
                 Bungee.getInstance(),
@@ -152,7 +153,7 @@ public class PlayerBungeeHandler implements Listener {
             return;
         }
         
-        if (Synergy.getConfig().getBoolean("twitch.enabled") && bread.getData("twitch-username").isSet()) {
+        if (Config.getBoolean("twitch.enabled") && bread.getData("twitch-username").isSet()) {
         	try {
         		Twitch.getConnectionManager().disconnect(
 				    bread.getData("twitch-username").getAsString()
@@ -162,7 +163,7 @@ public class PlayerBungeeHandler implements Listener {
 			}
         }
         
-        if (Synergy.getConfig().getBoolean("monobank.enabled") && bread.getData("monobank").isSet()) {
+        if (Config.getBoolean("monobank.enabled") && bread.getData("monobank").isSet()) {
         	try {
 				MonobankHandler.disconnect(
 				    bread.getData("monobank").getAsString()
@@ -172,7 +173,7 @@ public class PlayerBungeeHandler implements Listener {
 			}
         }
         
-        if (Synergy.getConfig().getBoolean("discord.enabled") && Synergy.getConfig().getBoolean("discord.player-join-leave-messages")) {
+        if (Config.getBoolean("discord.enabled") && Config.getBoolean("discord.player-join-leave-messages")) {
 	        Synergy.event("discord-embed")
 	            .setPlayerUniqueId(player.getUniqueId())
 	            .setOption("chat", "global")

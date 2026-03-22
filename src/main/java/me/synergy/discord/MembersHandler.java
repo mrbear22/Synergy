@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.entities.User;
@@ -25,7 +26,7 @@ public class MembersHandler extends ListenerAdapter implements SynergyListener {
 	
 	public MembersHandler() {
         try {
-	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+	        if (!Config.getBoolean("discord.enabled")) {
 	            return;
 	        }
 	        
@@ -50,27 +51,27 @@ public class MembersHandler extends ListenerAdapter implements SynergyListener {
 	
 	@Override
 	public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent event) {
-		if (!Synergy.getConfig().getBoolean("discord.welcome-message.enabled", false)) {
+		if (!Config.getBoolean("discord.welcome-message.enabled", false)) {
 			return;
 		}
 		
 		User user = event.getUser();
-		String welcomeMessage = Synergy.translate(Synergy.getConfig().getString("discord.welcome-message.text", "Welcome, %NAME%!"), Translation.getDefaultLanguage()).getStripped().replace("%NAME%", user.getAsMention());
+		String welcomeMessage = Synergy.translate(Config.getString("discord.welcome-message.text", "Welcome, %NAME%!"), Translation.getDefaultLanguage()).getStripped().replace("%NAME%", user.getAsMention());
 		
 		user.openPrivateChannel().queue(channel -> {
 			List<ItemComponent> buttons = new ArrayList<>();
 			
-			Map<String, Object> buttonConfigs = Synergy.getConfig().getConfigurationSection("discord.welcome-message.buttons");
+			Map<String, Object> buttonConfigs = Config.getConfigurationSection("discord.welcome-message.buttons");
 			
 			if (buttonConfigs != null && !buttonConfigs.isEmpty()) {
 
 				for (Map.Entry<String, Object> entry : buttonConfigs.entrySet()) {
 					String key = entry.getKey();
 					
-					String label = Synergy.getConfig().getString("discord.welcome-message.buttons." + key + ".label");
-					String value = Synergy.getConfig().getString("discord.welcome-message.buttons." + key + ".value");
-					String style = Synergy.getConfig().getString("discord.welcome-message.buttons." + key + ".style", "primary");
-					String emoji = Synergy.getConfig().getString("discord.welcome-message.buttons." + key + ".emoji");
+					String label = Config.getString("discord.welcome-message.buttons." + key + ".label");
+					String value = Config.getString("discord.welcome-message.buttons." + key + ".value");
+					String style = Config.getString("discord.welcome-message.buttons." + key + ".style", "primary");
+					String emoji = Config.getString("discord.welcome-message.buttons." + key + ".emoji");
 					
 					if (label == null || value == null) {
 						continue;
@@ -141,11 +142,11 @@ public class MembersHandler extends ListenerAdapter implements SynergyListener {
 
     @Override
     public void onGuildBan(@NotNull GuildBanEvent event) {
-        if (Synergy.getConfig().getBoolean("discord.kick-player.if-banned.enabled")) {
+        if (Config.getBoolean("discord.kick-player.if-banned.enabled")) {
 	        String userId = event.getUser().getId();
 	        UUID uniqueId = Discord.getUniqueIdByDiscordId(userId);
 	        BreadMaker bread = Synergy.getBread(uniqueId);
-        	bread.kick(Synergy.getConfig().getString("discord.kick-player.if-banned.message"));
+        	bread.kick(Config.getString("discord.kick-player.if-banned.message"));
         }
     }
     
@@ -156,22 +157,22 @@ public class MembersHandler extends ListenerAdapter implements SynergyListener {
     
     @Override
     public void onGuildMemberRemove(@NotNull GuildMemberRemoveEvent event) {
-        if (Synergy.getConfig().getBoolean("discord.kick-player.if-missing.enabled")) {
+        if (Config.getBoolean("discord.kick-player.if-missing.enabled")) {
 	        String userId = event.getUser().getId();
 	        UUID uniqueId = Discord.getUniqueIdByDiscordId(userId);
 	        BreadMaker bread = Synergy.getBread(uniqueId);
-        	bread.kick(Synergy.getConfig().getString("discord.kick-player.if-missing.message"));
+        	bread.kick(Config.getString("discord.kick-player.if-missing.message"));
         }
     }
     
     @Override
     public void onGuildMemberUpdateTimeOut(@NotNull GuildMemberUpdateTimeOutEvent event) {
-        if (Synergy.getConfig().getBoolean("discord.kick-player.if-muted.enabled")) {
+        if (Config.getBoolean("discord.kick-player.if-muted.enabled")) {
 	        String userId = event.getUser().getId();
 	        if (event.getNewTimeOutEnd() != null) {
 		        UUID uniqueId = Discord.getUniqueIdByDiscordId(userId);
 		        BreadMaker bread = Synergy.getBread(uniqueId);
-	        	bread.kick(Synergy.getConfig().getString("discord.kick-player.if-muted.message"));
+	        	bread.kick(Config.getString("discord.kick-player.if-muted.message"));
 	        } else {
 	            // 
 	        }

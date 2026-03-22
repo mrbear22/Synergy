@@ -16,6 +16,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 
 public class DeepLTranslator {
     
@@ -33,9 +34,9 @@ public class DeepLTranslator {
 	private final int requestDelay;
     
     public DeepLTranslator() {
-        this.apiKey = Synergy.getConfig().getString("deepl.api-key");
-        this.isProAccount = Synergy.getConfig().getBoolean("deepl.pro-account", false);
-        this.requestDelay = Synergy.getConfig().getInt("deepl.request-delay-ms", 200);
+        this.apiKey = Config.getString("deepl.api-key");
+        this.isProAccount = Config.getBoolean("deepl.pro-account", false);
+        this.requestDelay = Config.getInt("deepl.request-delay-ms", 200);
         
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new IllegalStateException("DeepL API key not found in config! Please set 'deepl.api-key' in config.yml");

@@ -10,6 +10,7 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +22,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.utils.Utils;
 
 public class Config {
-    private String configFile = "plugins/Synergy/config.yml";
+    private static String configFile = "plugins/Synergy/config.yml";
     public static Map<String, Object> configValues;
 
     public void initialize() {
@@ -49,9 +50,6 @@ public class Config {
             addDefault("twitch.client-id", "client-id");
 
             addDefault("monobank.enabled", false);
-            
-            addDefault("tiktok.enabled", false);
-            addDefault("tiktok.listener", false);
             
             addDefault("discord.enabled", false);
             addDefault("discord.bot-token", "token");
@@ -122,45 +120,9 @@ public class Config {
 	                addDefault("monobank.rewards.wither.cost", 1000);
 	                addDefault("twitch.rewards.wither.input-required", false);
 	                addDefault("twitch.rewards.wither.input-regex", "[a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9]");
-	                addDefault("monobank.rewards.wither.commands", new String[] {"execute at %target_name% run summon minecraft:wither ~ ~2 ~", "execute at %target_name% run title @a[distance=..500] title {\"text\":\"%counter_name% has spawned a Wither\"}"});
+	                addDefault("monobank.rewards.wither.commands", new String[] {"execute at %streamer_name% run summon minecraft:wither ~ ~2 ~", "execute at %streamer_name% run title @a[distance=..500] title {\"text\":\"%counter_name% has spawned a Wither\"}"});
             	}
-            	
-                if (getConfigurationSection("tiktok.rewards").isEmpty()) {
-                    addDefault("tiktok.rewards.small.title", "Small Gift");
-                    addDefault("tiktok.rewards.small.description", "Common gifts");
-                    addDefault("tiktok.rewards.small.gifts", new String[] {"Rose", "TikTok", "Heart", "GG"});
-                    addDefault("tiktok.rewards.small.commands", new String[] {
-                        "say &e%donater_name% &7sent &e%gift_name% &7to &e%target_name%!",
-                        "give %target_name% diamond 1"
-                    });
-                    
-                    addDefault("tiktok.rewards.medium.title", "Medium Gift");
-                    addDefault("tiktok.rewards.medium.description", "Valuable gifts");
-                    addDefault("tiktok.rewards.medium.gifts", new String[] {"Finger Heart", "Corgi", "Doughnut"});
-                    addDefault("tiktok.rewards.medium.commands", new String[] {
-                        "say &6%donater_name% &7sent &6%combo_count%x %gift_name% &7to &6%target_name%!",
-                        "give %target_name% diamond 5",
-                        "execute at %target_name% run summon firework_rocket ~ ~2 ~"
-                    });
-                    
-                    addDefault("tiktok.rewards.large.title", "Large Gift");
-                    addDefault("tiktok.rewards.large.description", "Premium gifts");
-                    addDefault("tiktok.rewards.large.gifts", new String[] {"Lion", "Breakthrough Star", "Drama Queen"});
-                    addDefault("tiktok.rewards.large.commands", new String[] {
-                        "broadcast &6&l%donater_name% &e&lsent a HUGE gift &6&l%gift_name% &e&lto &6&l%target_name%!",
-                        "give %target_name% diamond 10",
-                        "execute at %target_name% run summon firework_rocket ~ ~2 ~",
-                        "execute at %target_name% run summon firework_rocket ~1 ~2 ~1",
-                        "execute at %target_name% run summon firework_rocket ~-1 ~2 ~-1"
-                    });
-                    
-                    // Default для всіх інших подарунків
-                    addDefault("tiktok.rewards.default.title", "Gift");
-                    addDefault("tiktok.rewards.default.description", "Any other gift");
-                    addDefault("tiktok.rewards.default.commands", new String[] {
-                        "say &7%donater_name% &7sent &7%gift_name% &7to &7%target_name%!"
-                    });
-                }
+            
 	                
                 addDefault("votifier.rewards", new String[] {"eco give %PLAYER% 1"});
                 addDefault("votifier.monitorings", new String[] {"https://example.com/vote/example"});
@@ -216,6 +178,16 @@ public class Config {
                 addDefault("chat-manager.chats.local.color", "#deceb4");
                 addDefault("chat-manager.chats.local.tag", "[L]");
                 
+                addDefault("chat-manager.chats.twitch.enabled", false);
+                addDefault("chat-manager.chats.twitch.color", "#c9ffcd");
+                addDefault("chat-manager.chats.twitch.tag", "[Twitch]");
+                addDefault("chat-manager.chats.twitch.symbol", "none");
+                
+                addDefault("chat-manager.chats.tiktok.enabled", false);
+                addDefault("chat-manager.chats.tiktok.color", "#c9ffcd");
+                addDefault("chat-manager.chats.tiktok.tag", "[TikTok]");
+                addDefault("chat-manager.chats.tiktok.symbol", "none");
+                
             	if (getConfigurationSection("chat-manager").isEmpty()) {
 
 	                addDefault("chat-manager.chats.global.discord.color", "#dedee0");
@@ -231,11 +203,7 @@ public class Config {
 	                addDefault("chat-manager.chats.admin.discord.color", "#ffb4a1");
 	                addDefault("chat-manager.chats.admin.discord.tag", "[Discord]");
 	                addDefault("chat-manager.chats.admin.discord.channel", "00000000000000000");
-	
-	                addDefault("chat-manager.chats.twitch.enabled", false);
-	                addDefault("chat-manager.chats.twitch.color", "#c9ffcd");
-	                addDefault("chat-manager.chats.twitch.tag", "[Twitch]");
-	                addDefault("chat-manager.chats.twitch.symbol", "none");
+
 	                
             	}
             	
@@ -270,7 +238,7 @@ public class Config {
 
             }
 
-            saveConfig();
+            save();
 
         } catch (Exception c) {
             Synergy.getLogger().warning(String.valueOf(getClass().getSimpleName()) + " file failed to initialize: " + c);
@@ -304,20 +272,19 @@ public class Config {
         }
     }
 
-    private void saveConfig() {
-        try {
-	        OutputStream output = new FileOutputStream(this.configFile);
-	        DumperOptions options = new DumperOptions();
-	        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-	        Yaml yaml = new Yaml(options);
-	        yaml.dump(configValues, new OutputStreamWriter(output));
+    public static void save() {
+        try (OutputStream output = new FileOutputStream(configFile)) {
+            DumperOptions options = new DumperOptions();
+            options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+            Yaml yaml = new Yaml(options);
+            yaml.dump(configValues, new OutputStreamWriter(output));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
-
+    
     @SuppressWarnings("unchecked")
-    public Object get(String key) {
+    public static Object get(String key) {
         String[] keys = key.split("\\.");
         Map<String, Object> currentMap = configValues;
         for (String k : keys) {
@@ -332,7 +299,7 @@ public class Config {
     }
 
     @SuppressWarnings("unchecked")
-    public void set(String key, Object value) {
+    public static void set(String key, Object value) {
         String[] keys = key.split("\\.");
         Map<String, Object> currentMap = configValues;
         for (int i = 0; i < keys.length - 1; i++) {
@@ -344,78 +311,81 @@ public class Config {
         } else {
             currentMap.put(keys[keys.length - 1], value);
         }
-        saveConfig();
     }
 
-    private void addDefault(String key, String[] value) {
-    	if (get(key) == null) {
-            set(key, value);
-    	}
-        
+    public static List<String> addDefault(String key, String[] value) {
+        if (get(key) == null) {
+            set(key, Arrays.asList(value));
+        }
+        return getStringList(key);
     }
 
-    private void addDefault(String key, String value) {
+    public static String addDefault(String key, String value) {
        if (get(key) == null) {
             set(key, value);
         }
+       return getString(key);
     }
 
-    private void addDefault(String key, double value) {
+    public static double addDefault(String key, double value) {
         if (get(key) == null) {
             set(key, Double.valueOf(value));
         }
+        return getDouble(key);
     }
 
-    private void addDefault(String key, boolean value) {
+    public static boolean addDefault(String key, boolean value) {
         if (get(key) == null) {
             set(key, Boolean.valueOf(value));
         }
+        return getBoolean(key);
     }
 
-    private void addDefault(String key, int value) {
+    public static int addDefault(String key, int value) {
         if (get(key) == null) {
             set(key, Integer.valueOf(value));
         }
+        return getInt(key);
     }
     
-    public Boolean getBoolean(String key, boolean defaultIfNull) {
+    public static Boolean getBoolean(String key, boolean defaultIfNull) {
         return (getBoolean(key) != null) ? getBoolean(key) : defaultIfNull;
     }
     
-    public Boolean getBoolean(String key) {
+    public static Boolean getBoolean(String key) {
         Object value = get(key);
         return value != null ? (Boolean) value : null;
     }
 
-    public Integer getInt(String key, int defaultIfNull) {
+    public static Integer getInt(String key, int defaultIfNull) {
         return (getInt(key) != null) ? getInt(key) : defaultIfNull;
     }
     
-    public Integer getInt(String key) {
+    public static Integer getInt(String key) {
         Object value = get(key);
         return value != null ? (int) value : null;
     }
 
-    public String getString(String key) {
+    public static String getString(String key) {
         Object value = get(key);
         return value != null ? (String) value : null;
     }
 
-    public String getString(String key, String defaultIfNull) {
+    public static String getString(String key, String defaultIfNull) {
         return (getString(key) != null) ? getString(key) : defaultIfNull;
     }
 
-    public Double getDouble(String key, Double defaultIfNull) {
+    public static Double getDouble(String key, Double defaultIfNull) {
         return (getDouble(key) != null) ? getDouble(key) : defaultIfNull;
     }
     
-    public Double getDouble(String key) {
+    public static Double getDouble(String key) {
         Object value = get(key);
         return value != null ? (Double) value : null;
     }
 
     @SuppressWarnings("unchecked")
-    public List <String> getStringList(String key) {
+    public static List <String> getStringList(String key) {
         Object value = get(key);
         return (value != null) ? (List <String>) value : null;
     }
@@ -425,7 +395,7 @@ public class Config {
     }
 
 	@SuppressWarnings("unchecked")
-    public Map<String, Object> getConfigurationSection(String path) {
+    public static Map<String, Object> getConfigurationSection(String path) {
         if (path == null || path.isEmpty()) {
             return configValues;
         }

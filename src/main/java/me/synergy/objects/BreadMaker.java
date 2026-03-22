@@ -9,6 +9,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.brains.Velocity;
 import me.synergy.integrations.AuthmeAPI;
 import me.synergy.integrations.EssentialsAPI;
+import me.synergy.modules.Config;
 import me.synergy.text.Gendered.Gender;
 
 public class BreadMaker {
@@ -26,7 +27,7 @@ public class BreadMaker {
 		if (Synergy.isRunningSpigot() && isOnline()) {
 			return Synergy.getSpigot().getPlayerLanguage(getUniqueId());
 		}
-		return Synergy.getConfig().getString("localizations.default-language", "en");
+		return Config.getString("localizations.default-language", "en");
 	}
 
 	public void sendMessage(String message) {

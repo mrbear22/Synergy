@@ -10,7 +10,9 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
+import me.synergy.objects.Locale;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -24,7 +26,7 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
 
 	public ChatHandler() {
         try {
-	        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+	        if (!Config.getBoolean("discord.enabled")) {
 	            return;
 	        }
 	        
@@ -44,14 +46,14 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
 	public static MessageEmbed createEmbed(SynergyEvent event) {
         EmbedBuilder embedBuilder = new EmbedBuilder();
         if (event.getOption("title").isSet()) {
-            embedBuilder.setTitle(event.getOption("title").getAsString());
+            embedBuilder.setTitle(new Locale(event.getOption("title").getAsString(), Translation.getDefaultLanguage()).setGendered(null).getStripped());
         }
         if (event.getOption("color").isSet()) {
             String colorHex = event.getOption("color").getAsString();
             embedBuilder.setColor(Color.decode(colorHex));
         }
         if (event.getOption("author").isSet()) {
-	        String avatar = Synergy.getConfig().getString("discord.avatar-link");
+	        String avatar = Config.getString("discord.avatar-link");
         	if (event.getPlayerUniqueId() != null) {
         		avatar = avatar.replace("%UUID%", event.getPlayerUniqueId().toString());
 	        }
@@ -65,13 +67,13 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
 	        	avatar = event.getOption("avatar").getAsString();
 	        	avatar = avatar.equals("%self%") ? Synergy.getDiscord().getSelfUser().getAvatarUrl() : avatar;
 	        }
-            embedBuilder.setAuthor(event.getOption("author").getAsString(), null, avatar);
+            embedBuilder.setAuthor(new Locale(event.getOption("author").getAsString(), Translation.getDefaultLanguage()).setGendered(null).getStripped(), null, avatar);
         }
         if (event.getOption("description").isSet()) {
-            embedBuilder.setDescription(event.getOption("description").getAsString());
+            embedBuilder.setDescription(new Locale(event.getOption("description").getAsString(), Translation.getDefaultLanguage()).setGendered(null).getStripped());
         }
         if (event.getOption("footer").isSet()) {
-            embedBuilder.setFooter(event.getOption("footer").getAsString());
+            embedBuilder.setFooter(new Locale(event.getOption("footer").getAsString(), Translation.getDefaultLanguage()).setGendered(null).getStripped());
         }
         if (event.getOption("image").isSet()) {
             embedBuilder.setImage(event.getOption("image").getAsString());
@@ -86,7 +88,7 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
     public void onSynergyEvent(SynergyEvent event) {
     	
     	if (event.getIdentifier().equals("discord-message")) {
-        	String channel = event.getOption("channel").isSet() ?  Synergy.getConfig().getString("discord.channels."+event.getOption("channel").getAsString()) : null;
+        	String channel = event.getOption("channel").isSet() ?  Config.getString("discord.channels."+event.getOption("channel").getAsString()) : null;
         	
             if (channel == null || channel.isEmpty() || channel.length() != 19) {
             	return;
@@ -96,14 +98,14 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
     	}
     	
         if (event.getIdentifier().equals("discord-embed")) {
-        	String channel = event.getOption("channel").isSet() ? event.getOption("channel").getAsString() : Synergy.getConfig().getString("discord.channels.broadcast");
+        	String channel = event.getOption("channel").isSet() ? event.getOption("channel").getAsString() : Config.getString("discord.channels.broadcast");
         	
             if (channel == null || channel.isEmpty() || channel.length() != 19) {
             	return;
             }
   
             MessageEmbed embed = createEmbed(event);
-            if (Synergy.getConfig().getBoolean("discord.channels.merge-similar-embeds")) {
+            if (Config.getBoolean("discord.channels.merge-similar-embeds")) {
                 try {
                     Message message = Synergy.getDiscord().getTextChannelById(channel)
                             .retrieveMessageById(Synergy.getDiscord().getTextChannelById(channel).getLatestMessageId())
@@ -140,10 +142,10 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
 		       .setOption("discord-user-id", user.getId())
 		       .send();
 
-        if (Synergy.getConfig().getBoolean("discord.hightlights.enabled") &&
-            Synergy.getConfig().getStringList("discord.hightlights.channels").contains(channelId) &&
+        if (Config.getBoolean("discord.hightlights.enabled") &&
+            Config.getStringList("discord.hightlights.channels").contains(channelId) &&
             message.getAttachments().size() > 0) {
-            message.addReaction(Emoji.fromUnicode(Synergy.getConfig().getString("discord.hightlights.reaction-emoji"))).complete();
+            message.addReaction(Emoji.fromUnicode(Config.getString("discord.hightlights.reaction-emoji"))).complete();
             message.createThreadChannel(Synergy.translate("<lang>hightlights-comments</lang>", Translation.getDefaultLanguage()).getStripped()).queue();
         }
         return;

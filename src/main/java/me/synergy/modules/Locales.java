@@ -32,7 +32,7 @@ public class Locales {
     public void initialize() {
         try {
             loadLocales();
-            if (!Synergy.getConfig().getBoolean("localizations.enabled")) return;
+            if (!Config.getBoolean("localizations.enabled")) return;
             Synergy.getLogger().info(getClass().getSimpleName() + " module initialized!");
         } catch (Exception e) {
             Synergy.getLogger().error(getClass().getSimpleName() + " module failed to initialize:");

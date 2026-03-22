@@ -14,13 +14,14 @@ import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
 
 public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, SynergyListener {
 
 	public void initialize() {
-        if (!Synergy.getConfig().getBoolean("twitch.enabled")) {
+        if (!Config.getBoolean("twitch.enabled")) {
             return;
         }
         Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());
@@ -55,7 +56,7 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
 
 	    if (args[0].equalsIgnoreCase("createreward") || args[0].equalsIgnoreCase("removereward") || args[0].equalsIgnoreCase("testreward")) {
 	        if (args.length == 2) {
-	            Map<String, Object> rewardsSection = Synergy.getConfig().getConfigurationSection("twitch.rewards");
+	            Map<String, Object> rewardsSection = Config.getConfigurationSection("twitch.rewards");
 	            if (rewardsSection != null) {
 	                return rewardsSection.keySet().stream()
 	                        .filter(k -> k.toLowerCase().startsWith(args[1].toLowerCase()))
@@ -104,10 +105,10 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
 		    	
 	    		Synergy.event("create-twitch-reward")
 	    			   .setPlayerUniqueId(player.getUniqueId())
-	    			   .setOption("title", Synergy.getConfig().getString("twitch.rewards." + args[1] + ".title"))
-	    			   .setOption("cost", String.valueOf(Synergy.getConfig().getInt("twitch.rewards." + args[1] + ".cost")))
-	    			   .setOption("description", Synergy.getConfig().getString("twitch.rewards." + args[1] + ".description"))
-	    			   .setOption("input-required", String.valueOf(Synergy.getConfig().getBoolean("twitch.rewards." + args[1] + ".input-required")))
+	    			   .setOption("title", Config.getString("twitch.rewards." + args[1] + ".title"))
+	    			   .setOption("cost", String.valueOf(Config.getInt("twitch.rewards." + args[1] + ".cost")))
+	    			   .setOption("description", Config.getString("twitch.rewards." + args[1] + ".description"))
+	    			   .setOption("input-required", String.valueOf(Config.getBoolean("twitch.rewards." + args[1] + ".input-required")))
 	    			   .send();
 	            break;
 	            
@@ -123,7 +124,7 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
 		    	
 	    		Synergy.event("remove-twitch-reward")
 	    			   .setPlayerUniqueId(player.getUniqueId())
-	    			   .setOption("title", Synergy.getConfig().getString("twitch.rewards." + args[1] + ".title"))
+	    			   .setOption("title", Config.getString("twitch.rewards." + args[1] + ".title"))
 	    			   .send();
 	            break;
 	            
@@ -139,7 +140,7 @@ public class TwitchCommand implements CommandExecutor, TabCompleter, Listener, S
 		    	
 	            Synergy.event("twitch-reward-redeemed")
 	                .setPlayerUniqueId(bread.getUniqueId())
-	                .setOption("reward-title", Synergy.getConfig().getString("twitch.rewards." + args[1] + ".title"))
+	                .setOption("reward-title", Config.getString("twitch.rewards." + args[1] + ".title"))
 	                .setOption("viewer-name", "test")
 	                .setOption("channel-name", bread.getData("twitch-username").getAsString())
 	                .setOption("viewer-input", args[2])

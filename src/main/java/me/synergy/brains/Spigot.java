@@ -20,6 +20,7 @@ import com.google.common.io.ByteStreams;
 import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.commands.ChatCommand;
+import me.synergy.commands.DelayedCommand;
 import me.synergy.commands.DiscordCommand;
 import me.synergy.commands.DynamicCommands;
 import me.synergy.commands.LanguageCommand;
@@ -97,6 +98,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
 		new DynamicCommands().initialize();
         new TikTokHandler().initialize();
         new TikTokCommand().initialize();
+        new DelayedCommand().initialize();
 		
 		if (Synergy.isDependencyAvailable("ProtocolLib")) {
 			PROTOCOLMANAGER = ProtocolLibrary.getProtocolManager();
@@ -126,6 +128,8 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
         Synergy.getEventManager().registerEvents(this);
 		
 		new UpdateChecker("mrbear22", "Synergy").checkForUpdates();
+		
+		Config.save();
 		
         getLogger().info("Synergy is ready to be helpful for the all BreadMakers!");
     }

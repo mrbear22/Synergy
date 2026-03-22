@@ -2,6 +2,7 @@ package me.synergy.objects;
 
 import me.synergy.brains.Synergy;
 import me.synergy.handlers.ChatHandler.MessageSource;
+import me.synergy.modules.Config;
 import me.synergy.handlers.ChatHandler.ChatFilter;
 import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.entity.Player;
@@ -17,14 +18,14 @@ public class Chat implements MessageSource {
     }
     
     public String getName() { return name; }
-    public boolean isEnabled() { return Synergy.getConfig().getBoolean("chat-manager.chats." + name + ".enabled", false); }
-    public int getRadius() { return Synergy.getConfig().getInt("chat-manager.chats." + name + ".radius", 0); }
-    public String getColor() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".color", "<#ffffff>"); }
-    public String getTag() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".tag", ""); }
-    public String getSymbol() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".symbol", null); }
-    public String getPermission() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".permission", null); }
-    public String getPlaceholder() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".placeholder", null); }
-    public String getFormat() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".format", Synergy.getConfig().getString("chat-manager.format")); }
+    public boolean isEnabled() { return Config.getBoolean("chat-manager.chats." + name + ".enabled", false); }
+    public int getRadius() { return Config.getInt("chat-manager.chats." + name + ".radius", 0); }
+    public String getColor() { return Config.getString("chat-manager.chats." + name + ".color", "<#ffffff>"); }
+    public String getTag() { return Config.getString("chat-manager.chats." + name + ".tag", ""); }
+    public String getSymbol() { return Config.getString("chat-manager.chats." + name + ".symbol", null); }
+    public String getPermission() { return Config.getString("chat-manager.chats." + name + ".permission", null); }
+    public String getPlaceholder() { return Config.getString("chat-manager.chats." + name + ".placeholder", null); }
+    public String getFormat() { return Config.getString("chat-manager.chats." + name + ".format", Config.getString("chat-manager.format")); }
     public Discord getDiscord() { return new Discord(name); }
     
     public static void register(String name, ChatFilter filter) {
@@ -37,7 +38,7 @@ public class Chat implements MessageSource {
     }
     
     public static void registerAll() {
-        Synergy.getConfig().getConfigurationSection("chat-manager.chats").keySet().forEach(name -> {
+        Config.getConfigurationSection("chat-manager.chats").keySet().forEach(name -> {
             var chat = new Chat(name);
             if (!chat.isEnabled()) return;
             
@@ -71,10 +72,10 @@ public class Chat implements MessageSource {
             this.name = name;
         }
         
-        public String getColor() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".discord.color", "<#ffffff>"); }
-        public String getTag() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".discord.tag", ""); }
-        public String getChannel() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".discord.channel", "000"); }
-        public String getPermission() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".discord.permission", null); }
-        public String getFormat() { return Synergy.getConfig().getString("chat-manager.chats." + name + ".discord.format", Synergy.getConfig().getString("chat-manager.format")); }
+        public String getColor() { return Config.getString("chat-manager.chats." + name + ".discord.color", "<#ffffff>"); }
+        public String getTag() { return Config.getString("chat-manager.chats." + name + ".discord.tag", ""); }
+        public String getChannel() { return Config.getString("chat-manager.chats." + name + ".discord.channel", "000"); }
+        public String getPermission() { return Config.getString("chat-manager.chats." + name + ".discord.permission", null); }
+        public String getFormat() { return Config.getString("chat-manager.chats." + name + ".discord.format", Config.getString("chat-manager.format")); }
     }
 }

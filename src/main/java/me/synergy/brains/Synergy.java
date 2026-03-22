@@ -23,7 +23,7 @@ public class Synergy {
     public static String platform;
 
     public static String getSynergyToken() {
-        return getConfig().getString("synergy-plugin-messaging.token");
+        return Config.getString("synergy-plugin-messaging.token");
     }
 
     public static Spigot getSpigot() {
@@ -51,7 +51,7 @@ public class Synergy {
 	}
 
     public static String getServerName() {
-        return getConfig().getString("synergy-plugin-messaging.servername");
+        return Config.getString("synergy-plugin-messaging.servername");
     }
 
     public static SynergyEvent event(String identifier) {

@@ -8,13 +8,14 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
 
 public class MonobankCommand implements CommandExecutor, TabCompleter, Listener {
     
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("monobank.enabled")) {
+        if (!Config.getBoolean("monobank.enabled")) {
             return;
         }
         Bukkit.getPluginManager().registerEvents(this, Synergy.getSpigot());

@@ -19,7 +19,9 @@ import me.synergy.modules.DataManager;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.twitch.Twitch;
+import me.synergy.utils.UpdateChecker;
 import me.synergy.web.MonobankHandler;
+import me.synergy.web.TikTokHandler;
 import me.synergy.web.WebServer;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -51,14 +53,19 @@ public class Bungee extends Plugin implements Listener {
 	    new WebServer().initialize();
         new RolesHandler().initialize();
         new VoteHandler().initialize();
+		new TikTokHandler().initialize();
         
     	if (Synergy.isDependencyAvailable("Plan")) {
     		new PlanAPI().initialize();
     	}
-        
+
 	    getProxy().getPluginManager().registerListener(this, this);
 	    
 	    getProxy().registerChannel("net:synergy");
+	    
+	    new UpdateChecker("mrbear22", "Synergy").checkForUpdates();
+	    
+    	Config.save();
 	    
 		getLogger().info("Synergy is ready to be helpful for all beadmakers!");
 	}

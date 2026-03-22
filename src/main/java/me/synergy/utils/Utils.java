@@ -15,6 +15,7 @@ import org.bukkit.OfflinePlayer;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.synergy.brains.Synergy;
 import me.synergy.brains.Velocity;
+import me.synergy.modules.Config;
 import net.md_5.bungee.api.ChatColor;
 
 public class Utils {
@@ -125,7 +126,7 @@ public class Utils {
     }
 
     public static String censorBlockedWords(String sentence) {
-        double tolerance = Synergy.getConfig().getDouble("chat-manager.chat-filter.blocked-words-tolerance-percentage");
+        double tolerance = Config.getDouble("chat-manager.chat-filter.blocked-words-tolerance-percentage");
 
         for (String blockedWord : getBlockedWorlds()) {
             if (blockedWord.length() == 1) {
@@ -214,8 +215,8 @@ public class Utils {
     }
     
 	public static String translateSmiles(String string) {
-		for (Entry<String, Object> e : Synergy.getConfig().getConfigurationSection("chat-manager.custom-emojis").entrySet()) {
-			string = string.replace(e.getKey(), Synergy.getConfig().getString("chat-manager.custom-emojis."+e.getKey()));
+		for (Entry<String, Object> e : Config.getConfigurationSection("chat-manager.custom-emojis").entrySet()) {
+			string = string.replace(e.getKey(), Config.getString("chat-manager.custom-emojis."+e.getKey()));
 		}
 		return string;
 	}
@@ -318,7 +319,7 @@ public class Utils {
     
     public static String replacePlaceholderOutputs(OfflinePlayer player, String format) {
         StringBuilder result = new StringBuilder(format);
-        Set<Entry<String, Object>> placeholdersKeys = Synergy.getConfig().getConfigurationSection("placeholder-output-replacements").entrySet();
+        Set<Entry<String, Object>> placeholdersKeys = Config.getConfigurationSection("placeholder-output-replacements").entrySet();
 
         for (Entry<String, Object> entry : placeholdersKeys) {
             String placeholderKey = entry.getKey();
@@ -326,7 +327,7 @@ public class Utils {
             try {
                 replacementKey = PlaceholderAPI.setPlaceholders(player, placeholderKey);
             } catch (Exception e) {}
-            Set<Entry<String, Object>> placeholders = Synergy.getConfig().getConfigurationSection("placeholder-output-replacements." + placeholderKey).entrySet();
+            Set<Entry<String, Object>> placeholders = Config.getConfigurationSection("placeholder-output-replacements." + placeholderKey).entrySet();
             for (Entry<String, Object> p : placeholders) {
                 String configKey = p.getKey();
                 String configValue = (String) p.getValue();

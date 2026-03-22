@@ -551,12 +551,12 @@ monobank:
       title: Flash Speed
       description: Super speed for 20 seconds
       commands:
-        - effect give %target_name% minecraft:speed 20 5 true
+        - effect give %streamer_name% minecraft:speed 20 5 true
         - title @a title {"text":"⚡ Lightning Speed!"}
 ```
 
 **Available placeholders:**
-- `%target_name%` - Player who receives the reward
+- `%streamer_name%` - Player who receives the reward
 - `%counter_name%` - Name of the person who donated
 
 ---

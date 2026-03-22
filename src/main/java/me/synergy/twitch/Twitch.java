@@ -8,6 +8,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 
@@ -15,7 +16,7 @@ public class Twitch implements SynergyListener {
 
     public void initialize() {
         try {
-            if (!Synergy.getConfig().getBoolean("twitch.enabled")) return;
+            if (!Config.getBoolean("twitch.enabled")) return;
             Synergy.getEventManager().registerEvents(this);
             
             Locales.addDefault("command_description_twitch", "en", "Twitch integration");
@@ -72,7 +73,7 @@ public class Twitch implements SynergyListener {
     
     @SynergyHandler
     public void onSynergyEvent(SynergyEvent event) {
-        if (!Synergy.getConfig().getBoolean("twitch.enabled")) return;
+        if (!Config.getBoolean("twitch.enabled")) return;
 
         UUID uuid = event.getPlayerUniqueId();
         
@@ -84,19 +85,19 @@ public class Twitch implements SynergyListener {
         
         switch (eventId) {
             case "make-twitch-link":
-            	if (Synergy.getConfig().getString("twitch.client-id").equals("client-id")) return;
+            	if (Config.getString("twitch.client-id").equals("client-id")) return;
                 String username = event.getOption("tag").getAsString();
                 String token = event.getOption("token").getAsString();
                 getLinksManager().linkAccount(uuid, username, token);
                 break;
                 
             case "remove-twitch-link":
-            	if (Synergy.getConfig().getString("twitch.client-id").equals("client-id")) return;
+            	if (Config.getString("twitch.client-id").equals("client-id")) return;
             	getLinksManager().unlinkAccount(uuid);
                 break;
                 
             case "create-twitch-reward":
-            	if (Synergy.getConfig().getString("twitch.client-id").equals("client-id")) return;
+            	if (Config.getString("twitch.client-id").equals("client-id")) return;
                 if (channelName != null && accessToken != null) {
                 	try {
 						getRewardsManager(channelName, accessToken).create(
@@ -111,7 +112,7 @@ public class Twitch implements SynergyListener {
                 break;
                 
             case "remove-twitch-reward":
-            	if (Synergy.getConfig().getString("twitch.client-id").equals("client-id")) return;
+            	if (Config.getString("twitch.client-id").equals("client-id")) return;
                 if (channelName != null && accessToken != null) {
                 	try {
 						getRewardsManager(channelName, accessToken).delete(event.getOption("title").getAsString());
@@ -122,7 +123,7 @@ public class Twitch implements SynergyListener {
                 break;
                 
             case "send-twitch-message":
-            	if (Synergy.getConfig().getString("twitch.client-id").equals("client-id")) return;
+            	if (Config.getString("twitch.client-id").equals("client-id")) return;
                 if (channelName != null) {
                     ChatHandler.sendMessage(channelName, event.getOption("message").getAsString());
                 }
@@ -139,11 +140,11 @@ public class Twitch implements SynergyListener {
 
             	if (Synergy.isRunningSpigot()) {
 
-            	    for (Entry<String, Object> reward : Synergy.getConfig().getConfigurationSection("twitch.rewards").entrySet()) {
+            	    for (Entry<String, Object> reward : Config.getConfigurationSection("twitch.rewards").entrySet()) {
             	        
-            	        if (Synergy.getConfig().getString("twitch.rewards." + reward.getKey() + ".title").equalsIgnoreCase(rewardTitle)) {
+            	        if (Config.getString("twitch.rewards." + reward.getKey() + ".title").equalsIgnoreCase(rewardTitle)) {
             	        	
-            	        	String inputRegex = Synergy.getConfig().getString("twitch.rewards." + reward.getKey() + ".input-regex");
+            	        	String inputRegex = Config.getString("twitch.rewards." + reward.getKey() + ".input-regex");
 
                         	if (inputRegex != null && !inputRegex.isEmpty() && viewerInput != null && !viewerInput.isEmpty()) {
                         	    try {
@@ -167,7 +168,7 @@ public class Twitch implements SynergyListener {
                         	    }
                         	}
             	        	
-            	            for (String command : Synergy.getConfig().getStringList("twitch.rewards."+reward.getKey()+".commands")) {
+            	            for (String command : Config.getStringList("twitch.rewards."+reward.getKey()+".commands")) {
 
             	                command = command.replace("%streamer_name%", bread.getName());
             	                command = command.replace("%streamer_x%", String.valueOf(Synergy.getSpigot().getPlayerLocation(uuid).getX()));

@@ -16,6 +16,7 @@ import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
@@ -23,7 +24,7 @@ import me.synergy.text.Translation;
 public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, SynergyListener {
 
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("discord.enabled")) {
+        if (!Config.getBoolean("discord.enabled")) {
             // return;
         }
 
@@ -92,7 +93,7 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
         
         if (args.length == 0) {
             String usage = Translation.translate("<lang>command_usage_discord</lang>", bread.getLanguage())
-                    .replace("%INVITE%", Synergy.getConfig().getString("discord.invite-link"));
+                    .replace("%INVITE%", Config.getString("discord.invite-link"));
             String[] usageLines = usage.split("\n");
             for (String line : usageLines) {
                 bread.sendMessage(line);
@@ -124,8 +125,8 @@ public class DiscordCommand implements CommandExecutor, TabCompleter, Listener, 
                 Synergy.event("sync-roles-from-discord-to-mc")
 	                .setPlayerUniqueId(player.getUniqueId())
 	                .send();
-                if (Synergy.getConfig().getBoolean("discord.kick-player.if-has-no-link.enabled")) {
-                    bread.kick(Synergy.getConfig().getString("discord.kick-player.if-has-no-link.message"));
+                if (Config.getBoolean("discord.kick-player.if-has-no-link.enabled")) {
+                    bread.kick(Config.getString("discord.kick-player.if-has-no-link.message"));
                 }
                 break;
                 

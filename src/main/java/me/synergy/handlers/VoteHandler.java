@@ -2,7 +2,7 @@ package me.synergy.handlers;
 
 import me.synergy.brains.Synergy;
 import me.synergy.objects.BreadMaker;
-import me.synergy.text.Translation;
+import me.synergy.objects.LocaleBuilder;
 
 public class VoteHandler {
     
@@ -26,13 +26,13 @@ public class VoteHandler {
 	        .setOption("username", username)
 	        .send();
 
-        String message = Synergy.getConfig().getString("votifier.announcement").replace("%PLAYER%", username).replace("%SERVICE%", service);
+        String message = LocaleBuilder.of("votifier-announcement").placeholder("player", username).placeholder("service", service).placeholder("gender", bread.getGender()).build();
         
         Synergy.event("discord-embed")
             .setPlayerUniqueId(bread.getUniqueId())
             .setOption("chat", "global")
             .setOption("color", "#55efc4")
-            .setOption("author", Synergy.translate(message, Translation.getDefaultLanguage()).setGendered(bread.getGender()).getStripped())
+            .setOption("author", message)
             .fireEvent();
         
         bread.setData("last-voted", System.currentTimeMillis());

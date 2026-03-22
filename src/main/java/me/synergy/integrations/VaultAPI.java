@@ -10,6 +10,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import net.milkbowl.vault.permission.Permission;
 
 public class VaultAPI implements SynergyListener {
@@ -27,18 +28,18 @@ public class VaultAPI implements SynergyListener {
     @SynergyHandler
     public void onSynergyEvent(SynergyEvent event) {
         if (event.getIdentifier().equals("remove-player-group")) {
-            if (Synergy.isDependencyAvailable("Vault") && Synergy.getConfig().getBoolean("discord-roles-sync.use-vault")) {
+            if (Synergy.isDependencyAvailable("Vault") && Config.getBoolean("discord-roles-sync.use-vault")) {
             	Synergy.getSpigot().getPermissions().playerRemoveGroup(Bukkit.getPlayer(event.getPlayerUniqueId()), event.getOption("group").getAsString());
             } else {
-            	Synergy.dispatchCommand(Synergy.getConfig().getString("discord-roles-sync.custom-command-remove").replace("%PLAYER%", event.getBread().getName()).replace("%GROUP%", event.getOption("group").getAsString()));
+            	Synergy.dispatchCommand(Config.getString("discord-roles-sync.custom-command-remove").replace("%PLAYER%", event.getBread().getName()).replace("%GROUP%", event.getOption("group").getAsString()));
             }
         }
 
         if (event.getIdentifier().equals("set-player-group")) {
-            if (Synergy.isDependencyAvailable("Vault") && Synergy.getConfig().getBoolean("discord-roles-sync.use-vault")) {
+            if (Synergy.isDependencyAvailable("Vault") && Config.getBoolean("discord-roles-sync.use-vault")) {
                 Synergy.getSpigot().getPermissions().playerAddGroup(Bukkit.getPlayer(event.getPlayerUniqueId()), event.getOption("group").getAsString());
             } else {
-                Synergy.dispatchCommand(Synergy.getConfig().getString("discord-roles-sync.custom-command-add").replace("%PLAYER%", event.getBread().getName()).replace("%GROUP%", event.getOption("group").getAsString()));
+                Synergy.dispatchCommand(Config.getString("discord-roles-sync.custom-command-add").replace("%PLAYER%", event.getBread().getName()).replace("%GROUP%", event.getOption("group").getAsString()));
             }
         }
     }

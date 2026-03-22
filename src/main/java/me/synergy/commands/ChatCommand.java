@@ -16,6 +16,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.Chat;
 import me.synergy.utils.BookMessage;
@@ -24,7 +25,7 @@ import me.synergy.utils.Utils;
 public class ChatCommand implements CommandExecutor, TabCompleter {
 
     public void initialize() {
-        if (Synergy.getConfig().getBoolean("chat-manager.enabled")) {
+        if (Config.getBoolean("chat-manager.enabled")) {
             Synergy.getSpigot().getCommand("chat").setExecutor(this);
             Synergy.getSpigot().getCommand("colors").setExecutor(this);
             Synergy.getSpigot().getCommand("emojis").setExecutor(this);
@@ -160,10 +161,10 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 		}
 
 		if (label.equalsIgnoreCase("colors")) {
-		    Map<String, Object> tags = Synergy.getConfig().getConfigurationSection("chat-manager.custom-color-tags");
+		    Map<String, Object> tags = Config.getConfigurationSection("chat-manager.custom-color-tags");
 	        List<String> colors = new ArrayList<>();
 	        for (Entry<String, Object> t : tags.entrySet()) {
-	        	String color = Synergy.getConfig().getString("chat-manager.custom-color-tags."+t.getKey());
+	        	String color = Config.getString("chat-manager.custom-color-tags."+t.getKey());
 	            colors.add(color+t.getKey().replace("&", "$")/*String.join(color, t.split(""))*/);
 	        }
 	        if (sender instanceof Player) {
@@ -174,12 +175,12 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 		}
 
 		if (label.equalsIgnoreCase("emojis")) {
-		    Set<String> tags = Synergy.getConfig().getConfigurationSection("chat-manager.custom-emojis").keySet();
+		    Set<String> tags = Config.getConfigurationSection("chat-manager.custom-emojis").keySet();
 		    int count = 0;
 		    StringBuilder messageBuilder = new StringBuilder();
 		    int maxEmojiLength = 0;
 		    for (String e : tags) {
-		        String emoji = Synergy.getConfig().getString("chat-manager.custom-emojis."+e);
+		        String emoji = Config.getString("chat-manager.custom-emojis."+e);
 		        maxEmojiLength = Math.max(maxEmojiLength, e.length() + emoji.length() + 3);
 		    }
 		    for (String e : tags) {
@@ -188,7 +189,7 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 		            messageBuilder = new StringBuilder();
 		            count = 0;
 		        }
-		        String emoji = Synergy.getConfig().getString("chat-manager.custom-emojis."+e);
+		        String emoji = Config.getString("chat-manager.custom-emojis."+e);
 		        int padding = maxEmojiLength - e.length() - emoji.length();
 		        messageBuilder.append(String.format("<lang>primary</lang>%s - <lang>secondary</lang>%s%" + padding + "s", e, emoji, ""));
 		        count++;
@@ -202,7 +203,7 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 	}
 	
 	private List<String> getChats(Player player) {
-	    return Synergy.getConfig().getConfigurationSection("chat-manager.chats").entrySet().stream()
+	    return Config.getConfigurationSection("chat-manager.chats").entrySet().stream()
 	        .map(entry -> new Chat(entry.getKey()))
 	        .filter(chat -> chat.isEnabled() && (chat.getPermission() == null || player.hasPermission(chat.getPermission())))
 	        .map(Chat::getName)

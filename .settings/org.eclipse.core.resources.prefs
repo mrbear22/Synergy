@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
+encoding//src/main/java/me/synergy/commands/DelayedCommand.java=UTF-8
 encoding//src/main/java/me/synergy/commands/LanguageCommand.java=UTF-8
 encoding//src/main/java/me/synergy/commands/PronounCommand.java=UTF-8
 encoding//src/main/java/me/synergy/commands/SynergyCommand.java=UTF-8

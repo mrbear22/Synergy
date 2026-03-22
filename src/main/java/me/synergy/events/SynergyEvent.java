@@ -13,6 +13,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import me.synergy.brains.Synergy;
+import me.synergy.modules.Config;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.DataObject;
 
@@ -76,7 +77,7 @@ public class SynergyEvent {
 	}
 	
     public void send() {
-        if (Synergy.getConfig().getBoolean("synergy-plugin-messaging.enabled")) {
+        if (Config.getBoolean("synergy-plugin-messaging.enabled")) {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             if (Synergy.isRunningBungee() || Synergy.isRunningVelocity()) {
                 out.writeUTF(Synergy.getSynergyToken());

@@ -4,6 +4,8 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.events.SynergyVotifierEvent;
+import me.synergy.modules.Config;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.LocaleBuilder;
 
@@ -22,7 +24,7 @@ import java.nio.charset.StandardCharsets;
 public class VoteSpigotHandler {
     
     public void initialize() {
-        if (!Synergy.getConfig().getBoolean("votifier.enabled")) {
+        if (!Config.getBoolean("votifier.enabled")) {
             return;
         }
         
@@ -49,6 +51,10 @@ public class VoteSpigotHandler {
             String service = vote.getServiceName();
             String username = vote.getUsername();
             VoteHandler.processVote(service, username);
+            BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
+            bread.setData("votes", bread.getData("votes").isSet() ? bread.getData("votes").getAsInteger() + 1 : 1);
+            bread.setData("last-voted", String.valueOf(System.currentTimeMillis()));
+            Bukkit.getPluginManager().callEvent(new SynergyVotifierEvent(bread.getUniqueId(), service, username));
         }
     }
     
@@ -68,13 +74,9 @@ public class VoteSpigotHandler {
                 String service = json.get("serviceName").getAsString();
                 
                 BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
+                bread.setData("votes", bread.getData("votes").isSet() ? bread.getData("votes").getAsInteger() + 1 : 1);
+                Bukkit.getPluginManager().callEvent(new SynergyVotifierEvent(bread.getUniqueId(), service, username));
                 
-                Synergy.event("votifier")
-	            	.setPlayerUniqueId(bread.getUniqueId())
-	    	        .setOption("service", service)
-	    	        .setOption("username", username)
-	    	        .fireEvent();
-	                
             } catch (Exception e) {
                 Synergy.getLogger().error("Error processing NuVotifier plugin message: " + e.getMessage());
             }
@@ -110,7 +112,7 @@ public class VoteSpigotHandler {
                 }
             }
             
-            for (String command : Synergy.getConfig().getStringList("votifier.rewards")) {
+            for (String command : Config.getStringList("votifier.rewards")) {
                 Synergy.dispatchCommand(command.replace("%PLAYER%", username));
             }
         }

@@ -15,6 +15,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 
@@ -31,7 +32,7 @@ public class MonobankHandler implements SynergyListener {
 
     public void initialize() {
         try {
-            if (!Synergy.getConfig().getBoolean("monobank.enabled")) return;
+            if (!Config.getBoolean("monobank.enabled")) return;
             Synergy.getEventManager().registerEvents(this);
             
             Locales.addDefault("command_description_monobank", "en", "Monobank integration");
@@ -66,7 +67,7 @@ public class MonobankHandler implements SynergyListener {
     
     @SynergyHandler
     public void onSynergyEvent(SynergyEvent event) {
-        if (!Synergy.getConfig().getBoolean("monobank.enabled")) return;
+        if (!Config.getBoolean("monobank.enabled")) return;
         if (!"monobank-donation".equals(event.getIdentifier())) return;
         if (!Synergy.isRunningSpigot()) return;
 
@@ -102,8 +103,8 @@ public class MonobankHandler implements SynergyListener {
         String bestRewardKey = null;
         int bestRewardCost = 0;
 
-        for (Entry<String, Object> reward : Synergy.getConfig().getConfigurationSection("monobank.rewards").entrySet()) {
-            int rewardCost = Synergy.getConfig().getInt("monobank.rewards." + reward.getKey() + ".cost");
+        for (Entry<String, Object> reward : Config.getConfigurationSection("monobank.rewards").entrySet()) {
+            int rewardCost = Config.getInt("monobank.rewards." + reward.getKey() + ".cost");
             
             // Виправлено: порівнюємо з double amount
             if (amount >= rewardCost) {
@@ -117,7 +118,7 @@ public class MonobankHandler implements SynergyListener {
         if (bestRewardKey != null) {
             Synergy.getLogger().info("[Monobank] [" + bread.getName() + "] Selected reward: " + bestRewardKey + " (cost: " + bestRewardCost + ")");
             
-        	String inputRegex = Synergy.getConfig().getString("monobank.rewards." + bestRewardKey + ".input-regex");
+        	String inputRegex = Config.getString("monobank.rewards." + bestRewardKey + ".input-regex");
 
         	if (inputRegex != null && !inputRegex.isEmpty() && comment != null && !comment.isEmpty()) {
         	    try {
@@ -135,8 +136,8 @@ public class MonobankHandler implements SynergyListener {
         	    }
         	}
             
-            for (String command : Synergy.getConfig().getStringList("monobank.rewards." + bestRewardKey + ".commands")) {
-                command = command.replace("%target_name%", bread.getName());
+            for (String command : Config.getStringList("monobank.rewards." + bestRewardKey + ".commands")) {
+                command = command.replace("%streamer_name%", bread.getName());
                 command = command.replace("%target_x%", String.valueOf(Synergy.getSpigot().getPlayerLocation(uuid).getX()));
                 command = command.replace("%target_y%", String.valueOf(Synergy.getSpigot().getPlayerLocation(uuid).getY()));
                 command = command.replace("%target_z%", String.valueOf(Synergy.getSpigot().getPlayerLocation(uuid).getZ()));
