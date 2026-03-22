@@ -4,7 +4,7 @@
   <groupId>archi.quest</groupId>
   <artifactId>synergy</artifactId>
   <name>Synergy</name>
-  <version>1.5.1</version>
+  <version>1.5.2</version>
   <description>Basic tools and server messaging plugin</description>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
@@ -91,6 +91,9 @@
   </build>
   <repositories>
     <repository>
+      <snapshots>
+        <updatePolicy>always</updatePolicy>
+      </snapshots>
       <id>papermc</id>
       <url>https://repo.papermc.io/repository/maven-public/</url>
     </repository>

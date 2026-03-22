@@ -104,8 +104,12 @@
 	</build>
 	<repositories>
 		<repository>
-			<id>papermc</id>
-			<url>https://repo.papermc.io/repository/maven-public/</url>
+		    <id>papermc</id>
+		    <url>https://repo.papermc.io/repository/maven-public/</url>
+		    <snapshots>
+		        <enabled>true</enabled>
+		        <updatePolicy>always</updatePolicy>
+		    </snapshots>
 		</repository>
 		<repository>
 			<id>spigot-repo</id>

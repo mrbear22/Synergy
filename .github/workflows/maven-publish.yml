@@ -11,33 +11,34 @@ jobs:
     permissions:
       contents: read
       packages: write
-
     steps:
       - uses: actions/checkout@v4
+
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: 'maven'
           server-id: github
           settings-path: ${{ github.workspace }}
 
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
-      - name: Find and move JAR file
+      - name: Move JAR to release folder
         run: |
           mkdir -p release
-          mv target/*.jar release/
+          mv target/Synergy.jar release/  # explicit name avoids grabbing the -original jar
 
-      - name: Upload JAR as artifact (v4)
+      - name: Upload JAR as artifact
         uses: actions/upload-artifact@v4
         with:
           name: jar-artifact
           path: release/
           compression-level: 0
 
-      - name: Publish to GitHub Packages Apache Maven
+      - name: Publish to GitHub Packages
         run: mvn deploy -s $GITHUB_WORKSPACE/settings.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -47,18 +48,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download JAR artifact (v4)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Download JAR artifact
         uses: actions/download-artifact@v4
         with:
           name: jar-artifact
           path: release
 
       - name: Get version from pom.xml
-        id: get_version
         run: echo "VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
 
       - name: Create GitHub Release
