@@ -11,6 +11,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.integrations.DeepLTranslator;
 import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
+import me.synergy.objects.Chat;
 import me.synergy.objects.LocaleBuilder;
 import me.synergy.utils.Timings;
 
@@ -79,7 +80,9 @@ public class SynergyCommand implements CommandExecutor {
                 Synergy.getLocalesManager().reload();
                 Synergy.getDataManager().initialize();
                 Synergy.getConfig().initialize();
-
+                
+                Chat.registerAll();
+                
                 new DynamicCommands().shutdown();
                 new DynamicCommands().initialize();
                 sender.sendMessage(LocaleBuilder.of("reloaded").build());

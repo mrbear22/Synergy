@@ -20,11 +20,33 @@ import me.synergy.events.SynergyEvent;
 import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.Chat;
+import me.synergy.objects.LocaleBuilder;
 import me.synergy.text.Translation;
 import me.synergy.utils.Utils;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class ChatHandler implements Listener, SynergyListener {
+
+    private static volatile boolean chatLocked = false;
+    private static volatile int slowmodeSeconds = 2;
+
+    public static boolean isChatLocked() {
+        return chatLocked;
+    }
+
+    /** Локальна зміна + розсилка по всій мережі (proxy + бекенди) */
+    public static void setChatLocked(boolean locked) {
+        chatLocked = locked;
+        Synergy.event("chat-lock-sync").setOption("locked", String.valueOf(locked)).send();
+    }
+
+    public static int getSlowmodeSeconds() {
+        return slowmodeSeconds;
+    }
+
+    public static void setSlowmode(int seconds) {
+        slowmodeSeconds = Math.max(seconds, 0);
+    }
 
     @FunctionalInterface
     public interface ChatFilter {
@@ -54,7 +76,27 @@ public class ChatHandler implements Listener, SynergyListener {
         var bread = Synergy.getBread(p.getUniqueId());
         var cd = Synergy.getCooldown(p.getUniqueId());
         
-        if (!bread.isAuthenticated() || bread.isMuted()) {
+        if (!bread.isAuthenticated()) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (bread.isMuted()) {
+            long remaining = bread.getMuteRemainingSeconds();
+            String remainingText = remaining == -1 ? "permanent" : Utils.formatDuration(remaining);
+            String reason = bread.getMuteReason();
+
+            p.sendMessage(LocaleBuilder.of("you-are-muted")
+                .placeholder("reason", reason == null || reason.isEmpty() ? "-" : reason)
+                .placeholder("remaining", remainingText)
+                .build());
+            event.setCancelled(true);
+            return;
+        }
+
+        if (chatLocked && !p.hasPermission("synergy.chat.bypass")) {
+            p.sendMessage(Synergy.translate("<locale:chat-is-locked>", bread.getLanguage())
+                .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
             event.setCancelled(true);
             return;
         }
@@ -81,7 +123,7 @@ public class ChatHandler implements Listener, SynergyListener {
             event.setCancelled(true);
             return;
         }
-        cd.setCooldown("chat", 2);
+        cd.setCooldown("chat", slowmodeSeconds);
         
         if (!Chat.applyFilter(chat.getName(), p, event)) {
             event.setCancelled(true);
@@ -94,15 +136,25 @@ public class ChatHandler implements Listener, SynergyListener {
         
         var format = formatMessage(chat, msg, p);
         
+        if ("global".equals(chat.getName())) {
+            Synergy.event("global-chat")
+                .setPlayerUniqueId(p.getUniqueId())
+                .setOption("format", format)
+                .setOption("message", msg.getMessage())
+                .setOption("tag", chat.getTag())
+                .send();
+        
+        }
+        
         if (Config.getBoolean("chat-manager.use-interactive-tags")) {
-            event.viewers().forEach(a -> {
-                if (a instanceof Player r) {
-                    var b = Synergy.getBread(r.getUniqueId());
-                    r.sendMessage(Synergy.translate(format, b.getLanguage())
-                        .setPlaceholders(b).setGendered(b.getGender())
-                        .setExecuteInteractive(b).getColoredComponent(b.getTheme()));
-                }
-            });
+        	if (!"global".equals(chat.getName())) {
+	            event.viewers().forEach(a -> {
+	                if (a instanceof Player r) {
+	                    var b = Synergy.getBread(r.getUniqueId());
+	                    r.sendMessage(Synergy.translate(format, b.getLanguage()).setPlaceholders(b).setGendered(b.getGender()).setExecuteInteractive(b).getColoredComponent(b.getTheme()));
+	                }
+	            });
+        	}
             Bukkit.getLogger().info("[CHAT] [" + chat.getTag() + "] " + p.getName() + ": " + msg.getMessage());
             event.setCancelled(true);
         } else {
@@ -150,23 +202,43 @@ public class ChatHandler implements Listener, SynergyListener {
                     .setExecuteInteractive(b).getColoredComponent(b.getTheme()));
             });
         }
+        
+        if ("global-chat".equals(event.getIdentifier())) {
+        	Synergy.getLogger().info(Synergy.getServerName() + " --- " + event.getServerName());
+            if (Synergy.getServerName().equals(event.getServerName())) return;
+            var format = event.getOption("format").getAsString();
+            Bukkit.getOnlinePlayers().forEach(p -> {
+                var b = Synergy.getBread(p.getUniqueId());
+                p.sendMessage(Synergy.translate(format, b.getLanguage())
+                    .setPlaceholders(b).setGendered(b.getGender())
+                    .setExecuteInteractive(b).getColoredComponent(b.getTheme()));
+            });
+        }
+
+        if ("chat-lock-sync".equals(event.getIdentifier())) {
+            chatLocked = Boolean.parseBoolean(event.getOption("locked").getAsString());
+        }
     }
     
     @SynergyHandler
     public void onTwitchMessage(SynergyEvent event) throws SQLException {
         if (!"twitch-chat".equals(event.getIdentifier())) return;
-        
+
         var chat = new Chat("twitch");
         if (!chat.isEnabled()) return;
-        
-        Optional.ofNullable(Synergy.getDataManager().findUserUUID("twitch-username", 
-            event.getOption("twitch-channel").getAsString())).ifPresent(uuid -> {
-                Synergy.getBread(uuid).sendMessage(formatMessage(chat, 
-                    new Message(event.getOption("message").getAsString()), 
-                    event.getOption("player").getAsString()));
-                Synergy.getLogger().info("[" + event.getOption("twitch-channel").getAsString() + "] " + 
-                    event.getOption("player").getAsString() + ": " + event.getOption("message").getAsString());
-            });
+
+        UUID uuid = Synergy.getDataManager().findUserUUID("twitch-username",
+            event.getOption("twitch-channel").getAsString());
+        if (uuid == null) return;
+
+        if (Bukkit.getPlayer(uuid) == null) return;
+
+        Synergy.getBread(uuid).sendMessage(formatMessage(chat,
+            new Message(event.getOption("message").getAsString()),
+            event.getOption("player").getAsString()));
+
+        Synergy.getLogger().info("[" + event.getOption("twitch-channel").getAsString() + "] " +
+            event.getOption("player").getAsString() + ": " + event.getOption("message").getAsString());
     }
     
     @SynergyHandler
@@ -191,10 +263,6 @@ public class ChatHandler implements Listener, SynergyListener {
         }
         
         if (Synergy.getBread(uuid).isMuted()) {
-            Synergy.event("discord-embed")
-                .setOption("channel", channelId)
-                .setOption("title", Synergy.translate("<lang>you-are-muted</lang>", Translation.getDefaultLanguage()).getStripped())
-                .setOption("color", "#fab1a0").send();
             return;
         }
         
@@ -212,14 +280,37 @@ public class ChatHandler implements Listener, SynergyListener {
 
     @EventHandler
     public void onPlayerCommandPreprocess(PlayerCommandPreprocessEvent event) {
-        if (!Synergy.getCooldown(event.getPlayer().getUniqueId()).hasCooldown("command") &&
-            Arrays.asList("/reg", "/register", "/l", "/login", "/unregister").stream()
+        var p = event.getPlayer();
+        var bread = Synergy.getBread(p.getUniqueId());
+
+        if (bread.isMuted() && matchesCommand(event.getMessage(), "chat-manager.muted-blocked-commands")) {
+            long remaining = bread.getMuteRemainingSeconds();
+            String remainingText = remaining == -1 ? "permanent" : Utils.formatDuration(remaining);
+            String reason = bread.getMuteReason();
+
+            p.sendMessage(LocaleBuilder.of("you-are-muted")
+                .placeholder("reason", reason == null || reason.isEmpty() ? "-" : reason)
+                .placeholder("remaining", remainingText)
+                .build());
+            event.setCancelled(true);
+            return;
+        }
+
+        if (!Synergy.getCooldown(p.getUniqueId()).hasCooldown("command") &&
+            Config.getStringList("chat-manager.log-ignored-commands").stream()
                 .noneMatch(event.getMessage()::startsWith)) {
             Synergy.getLogger().discord("```[" + Synergy.getServerName() + "] [cmd] " + 
-                event.getPlayer().getName() + ": " + event.getMessage() + "```");
+                p.getName() + ": " + event.getMessage() + "```");
         }
     }
 
+    private boolean matchesCommand(String message, String configPath) {
+        String cmd = message.split(" ")[0].toLowerCase();
+        return Config.getStringList(configPath).stream()
+            .map(String::toLowerCase)
+            .anyMatch(cmd::equals);
+    }
+    
     public static String formatMessage(MessageSource source, Message msg, Object player) {
         var format = source.getFormat()
             .replace("%CHAT%", source.getTag())

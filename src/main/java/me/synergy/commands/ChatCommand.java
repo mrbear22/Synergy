@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -16,13 +17,18 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
 import me.synergy.brains.Synergy;
+import me.synergy.handlers.ChatHandler;
 import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.Chat;
+import me.synergy.objects.LocaleBuilder;
 import me.synergy.utils.BookMessage;
 import me.synergy.utils.Utils;
 
 public class ChatCommand implements CommandExecutor, TabCompleter {
+
+    private static final List<String> MOD_SUBCOMMANDS = List.of("lock", "unlock", "clear", "slowmode");
+    private static final String MOD_PERMISSION = "synergy.chat.moderate";
 
     public void initialize() {
         if (Config.getBoolean("chat-manager.enabled")) {
@@ -82,10 +88,21 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
     		    "<secondary>Examples:",
     		    "<primary>  /chat global <secondary>- Join global chat",
     		    "<primary>  /chat local  <secondary>- Switch to local chat",
-    		    "<primary>  /chat staff  <secondary>- Access staff chat"
+    		    "<primary>  /chat staff  <secondary>- Access staff chat",
+    		    "",
+    		    "<secondary>Moderator subcommands:",
+    		    "<primary>  /chat lock            <secondary>- Lock chat for everyone",
+    		    "<primary>  /chat unlock          <secondary>- Unlock chat",
+    		    "<primary>  /chat clear           <secondary>- Clear chat window",
+    		    "<primary>  /chat slowmode <sec>  <secondary>- Set chat cooldown"
     		});
             
             Locales.addDefault("selected-chat", "en", "<success>Chat selected: <primary>%ARGUMENT%<sound:'entity.ocelot.death'>");
+
+            Locales.addDefault("chat-locked", "en", "<danger>Chat has been locked by %staff%.");
+            Locales.addDefault("chat-unlocked", "en", "<success>Chat has been unlocked by %staff%.");
+            Locales.addDefault("chat-is-locked", "en", "<danger>Chat is currently locked.");
+            Locales.addDefault("slowmode-set", "en", "<success>Chat slowmode set to %seconds% seconds.");
     		
             Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
         }
@@ -102,7 +119,14 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 		
     	if (command.getLabel().equals("chat")) {
 	    	if (args.length < 2) {
-		        return getChats(player);
+	    		List<String> options = new ArrayList<>(getChats(player));
+	    		if (sender.hasPermission(MOD_PERMISSION)) {
+	    			options.addAll(MOD_SUBCOMMANDS);
+	    		}
+	    		return options;
+	    	}
+	    	if (args.length == 2 && args[0].equalsIgnoreCase("slowmode") && sender.hasPermission(MOD_PERMISSION)) {
+	    		return List.of("0", "5", "10", "30");
 	    	}
     	}
     	if (command.getLabel().equals("chatfilter")) {
@@ -147,9 +171,18 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 		if (label.equalsIgnoreCase("chat")) {
 
 			Player player = (Player) sender;
-			
+
 			if (args.length == 0) {
 				player.sendMessage("<lang>command-usage</lang> /chat <"+String.join("/", getChats(player))+">");
+				return true;
+			}
+
+			if (MOD_SUBCOMMANDS.contains(args[0].toLowerCase())) {
+				if (!sender.hasPermission(MOD_PERMISSION)) {
+					sender.sendMessage("<lang>no-permission</lang>");
+					return true;
+				}
+				handleModeration(sender, args);
 				return true;
 			}
 
@@ -200,6 +233,36 @@ public class ChatCommand implements CommandExecutor, TabCompleter {
 		}
 
 		return true;
+	}
+
+	private void handleModeration(CommandSender sender, String[] args) {
+		switch (args[0].toLowerCase()) {
+			case "lock" -> {
+				ChatHandler.setChatLocked(true);
+				sender.sendMessage(LocaleBuilder.of("chat-locked").placeholder("staff", sender.getName()).build());
+				Synergy.getLogger().discord("```[MOD] " + sender.getName() + " locked chat```");
+			}
+			case "unlock" -> {
+				ChatHandler.setChatLocked(false);
+				sender.sendMessage(LocaleBuilder.of("chat-unlocked").placeholder("staff", sender.getName()).build());
+				Synergy.getLogger().discord("```[MOD] " + sender.getName() + " unlocked chat```");
+			}
+			case "clear" -> {
+				for (int i = 0; i < 100; i++) {
+					Bukkit.getServer().broadcastMessage("");
+				}
+				Synergy.getLogger().discord("```[MOD] " + sender.getName() + " cleared chat```");
+			}
+			case "slowmode" -> {
+				if (args.length < 2 || !args[1].matches("\\d+")) {
+					sender.sendMessage("<locale:command-usage> /chat slowmode <seconds>");
+					return;
+				}
+				int seconds = Integer.parseInt(args[1]);
+				ChatHandler.setSlowmode(seconds);
+				sender.sendMessage(LocaleBuilder.of("slowmode-set").placeholder("seconds", seconds).build());
+			}
+		}
 	}
 	
 	private List<String> getChats(Player player) {

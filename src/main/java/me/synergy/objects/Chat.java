@@ -56,8 +56,8 @@ public class Chat implements MessageSource {
                 
                 if (chat.getPlaceholder() != null && Synergy.isDependencyAvailable("PlaceholderAPI")) {
                     var value = PlaceholderAPI.setPlaceholders(p, chat.getPlaceholder());
-                    e.viewers().removeIf(v -> !(v instanceof Player r) || 
-                        !value.equals(PlaceholderAPI.setPlaceholders(r, chat.getPlaceholder())));
+                    if (value.isEmpty()) return false;
+                    e.viewers().removeIf(v -> !(v instanceof Player r) || !value.equals(PlaceholderAPI.setPlaceholders(r, chat.getPlaceholder())) || PlaceholderAPI.setPlaceholders(r, chat.getPlaceholder()).isEmpty());
                 }
                 
                 return true;

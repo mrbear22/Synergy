@@ -10,15 +10,35 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import me.synergy.brains.Synergy;
+import me.synergy.brains.Velocity;
 
 public class UpdateChecker {
 
+    public enum Platform {
+        SPIGOT,
+        BUNGEECORD,
+        VELOCITY
+    }
+
     private final String repoOwner;
     private final String repoName;
+    private final Platform platform;
 
-    public UpdateChecker(String repoOwner, String repoName) {
+    public UpdateChecker(String repoOwner, String repoName, Platform platform) {
         this.repoOwner = repoOwner;
         this.repoName = repoName;
+        this.platform = platform;
+    }
+
+    private String getCurrentVersion() {
+        return switch (platform) {
+            case SPIGOT     -> Synergy.getSpigot().getPluginMeta().getVersion();
+            case BUNGEECORD -> Synergy.getBungee().getDescription().getVersion();
+            case VELOCITY -> Velocity.getProxy().getPluginManager()
+						            .getPlugin("synergy")
+						            .flatMap(p -> p.getDescription().getVersion())
+						            .orElse("unknown");
+        };
     }
 
     public void checkForUpdates() {
@@ -26,7 +46,7 @@ public class UpdateChecker {
             try {
                 URI uri = new URI("https", "api.github.com", "/repos/" + repoOwner + "/" + repoName + "/releases/latest", null);
                 URL url = uri.toURL();
-                
+
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setRequestProperty("User-Agent", "Mozilla/5.0");
@@ -41,9 +61,9 @@ public class UpdateChecker {
 
                 JsonObject jsonResponse = JsonParser.parseString(response.toString()).getAsJsonObject();
                 String latestVersion = jsonResponse.get("tag_name").getAsString();
-                String currentVersion = Synergy.getSpigot().getPluginMeta().getVersion();
-                String downloadUrl = jsonResponse.getAsJsonArray("assets").size() > 0 
-                    ? jsonResponse.getAsJsonArray("assets").get(0).getAsJsonObject().get("browser_download_url").getAsString() 
+                String currentVersion = getCurrentVersion();
+                String downloadUrl = jsonResponse.getAsJsonArray("assets").size() > 0
+                    ? jsonResponse.getAsJsonArray("assets").get(0).getAsJsonObject().get("browser_download_url").getAsString()
                     : jsonResponse.get("html_url").getAsString();
 
                 if (!latestVersion.equalsIgnoreCase(currentVersion)) {

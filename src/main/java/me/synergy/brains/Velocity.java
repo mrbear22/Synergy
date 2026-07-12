@@ -29,7 +29,10 @@ import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
+import me.synergy.twitch.Twitch;
 import me.synergy.utils.UpdateChecker;
+import me.synergy.utils.UpdateChecker.Platform;
+import me.synergy.web.MonobankHandler;
 import me.synergy.web.TikTokHandler;
 import me.synergy.web.WebServer;
 
@@ -69,11 +72,14 @@ public class Velocity {
 	    new WebServer().initialize();
         new RolesHandler().initialize();
 		new TikTokHandler().initialize();
+	    new Twitch().initialize();
+        new MonobankHandler().initialize();
+	    
     	if (Synergy.isDependencyAvailable("Plan")) {
     		new PlanAPI().initialize();
     	}
     	
-    	new UpdateChecker("mrbear22", "Synergy").checkForUpdates();
+    	new UpdateChecker("mrbear22", "Synergy", Platform.VELOCITY).checkForUpdates();
     	
     	Config.save();
 		

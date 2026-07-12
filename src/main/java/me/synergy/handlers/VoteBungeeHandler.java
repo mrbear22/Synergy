@@ -3,10 +3,14 @@ package me.synergy.handlers;
 import me.synergy.brains.Bungee;
 import me.synergy.brains.Synergy;
 import me.synergy.modules.Config;
+import me.synergy.modules.DataManager;
 import me.synergy.objects.BreadMaker;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 import net.md_5.bungee.event.EventPriority;
+
+import java.sql.SQLException;
+import java.util.UUID;
 
 import com.vexsoftware.votifier.bungee.events.VotifierEvent;
 import com.vexsoftware.votifier.model.Vote;
@@ -30,7 +34,15 @@ public class VoteBungeeHandler implements Listener {
         Vote vote = event.getVote();
         String service = vote.getServiceName();
         String username = vote.getUsername();
-        BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
+        
+        UUID uuid = null;
+		try {
+			uuid = new DataManager().findUuidByName(username);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+        
+        BreadMaker bread = Synergy.getBread(uuid);
         
         VoteHandler.processVote(service, username);
         

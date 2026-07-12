@@ -50,3 +50,9 @@ commands:
   delayed:
     description: <lang>command_description_delayed</lang>
     usage: <lang>command_usage_delayed</lang>
+  tempmute:
+    description: <lang>command_description_tempmute</lang>
+    usage: <lang>command_usage_tempmute</lang>
+  unmute:
+    description: <lang>command_description_unmute</lang>
+    usage: <lang>command_usage_unmute</lang>

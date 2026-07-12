@@ -22,11 +22,16 @@ public class SynergyEvent {
     private String identifier;
     private Map<String, String> options = new HashMap<>();
     private UUID uuid;
+    private String server;
 	
     public SynergyEvent(String identifier, UUID uuid, String options) {
         this.identifier = identifier;
         this.uuid = uuid;
         this.options = getOptionsAsMap(options);
+        if (!this.options.containsKey("server")) {
+        	this.options.put("server", Synergy.getServerName());
+        }
+        this.server = this.options.get("server");
 	}
 
 	public SynergyEvent(String identifier) {
@@ -51,6 +56,10 @@ public class SynergyEvent {
 		return uuid;
 	}
 
+	public String getServerName() {
+		return server;
+	}
+	
 	public BreadMaker getBread() {
 		return new BreadMaker(getPlayerUniqueId());
 	}

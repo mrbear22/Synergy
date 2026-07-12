@@ -5,7 +5,7 @@ import com.github.twitch4j.TwitchClient;
 import com.github.twitch4j.chat.events.channel.ChannelMessageEvent;
 
 import me.synergy.brains.Synergy;
-import me.synergy.text.Translation;
+import me.synergy.objects.Locale;
 
 public class ChatHandler {
 
@@ -25,7 +25,7 @@ public class ChatHandler {
 			UUID uuid = Synergy.getDataManager().findUserUUID("twitch-username", channelName);
 	        TwitchClient client = ConnectionManager.channelClients.get(channelName);
 	        if (client != null && client.getChat() != null) {
-	            client.getChat().sendMessage(channelName, Translation.translate(message, Synergy.getBread(uuid).getLanguage()));
+	            client.getChat().sendMessage(channelName, new Locale(message, Synergy.getBread(uuid).getLanguage()).getStripped());
 	        }
 		} catch (Exception e) {
 		}

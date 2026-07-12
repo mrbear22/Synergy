@@ -6,6 +6,7 @@ import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
 import me.synergy.events.SynergyVotifierEvent;
 import me.synergy.modules.Config;
+import me.synergy.modules.DataManager;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.LocaleBuilder;
 
@@ -20,6 +21,8 @@ import com.vexsoftware.votifier.model.VotifierEvent;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
+import java.util.UUID;
 
 public class VoteSpigotHandler {
     
@@ -51,7 +54,15 @@ public class VoteSpigotHandler {
             String service = vote.getServiceName();
             String username = vote.getUsername();
             VoteHandler.processVote(service, username);
-            BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
+            
+            UUID uuid = null;
+    		try {
+    			uuid = new DataManager().findUuidByName(username);
+    		} catch (SQLException e) {
+    			e.printStackTrace();
+    		}
+            
+            BreadMaker bread = Synergy.getBread(uuid);
             bread.setData("votes", bread.getData("votes").isSet() ? bread.getData("votes").getAsInteger() + 1 : 1);
             bread.setData("last-voted", String.valueOf(System.currentTimeMillis()));
             Bukkit.getPluginManager().callEvent(new SynergyVotifierEvent(bread.getUniqueId(), service, username));
@@ -73,7 +84,14 @@ public class VoteSpigotHandler {
                 String username = json.get("username").getAsString();
                 String service = json.get("serviceName").getAsString();
                 
-                BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
+                UUID uuid = null;
+        		try {
+        			uuid = new DataManager().findUuidByName(username);
+        		} catch (SQLException e) {
+        			e.printStackTrace();
+        		}
+                
+                BreadMaker bread = Synergy.getBread(uuid);
                 bread.setData("votes", bread.getData("votes").isSet() ? bread.getData("votes").getAsInteger() + 1 : 1);
                 Bukkit.getPluginManager().callEvent(new SynergyVotifierEvent(bread.getUniqueId(), service, username));
                 

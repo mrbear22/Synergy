@@ -27,6 +27,7 @@ import me.synergy.commands.LanguageCommand;
 import me.synergy.commands.MonobankCommand;
 import me.synergy.commands.PronounCommand;
 import me.synergy.commands.SynergyCommand;
+import me.synergy.commands.TempMuteCommand;
 import me.synergy.commands.ThemeCommand;
 import me.synergy.commands.TikTokCommand;
 import me.synergy.commands.TwitchCommand;
@@ -51,6 +52,7 @@ import me.synergy.objects.BreadMaker;
 import me.synergy.twitch.Twitch;
 import me.synergy.utils.RepeatingTask;
 import me.synergy.utils.UpdateChecker;
+import me.synergy.utils.UpdateChecker.Platform;
 import me.synergy.web.MonobankHandler;
 import me.synergy.web.TikTokHandler;
 import me.synergy.web.WebServer;
@@ -99,6 +101,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
         new TikTokHandler().initialize();
         new TikTokCommand().initialize();
         new DelayedCommand().initialize();
+        new TempMuteCommand().initialize();
 		
 		if (Synergy.isDependencyAvailable("ProtocolLib")) {
 			PROTOCOLMANAGER = ProtocolLibrary.getProtocolManager();
@@ -127,7 +130,7 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
 		
         Synergy.getEventManager().registerEvents(this);
 		
-		new UpdateChecker("mrbear22", "Synergy").checkForUpdates();
+		new UpdateChecker("mrbear22", "Synergy", Platform.SPIGOT).checkForUpdates();
 		
 		Config.save();
 		

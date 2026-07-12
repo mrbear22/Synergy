@@ -1,5 +1,10 @@
 package me.synergy.handlers;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -8,6 +13,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -35,6 +41,63 @@ public class PlayerSpigotHandler implements Listener {
         Locales.addDefault("player-first-time-join-message", "en", "<primary>%player% <secondary>joined for the first time!");
     }
 
+    @EventHandler
+    public void onPreLogin(AsyncPlayerPreLoginEvent event) {
+        UUID uuid = event.getUniqueId();
+        String username = event.getName();
+
+        try {
+        	UUID oldUuid = UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(StandardCharsets.UTF_8)); // Synergy.getDataManager().findUuidByName(username);
+            if (oldUuid != null && !oldUuid.equals(uuid)) {
+                Synergy.getDataManager().migrateUuid(oldUuid, uuid);
+                Synergy.getLogger().info("Migrated UUID for " + username + ": " + oldUuid + " -> " + uuid);
+
+                for (org.bukkit.World world : Bukkit.getWorlds()) {
+                    Path base = world.getWorldFolder().toPath();
+                    migrateFile(base.resolve("playerdata").resolve(oldUuid + ".dat"),
+                                base.resolve("playerdata").resolve(uuid + ".dat"));
+                    migrateFile(base.resolve("playerdata").resolve(oldUuid + ".dat_old"),
+                                base.resolve("playerdata").resolve(uuid + ".dat_old"));
+                    migrateFile(base.resolve("stats").resolve(oldUuid + ".json"),
+                                base.resolve("stats").resolve(uuid + ".json"));
+                    migrateFile(base.resolve("advancements").resolve(oldUuid + ".json"),
+                                base.resolve("advancements").resolve(uuid + ".json"));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        BreadMaker bread = Synergy.getBread(uuid);
+        try {
+            bread.getData("twitch-username");
+            bread.getData("twitch-token");
+            bread.getData("monobank");
+            bread.getData("discord");
+            bread.getData("confirm-discord");
+            bread.getData("last-voted");
+            bread.getData("gender");
+            bread.getData("chat");
+            bread.getData("theme");
+            bread.getData("name");
+            bread.getData("votes");
+            bread.getData("mojangUUID");
+            bread.getData("language");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void migrateFile(Path source, Path target) {
+        try {
+            if (Files.exists(source) && !Files.exists(target)) {
+                Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
     	Player player = event.getPlayer();

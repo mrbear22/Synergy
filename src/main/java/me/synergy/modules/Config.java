@@ -141,6 +141,12 @@ public class Config {
                 
                 addDefault("localizations.genders", true);
                 addDefault("localizations.minimessage", true);
+                
+                addDefault("localizations.modules.chat", true);
+                addDefault("localizations.modules.scoreboard", true);
+                addDefault("localizations.modules.entites", true);
+                addDefault("localizations.modules.merchant", false);
+                addDefault("localizations.modules.items", false);
 
                 addDefault("discord-roles-sync.enabled", false);
                 addDefault("discord-roles-sync.sync-roles-from-discord-to-mc", false);
@@ -167,6 +173,9 @@ public class Config {
                 
                 addDefault("chat-manager.use-interactive-tags", false);
                 addDefault("chat-manager.warn-if-nobody-in-chat", true);
+                
+                addDefault("chat-manager.muted-blocked-commands", new String[] {"/msg", "/tell", "/w", "/r", "/reply"});
+                addDefault("chat-manager.log-ignored-commands", new String[] {"/reg", "/register", "/l", "/login", "/unregister"});
                 
                 addDefault("chat-manager.chats.global.enabled", true);
                 addDefault("chat-manager.chats.global.color", "#dedee0");

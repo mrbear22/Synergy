@@ -3,8 +3,8 @@ package me.synergy.handlers;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MerchantRecipe;
 import org.bukkit.inventory.meta.BookMeta;
-import org.bukkit.inventory.meta.WritableBookMeta;
 
 import com.comphenix.protocol.PacketType;
 import com.comphenix.protocol.ProtocolLibrary;
@@ -13,14 +13,11 @@ import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.events.PacketEvent;
 import com.comphenix.protocol.wrappers.AdventureComponentConverter;
-import com.comphenix.protocol.wrappers.WrappedChatComponent;
 
 import me.synergy.brains.Synergy;
 import me.synergy.modules.Config;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Locale;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 
 public class LocalesHandler {
 
@@ -44,25 +41,44 @@ public class LocalesHandler {
     private void registerPacketListeners() {
         var manager = Synergy.getSpigot().getProtocolManager();
         
-        manager.addPacketListener(createListener(ListenerPriority.HIGH, this::processComponents, 
-            PacketType.Play.Server.SYSTEM_CHAT));
+        if (Config.getBoolean("localizations.modules.chat")) {
+	        manager.addPacketListener(createListener(ListenerPriority.HIGH, this::processComponents, 
+	            PacketType.Play.Server.SYSTEM_CHAT));
+
+	        manager.addPacketListener(createListener(ListenerPriority.MONITOR, this::processComponents,
+	            PacketType.Play.Server.SET_TITLE_TEXT, PacketType.Play.Server.SET_SUBTITLE_TEXT,
+	            PacketType.Play.Server.SET_ACTION_BAR_TEXT, PacketType.Play.Server.BOSS,
+	            PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER, PacketType.Play.Server.PLAYER_INFO,
+	            PacketType.Play.Server.SCOREBOARD_TEAM, PacketType.Play.Server.OPEN_WINDOW,
+	            PacketType.Play.Server.SPAWN_ENTITY, PacketType.Play.Server.KICK_DISCONNECT));
+
+	        manager.addPacketListener(createListener(ListenerPriority.MONITOR, this::processDeathScreen,
+	        	    PacketType.Play.Server.PLAYER_COMBAT_KILL));
+        }
         
-        manager.addPacketListener(createListener(ListenerPriority.MONITOR, this::processComponents,
-            PacketType.Play.Server.SET_TITLE_TEXT, PacketType.Play.Server.SET_SUBTITLE_TEXT,
-            PacketType.Play.Server.SET_ACTION_BAR_TEXT, PacketType.Play.Server.BOSS,
-            PacketType.Play.Server.PLAYER_LIST_HEADER_FOOTER, PacketType.Play.Server.PLAYER_INFO,
-            PacketType.Play.Server.SCOREBOARD_TEAM, PacketType.Play.Server.OPEN_WINDOW,
-            PacketType.Play.Server.SPAWN_ENTITY, PacketType.Play.Server.KICK_DISCONNECT));
+
+        if (Config.getBoolean("localizations.modules.scoreboard")) {
+	        manager.addPacketListener(createListener(ListenerPriority.MONITOR, this::processStringComponents,
+	            PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE, PacketType.Play.Server.SCOREBOARD_OBJECTIVE,
+	            PacketType.Play.Server.MAP));
+        }
         
-        manager.addPacketListener(createListener(ListenerPriority.MONITOR, this::processStringComponents,
-            PacketType.Play.Server.SCOREBOARD_DISPLAY_OBJECTIVE, PacketType.Play.Server.SCOREBOARD_OBJECTIVE,
-            PacketType.Play.Server.MAP));
+
+        if (Config.getBoolean("localizations.modules.items")) {
+	        manager.addPacketListener(createListener(ListenerPriority.NORMAL, this::processInventoryItems,
+	            PacketType.Play.Server.WINDOW_ITEMS, PacketType.Play.Server.SET_SLOT));
+        }
         
-        manager.addPacketListener(createListener(ListenerPriority.NORMAL, this::processInventoryItems,
-            PacketType.Play.Server.WINDOW_ITEMS, PacketType.Play.Server.SET_SLOT));
-        
-        manager.addPacketListener(createListener(ListenerPriority.NORMAL, this::processEntityMetadata,
-        	    PacketType.Play.Server.ENTITY_METADATA));
+
+        if (Config.getBoolean("localizations.modules.entities")) {
+	        manager.addPacketListener(createListener(ListenerPriority.NORMAL, this::processEntityMetadata,
+	            PacketType.Play.Server.ENTITY_METADATA));
+        }
+
+        if (Config.getBoolean("localizations.modules.merchant")) {
+	        manager.addPacketListener(createListener(ListenerPriority.NORMAL, this::processMerchantRecipes,
+	            PacketType.Play.Server.OPEN_WINDOW_MERCHANT));
+        }
     }
 
     private PacketAdapter createListener(ListenerPriority priority, PacketProcessor processor, PacketType... types) {
@@ -133,6 +149,22 @@ public class LocalesHandler {
             });
     }
 
+    private void processDeathScreen(PacketEvent event) {
+        var packet = event.getPacket();
+        var bread = Synergy.getBread(event.getPlayer().getUniqueId());
+
+        var wrapped = packet.getChatComponents().read(0);
+        if (wrapped == null || wrapped.getJson() == null) return;
+
+        var locale = new Locale(AdventureComponentConverter.fromWrapper(wrapped), bread.getLanguage())
+            .setPlaceholders(bread)
+            .setGendered(bread.getGender())
+            .setExecuteInteractive(bread);
+
+        packet.getChatComponents().write(0, AdventureComponentConverter.fromComponent(
+            locale.getColoredComponent(bread.getTheme())));
+    }
+    
     private void processInventoryItems(PacketEvent event) {
         var packet = event.getPacket();
         var bread = Synergy.getBread(event.getPlayer().getUniqueId());
@@ -193,7 +225,40 @@ public class LocalesHandler {
             modifier.write(0, dataValues);
         }
     }
-    
+
+    private void processMerchantRecipes(PacketEvent event) {
+        var packet = event.getPacket();
+        var bread = Synergy.getBread(event.getPlayer().getUniqueId());
+
+        try {
+            var converter = com.comphenix.protocol.wrappers.BukkitConverters.getMerchantRecipeListConverter();
+            var nmsOffers = packet.getModifier().read(1);
+            if (nmsOffers == null) return;
+
+            var recipes = (java.util.List<MerchantRecipe>) converter.getSpecific(nmsOffers);
+            if (recipes == null || recipes.isEmpty()) return;
+
+            var translated = new java.util.ArrayList<MerchantRecipe>();
+            for (var recipe : recipes) {
+                var newRecipe = new MerchantRecipe(
+                    translateItem(recipe.getResult(), bread),
+                    recipe.getUses(),
+                    recipe.getMaxUses(),
+                    recipe.hasExperienceReward(),
+                    recipe.getVillagerExperience(),
+                    recipe.getPriceMultiplier()
+                );
+                for (var ingredient : recipe.getIngredients())
+                    newRecipe.addIngredient(translateItem(ingredient, bread));
+                translated.add(newRecipe);
+            }
+
+            packet.getModifier().write(1, converter.getGeneric(translated));
+        } catch (Exception e) {
+            Synergy.getLogger().error("Error processing merchant recipes: " + e.getMessage());
+        }
+    }
+
     @SuppressWarnings("deprecation")
 	private ItemStack translateItem(ItemStack item, BreadMaker bread) {
         if (item == null || !item.hasItemMeta()) return item;
@@ -220,7 +285,6 @@ public class LocalesHandler {
                 book.author(Synergy.translate(original.author(), bread.getLanguage())
                     .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()));
             if (original.hasPages())
-            	original.getPages().forEach(p -> Synergy.getLogger().info("PAGE RAW: " + p));
                 book.pages(original.getPages().stream()
                     .map(page -> Synergy.translate(page, bread.getLanguage())
                         .setPlaceholders(bread).setGendered(bread.getGender()).getColoredComponent(bread.getTheme()))

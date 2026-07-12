@@ -1,12 +1,12 @@
 package me.synergy.objects;
-
 import java.sql.SQLException;
 import java.util.UUID;
-
+import org.bukkit.Bukkit;
 import me.synergy.brains.Bungee;
 import me.synergy.brains.Spigot;
 import me.synergy.brains.Synergy;
 import me.synergy.brains.Velocity;
+import me.synergy.bukkit.events.PlayerMuteStatusChangeEvent;
 import me.synergy.integrations.AuthmeAPI;
 import me.synergy.integrations.EssentialsAPI;
 import me.synergy.modules.Config;
@@ -15,11 +15,11 @@ import me.synergy.text.Gendered.Gender;
 public class BreadMaker {
 
 	private UUID uuid;
-
+	
 	public BreadMaker(UUID uuid) {
 		this.uuid = uuid;
 	}
-
+	
 	public String getLanguage() {
 		if (getData("language").isSet()) {
 			return getData("language").getAsString();
@@ -29,23 +29,79 @@ public class BreadMaker {
 		}
 		return Config.getString("localizations.default-language", "en");
 	}
-
+	
 	public void sendMessage(String message) {
 		Synergy.event("system-chat").setPlayerUniqueId(uuid).setOption("message", message).send();
 	}
-
+	
 	public UUID getUniqueId() {
 		return uuid;
 	}
 
 	public boolean isMuted() {
-		return Synergy.isRunningSpigot() ? EssentialsAPI.essentialsIsPlayerMuted(getName()) : false;
+		if (Synergy.isRunningSpigot() && EssentialsAPI.essentialsIsPlayerMuted(getName())) {
+			return true;
+		}
+		long expires = getMuteExpires();
+		return expires == -1 || expires > System.currentTimeMillis();
+	}
+
+	public long getMuteExpires() {
+		var data = getData("mute-expires");
+		if (!data.isSet()) return 0;
+		try {
+			return Long.parseLong(data.getAsString());
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+	}
+
+	public String getMuteReason() {
+		return getData("mute-reason").isSet() ? getData("mute-reason").getAsString() : null;
+	}
+
+	public String getMuteBy() {
+		return getData("mute-by").isSet() ? getData("mute-by").getAsString() : null;
+	}
+
+	public long getMuteRemainingSeconds() {
+		long expires = getMuteExpires();
+		if (expires == -1) return -1;
+		if (expires == 0) return 0;
+		return Math.max((expires - System.currentTimeMillis()) / 1000L, 0);
+	}
+
+	public boolean mute(long durationMillis, String reason, String staff) {
+		long expires = durationMillis <= 0 ? -1 : System.currentTimeMillis() + durationMillis;
+
+		if (Synergy.isRunningSpigot()) {
+			var event = new PlayerMuteStatusChangeEvent(uuid, true, expires, reason, staff);
+			Bukkit.getPluginManager().callEvent(event);
+			if (event.isCancelled()) return false;
+		}
+
+		setData("mute-expires", String.valueOf(expires));
+		setData("mute-reason", reason == null ? "" : reason);
+		setData("mute-by", staff == null ? "console" : staff);
+		return true;
+	}
+
+	public boolean unmute() {
+		if (Synergy.isRunningSpigot()) {
+			var event = new PlayerMuteStatusChangeEvent(uuid, false, 0, null, null);
+			Bukkit.getPluginManager().callEvent(event);
+			if (event.isCancelled()) return false;
+		}
+
+		setData("mute-expires", null);
+		setData("mute-reason", null);
+		setData("mute-by", null);
+		return true;
 	}
 
 	public String getName() {
 		return getData("name").isSet() ? getData("name").getAsString() : null;
 	}
-
 	public DataObject getData(String option) {
 		try {
 			return Synergy.getDataManager().getData(getUniqueId(), option);
@@ -61,7 +117,6 @@ public class BreadMaker {
 			return new DataObject(null);
 		}
 	}
-
 	public DataObject getData(String option, boolean useCache) {
 		try {
 			return Synergy.getDataManager().getData(getUniqueId(), option, useCache);
@@ -92,39 +147,33 @@ public class BreadMaker {
 		}
 		return false;
 	}
-
     public boolean isAuthenticated() {
 		if (Synergy.isRunningSpigot() && Synergy.isDependencyAvailable("Authme")) {
 			return AuthmeAPI.isAuthenticated(Synergy.getSpigot().getPlayerByUniqueId(uuid));
 		}
 		return true;
     }
-
 	public boolean hasPermission(String node) {
 		if (Synergy.isRunningSpigot()) {
 			return Synergy.getSpigot().playerHasPermission(getUniqueId(), node);
 		}
 		return false;
 	}
-
 	public String getTheme() {
 		if (getData("theme").isSet()) {
 			return getData("theme").getAsString();
 		}
 		return "default";
 	}
-
 	public Gender getGender() {
 		if (getData("gender").isSet()) {
 			return getData("gender").getAsGender();
 		}
 		return Gender.MALE;
 	}
-
 	public Cache getCache() {
 		return new Cache(getUniqueId());
 	}
-
 	public void kick(String reason) {
 		try {
 		    if (Synergy.isRunningSpigot()) {

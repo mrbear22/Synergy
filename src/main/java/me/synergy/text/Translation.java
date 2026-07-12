@@ -1,12 +1,15 @@
 package me.synergy.text;
 
 import java.util.Map;
+import java.util.UUID;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import me.synergy.brains.Synergy;
 import me.synergy.integrations.PlaceholdersAPI;
 import me.synergy.modules.Config;
+import me.synergy.modules.DataManager;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Gendered.Gender;
@@ -55,17 +58,33 @@ public class Translation {
             Map<String, String> args = parseArguments(matcher.group(2));
             
             String translation = getTranslation(key, language, args.get("fallback"));
+
+            if (args.containsKey("line")) {
+                try {
+                    int lineIndex = Integer.parseInt(args.get("line").trim());
+                    String[] lines = translation.split("\n");
+                    translation = (lineIndex >= 0 && lineIndex < lines.length)
+                        ? lines[lineIndex]
+                        : translation;
+                } catch (NumberFormatException ignored) {}
+            }
             
             for (Map.Entry<String, String> e : args.entrySet()) {
-                if (!e.getKey().equals("fallback")) {
+                if (!e.getKey().equals("fallback") && !e.getKey().equals("line")) {
                     translation = translation.replace("%" + e.getKey() + "%", e.getValue());
                 }
             }
             
             Gender gender = args.containsKey("gender") ? Gendered.getGender(args.get("gender")) : null;
             if (gender == null && args.containsKey("player")) {
+                UUID uuid = null;
+        		try {
+        			uuid = new DataManager().findUuidByName(args.get("player"));
+        		} catch (SQLException e) {
+        			e.printStackTrace();
+        		}
                 try {
-                    BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(args.get("player")));
+                    BreadMaker bread = Synergy.getBread(uuid);
                     if (bread != null) gender = bread.getGender();
                 } catch (Exception e) {}
             }

@@ -1,5 +1,6 @@
 package me.synergy.handlers;
 
+import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -59,10 +60,24 @@ public class PlayerVelocityHandler {
 
     @Subscribe
     public void onPlayerLogin(PostLoginEvent event) {
-        BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        UUID newUuid = player.getUniqueId();
+        String username = player.getUsername();
+
+        try {
+            UUID oldUuid = Synergy.getDataManager().findUuidByName(username);
+            if (oldUuid != null && !oldUuid.equals(newUuid)) {
+                Synergy.getDataManager().migrateUuid(oldUuid, newUuid);
+                Synergy.getLogger().info("Migrated UUID for " + username + ": " + oldUuid + " -> " + newUuid);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        BreadMaker bread = Synergy.getBread(newUuid);
+
         bread.getCache().clear();
         bread.setData("name", event.getPlayer().getUsername());
-        Player player = event.getPlayer();
 
         if (Config.getBoolean("twitch.enabled") && bread.getData("twitch-username").isSet()) {
             try {

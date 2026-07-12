@@ -6,7 +6,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,10 +23,12 @@ import me.synergy.brains.Synergy;
 
 public class Locales {
 
-	private static final Map<String, HashMap<String, String>> LOCALES = new ConcurrentHashMap<>();
+    private static final Map<String, HashMap<String, String>> LOCALES = new ConcurrentHashMap<>();
     private static final Map<String, Set<String>> ARRAY_KEYS = new HashMap<>();
-    private final static String localesFilePath = "plugins/Synergy/locales.yml";
-    public static Map<String, Object> localesValues;
+
+    private static final Map<String, String> KEY_SOURCE_FILE = new ConcurrentHashMap<>();
+
+    private static final String LOCALES_DIR = "plugins/Synergy/locales";
 
     public void initialize() {
         try {
@@ -42,35 +43,54 @@ public class Locales {
 
     public void loadLocales() {
         try {
-            createLocalesFileIfNotExists();
-            Map<String, Object> yamlData = loadYamlDataFromFile();
-            if (yamlData == null) {
-                Synergy.getLogger().warning("Failed to load locales file.");
+            File localesDir = new File(LOCALES_DIR);
+
+            if (localesDir.mkdirs()) {
+            	copyResourceIfAbsent("locales/example.yml", new File(localesDir, "example.yml"));
+            }
+
+            File[] ymlFiles = localesDir.listFiles(
+                    (dir, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
+
+            if (ymlFiles == null || ymlFiles.length == 0) {
+                Synergy.getLogger().warning("No locale files found in " + LOCALES_DIR);
                 return;
             }
-            initializeTranslations(yamlData);
+
+            int totalCount = 0;
+            for (File file : ymlFiles) {
+                Map<String, Object> yamlData = loadYamlDataFromFile(file);
+                if (yamlData == null) {
+                    Synergy.getLogger().warning("Failed to load locale file: " + file.getName());
+                    continue;
+                }
+                int count = initializeTranslations(yamlData, file.getName());
+                Synergy.getLogger().info("  Loaded " + count + " translations from " + file.getName());
+                totalCount += count;
+            }
+
+            Synergy.getLogger().info("Initialized " + totalCount + " translations total!");
             checkMissingTranslations();
+
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void createLocalesFileIfNotExists() throws IOException {
-        File file = new File(localesFilePath);
-        if (!file.exists()) {
-            Synergy.getLogger().info("Creating locales file...");
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-            try (InputStream stream = getClass().getClassLoader().getResourceAsStream("locales.yml")) {
-                if (stream != null) {
-                    Files.copy(stream, Path.of(localesFilePath), StandardCopyOption.REPLACE_EXISTING);
-                }
+    private void copyResourceIfAbsent(String resourcePath, File target) throws IOException {
+        if (target.exists()) return;
+        Synergy.getLogger().info("Creating " + target.getName() + " from resources...");
+        try (InputStream stream = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
+            if (stream != null) {
+                Files.copy(stream, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                Synergy.getLogger().warning("Resource not found: " + resourcePath);
             }
         }
     }
 
-    private Map<String, Object> loadYamlDataFromFile() {
-        try (FileInputStream fis = new FileInputStream(localesFilePath)) {
+    private Map<String, Object> loadYamlDataFromFile(File file) {
+        try (FileInputStream fis = new FileInputStream(file)) {
             return new Yaml().load(fis);
         } catch (IOException e) {
             e.printStackTrace();
@@ -79,76 +99,60 @@ public class Locales {
     }
 
     @SuppressWarnings("unchecked")
-    private void initializeTranslations(Map<String, Object> yamlData) {
+    private int initializeTranslations(Map<String, Object> yamlData, String sourceFile) {
         int count = 0;
         for (Map.Entry<String, Object> entry : yamlData.entrySet()) {
             if (!(entry.getValue() instanceof Map)) continue;
             Map<String, Object> subSection = (Map<String, Object>) entry.getValue();
             for (Map.Entry<String, Object> langEntry : subSection.entrySet()) {
                 if (langEntry.getValue() instanceof String) {
-                    count += addTranslationInternal(entry.getKey(), langEntry.getKey(), (String) langEntry.getValue());
+                    count += addTranslationInternal(entry.getKey(), langEntry.getKey(),
+                            (String) langEntry.getValue(), sourceFile);
                 } else if (langEntry.getValue() instanceof List) {
-                    count += addTranslationsFromList(entry.getKey(), langEntry.getKey(), (List<String>) langEntry.getValue());
-                    ARRAY_KEYS.computeIfAbsent(langEntry.getKey(), k -> new java.util.HashSet<>()).add(entry.getKey());
+                    count += addTranslationsFromList(entry.getKey(), langEntry.getKey(),
+                            (List<String>) langEntry.getValue(), sourceFile);
+                    ARRAY_KEYS.computeIfAbsent(langEntry.getKey(), k -> new HashSet<>())
+                              .add(entry.getKey());
                 }
             }
         }
-        Synergy.getLogger().info("Initialized " + count + " translations!");
+        return count;
     }
 
-    private void checkMissingTranslations() {
-        Set<String> allKeys = new HashSet<>();
-        LOCALES.values().forEach(map -> allKeys.addAll(map.keySet()));
-        
-        if (allKeys.isEmpty()) return;
-        
-        boolean hasMissing = false;
-        for (Map.Entry<String, HashMap<String, String>> entry : LOCALES.entrySet()) {
-            String language = entry.getKey();
-            Set<String> langKeys = entry.getValue().keySet();
-            
-            Set<String> missingKeys = new HashSet<>(allKeys);
-            missingKeys.removeAll(langKeys);
-            
-            if (!missingKeys.isEmpty()) {
-                hasMissing = true;
-                Synergy.getLogger().warning("Language '" + language + "' is missing " + missingKeys.size() + " translation(s):");
-                for (String key : missingKeys) {
-                    Synergy.getLogger().warning("  - " + key);
-                }
-            }
-        }
-        
-        if (!hasMissing) {
-            Synergy.getLogger().info("All translations are complete for all languages!");
-        }
-    }
-
-    private int addTranslationInternal(String key, String language, String translation) {
+    private int addTranslationInternal(String key, String language, String translation,
+                                       String sourceFile) {
         LOCALES.computeIfAbsent(language, k -> new HashMap<>())
                .put(key, translation.replace("%nl%", System.lineSeparator()));
+        KEY_SOURCE_FILE.putIfAbsent(key, sourceFile);
         return 1;
     }
 
-    private int addTranslationsFromList(String key, String language, List<String> translations) {
+    private int addTranslationsFromList(String key, String language, List<String> translations,
+                                        String sourceFile) {
         String combined = String.join(System.lineSeparator(), translations)
                                 .replace("%nl%", System.lineSeparator());
         LOCALES.computeIfAbsent(language, k -> new HashMap<>()).put(key, combined);
+        KEY_SOURCE_FILE.putIfAbsent(key, sourceFile);
         return 1;
     }
 
-    public static boolean addOrUpdate(String key, String language, String translation) {
+    public static boolean addOrUpdate(String key, String language, String translation,
+                                      String targetFile) {
         try {
             LOCALES.computeIfAbsent(language, k -> new HashMap<>()).put(key, translation);
-            if (ARRAY_KEYS.containsKey(language)) {
-                ARRAY_KEYS.get(language).remove(key);
-            }
-            saveToFile();
+            if (ARRAY_KEYS.containsKey(language)) ARRAY_KEYS.get(language).remove(key);
+            String file = resolveTargetFile(key, targetFile);
+            KEY_SOURCE_FILE.put(key, file);
+            saveFile(file);
             return true;
         } catch (Exception e) {
             Synergy.getLogger().error("Failed to update translation: " + key);
             return false;
         }
+    }
+
+    public static boolean addOrUpdate(String key, String language, String translation) {
+        return addOrUpdate(key, language, translation, null);
     }
 
     public static boolean addDefault(String key, String language, String translation) {
@@ -156,12 +160,21 @@ public class Locales {
         return addOrUpdate(key, language, translation);
     }
 
-    public static boolean addOrUpdate(String key, String language, String[] translations) {
+    public static boolean addDefault(String key, String language, String translation,
+                                     String targetFile) {
+        if (hasTranslation(key, language)) return false;
+        return addOrUpdate(key, language, translation, targetFile);
+    }
+
+    public static boolean addOrUpdate(String key, String language, String[] translations,
+                                      String targetFile) {
         try {
             String combined = String.join(System.lineSeparator(), translations);
             LOCALES.computeIfAbsent(language, k -> new HashMap<>()).put(key, combined);
-            ARRAY_KEYS.computeIfAbsent(language, k -> new java.util.HashSet<>()).add(key);
-            saveToFile();
+            ARRAY_KEYS.computeIfAbsent(language, k -> new HashSet<>()).add(key);
+            String file = resolveTargetFile(key, targetFile);
+            KEY_SOURCE_FILE.put(key, file);
+            saveFile(file);
             return true;
         } catch (Exception e) {
             Synergy.getLogger().error("Failed to update translation: " + key);
@@ -169,9 +182,19 @@ public class Locales {
         }
     }
 
+    public static boolean addOrUpdate(String key, String language, String[] translations) {
+        return addOrUpdate(key, language, translations, null);
+    }
+
     public static boolean addDefault(String key, String language, String[] translations) {
         if (hasTranslation(key, language)) return false;
         return addOrUpdate(key, language, translations);
+    }
+
+    public static boolean addDefault(String key, String language, String[] translations,
+                                     String targetFile) {
+        if (hasTranslation(key, language)) return false;
+        return addOrUpdate(key, language, translations, targetFile);
     }
 
     public boolean remove(String key, String language) {
@@ -179,10 +202,14 @@ public class Locales {
         if (map == null || !map.containsKey(key)) return false;
         try {
             map.remove(key);
-            if (ARRAY_KEYS.containsKey(language)) {
-                ARRAY_KEYS.get(language).remove(key);
-            }
-            saveToFile();
+            if (ARRAY_KEYS.containsKey(language)) ARRAY_KEYS.get(language).remove(key);
+
+            String sourceFile = KEY_SOURCE_FILE.get(key);
+
+            boolean anyLeft = LOCALES.values().stream().anyMatch(m -> m.containsKey(key));
+            if (!anyLeft) KEY_SOURCE_FILE.remove(key);
+
+            if (sourceFile != null) saveFile(sourceFile);
             return true;
         } catch (Exception e) {
             Synergy.getLogger().error("Failed to remove translation: " + key);
@@ -211,25 +238,36 @@ public class Locales {
         return result;
     }
 
-    private static void saveToFile() throws IOException {
-        // Use TreeMap for alphabetical order
-        Map<String, Object> yamlData = new TreeMap<>();
-        
-        Set<String> allKeys = LOCALES.values().stream()
-                .flatMap(map -> map.keySet().stream())
-                .collect(java.util.stream.Collectors.toSet());
+    public Set<String> getLanguages() {
+        return LOCALES.keySet();
+    }
 
-        allKeys.forEach(key -> {
+    public static Map<String, HashMap<String, String>> getLocales() {
+        return LOCALES;
+    }
+
+    public Map<String, Set<String>> getArrayKeys() {
+        return ARRAY_KEYS;
+    }
+
+    public String getSourceFile(String key) {
+        return KEY_SOURCE_FILE.get(key);
+    }
+
+    private static void saveFile(String fileName) throws IOException {
+        Map<String, Object> yamlData = new TreeMap<>();
+
+        KEY_SOURCE_FILE.forEach((key, file) -> {
+            if (!file.equals(fileName)) return;
+
             Map<String, Object> langMap = new LinkedHashMap<>();
             LOCALES.forEach((lang, map) -> {
                 String translation = map.get(key);
-                if (translation != null) {
-                    if (ARRAY_KEYS.containsKey(lang) && ARRAY_KEYS.get(lang).contains(key)) {
-                        String[] lines = translation.split(System.lineSeparator());
-                        langMap.put(lang, List.of(lines));
-                    } else {
-                        langMap.put(lang, translation);
-                    }
+                if (translation == null) return;
+                if (ARRAY_KEYS.containsKey(lang) && ARRAY_KEYS.get(lang).contains(key)) {
+                    langMap.put(lang, List.of(translation.split(System.lineSeparator())));
+                } else {
+                    langMap.put(lang, translation);
                 }
             });
             if (!langMap.isEmpty()) yamlData.put(key, langMap);
@@ -239,27 +277,44 @@ public class Locales {
         options.setIndent(2);
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 
-        try (FileWriter writer = new FileWriter(localesFilePath)) {
+        File outFile = new File(LOCALES_DIR, fileName);
+        outFile.getParentFile().mkdirs();
+        try (FileWriter writer = new FileWriter(outFile)) {
             new Yaml(options).dump(yamlData, writer);
+        }
+    }
+
+    private static String resolveTargetFile(String key, String targetFile) {
+        if (targetFile != null && !targetFile.isBlank()) return targetFile;
+        return KEY_SOURCE_FILE.getOrDefault(key, "synergy.yml");
+    }
+
+    private void checkMissingTranslations() {
+        Set<String> allKeys = new HashSet<>();
+        LOCALES.values().forEach(map -> allKeys.addAll(map.keySet()));
+        if (allKeys.isEmpty()) return;
+
+        boolean hasMissing = false;
+        for (Map.Entry<String, HashMap<String, String>> entry : LOCALES.entrySet()) {
+            String language = entry.getKey();
+            Set<String> missingKeys = new HashSet<>(allKeys);
+            missingKeys.removeAll(entry.getValue().keySet());
+            if (!missingKeys.isEmpty()) {
+                hasMissing = true;
+                Synergy.getLogger().warning("Language '" + language + "' is missing "
+                        + missingKeys.size() + " translation(s):");
+                missingKeys.forEach(k -> Synergy.getLogger().warning("  - " + k));
+            }
+        }
+        if (!hasMissing) {
+            Synergy.getLogger().info("All translations are complete for all languages!");
         }
     }
 
     public void reload() {
         LOCALES.clear();
         ARRAY_KEYS.clear();
+        KEY_SOURCE_FILE.clear();
         loadLocales();
     }
-
-    public Set<String> getLanguages() {
-        return LOCALES.keySet();
-    }
-
-    public static Map<String, HashMap<String, String>> getLocales() {
-        return LOCALES;
-    }
-    
-    public Map<String, Set<String>> getArrayKeys() {
-        return ARRAY_KEYS;
-    }
-
 }

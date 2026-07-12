@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.synergy.brains.Synergy;
+import me.synergy.handlers.ChatHandler;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Cache;
 import me.synergy.text.Color;
@@ -73,11 +74,33 @@ public class PlaceholdersAPI {
             }
 
             BreadMaker bread = Synergy.getBread(player.getUniqueId());
-            String result = bread.getData(identifier).isSet() ? bread.getData(identifier).getAsString() : "none";
+            String result = resolveKnownPlaceholder(bread, identifier);
+
+            if (result == null) {
+                result = bread.getData(identifier).isSet() ? bread.getData(identifier).getAsString() : "none";
+            }
 
             cache.add("placeholder:"+identifier, result, 10);
             
             return result;
+        }
+
+        private String resolveKnownPlaceholder(BreadMaker bread, String identifier) {
+            return switch (identifier.toLowerCase()) {
+                case "chat" -> bread.getData("chat").isSet() ? bread.getData("chat").getAsString() : "global";
+                case "language" -> bread.getLanguage();
+                case "theme" -> bread.getTheme();
+                case "muted" -> String.valueOf(bread.isMuted());
+                case "mute_reason" -> bread.getMuteReason() != null ? bread.getMuteReason() : "";
+                case "mute_by" -> bread.getMuteBy() != null ? bread.getMuteBy() : "";
+                case "mute_remaining" -> {
+                    long remaining = bread.getMuteRemainingSeconds();
+                    yield remaining == -1 ? "perm" : String.valueOf(remaining);
+                }
+                case "chat_locked" -> String.valueOf(ChatHandler.isChatLocked());
+                case "slowmode" -> String.valueOf(ChatHandler.getSlowmodeSeconds());
+                default -> null;
+            };
         }
 
     }

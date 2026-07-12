@@ -20,6 +20,7 @@ import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.twitch.Twitch;
 import me.synergy.utils.UpdateChecker;
+import me.synergy.utils.UpdateChecker.Platform;
 import me.synergy.web.MonobankHandler;
 import me.synergy.web.TikTokHandler;
 import me.synergy.web.WebServer;
@@ -63,7 +64,7 @@ public class Bungee extends Plugin implements Listener {
 	    
 	    getProxy().registerChannel("net:synergy");
 	    
-	    new UpdateChecker("mrbear22", "Synergy").checkForUpdates();
+	    new UpdateChecker("mrbear22", "Synergy", Platform.BUNGEECORD).checkForUpdates();
 	    
     	Config.save();
 	    

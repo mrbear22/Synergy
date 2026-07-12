@@ -6,7 +6,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
@@ -140,19 +142,72 @@ public class DataManager implements SynergyListener {
     	new Cache(event.getPlayerUniqueId()).add(option, value, 600);
     }
     
+    private final Map<String, UUID> uuidCache = new ConcurrentHashMap<>();
+
     public UUID findUserUUID(String option, String value) throws SQLException {
-    	establishConnection();
+        String cacheKey = option + ":" + value;
+        UUID cached = uuidCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
+        establishConnection();
         String sql = "SELECT uuid FROM synergy WHERE option = ? AND value = ?";
         try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
             pstmt.setString(1, option);
             pstmt.setString(2, value);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) {
-                return new DataObject(rs.getString("uuid")).getAsUUID();
-            } else {
-                return null;
+                UUID result = new DataObject(rs.getString("uuid")).getAsUUID();
+                uuidCache.put(cacheKey, result);
+                return result;
             }
+            return null;
         }
+    }
+    
+    public synchronized void migrateUuid(UUID oldUuid, UUID newUuid) throws SQLException {
+        if (oldUuid.equals(newUuid)) return;
+
+        establishConnection();
+        connection.setAutoCommit(false);
+        try {
+            String selectSql = "SELECT option, value FROM synergy WHERE uuid = ?";
+            try (PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
+                selectStmt.setString(1, oldUuid.toString());
+                ResultSet rs = selectStmt.executeQuery();
+
+                String replaceSql = "REPLACE INTO synergy (uuid, option, value) VALUES (?, ?, ?)";
+                try (PreparedStatement replaceStmt = connection.prepareStatement(replaceSql)) {
+                    while (rs.next()) {
+                        replaceStmt.setString(1, newUuid.toString());
+                        replaceStmt.setString(2, rs.getString("option"));
+                        replaceStmt.setString(3, rs.getString("value"));
+                        replaceStmt.addBatch();
+                    }
+                    replaceStmt.executeBatch();
+                }
+            }
+
+            try (PreparedStatement deleteStmt = connection.prepareStatement("DELETE FROM synergy WHERE uuid = ?")) {
+                deleteStmt.setString(1, oldUuid.toString());
+                deleteStmt.executeUpdate();
+            }
+
+            connection.commit();
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(true);
+        }
+
+        new Cache(oldUuid).clear();
+        new Cache(newUuid).clear();
+    }
+
+    public UUID findUuidByName(String name) throws SQLException {
+        return findUserUUID("name", name);
     }
     
     public void close() throws SQLException {

@@ -66,7 +66,7 @@ public class LinksManager {
             Synergy.getBread(uuid).sendMessage("<lang>twitch-successfully-linked</lang>");
             
             String playerName = Synergy.getBread(uuid).getName();
-            ChatHandler.sendMessage(username.toLowerCase(), "<lang>log-twitch-linked-message<arg>" + playerName + "</arg></lang>");
+            ChatHandler.sendMessage(username.toLowerCase(), "<lang>twitch-successfully-linked</lang>");
         } else {
             throw new RuntimeException("<lang>twitch-connection-failed</lang>");
         }

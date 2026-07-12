@@ -1,10 +1,12 @@
 package me.synergy.discord;
 
 import java.awt.Color;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
@@ -13,6 +15,7 @@ import me.synergy.events.SynergyEvent;
 import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.objects.Locale;
+import me.synergy.objects.LocaleBuilder;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Message;
@@ -35,6 +38,7 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
 	        Locales.addDefault("message-cant-be-empty", "en", "<danger>Message can't be empty!");
 	        Locales.addDefault("message-recipients", "en", "Players who saw your message: %RECIPIENTS%");
 	        Locales.addDefault("noone-hears-you", "en", "<danger>No one can hear you. Use ! for global chat.");
+	        Locales.addDefault("you-are-muted", "en", "<danger>You are muted. Reason: %reason%");
 	        
 	        Synergy.getLogger().info(String.valueOf(getClass().getSimpleName()) + " module has been initialized!");
 	    } catch (Exception exception) {
@@ -135,6 +139,21 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
         	return;	
         }
 
+        UUID uuid = resolveLinkedUUID(user.getId());
+
+        if (uuid != null && Synergy.getBread(uuid).isMuted()) {
+            message.delete().queue(success -> {}, failure -> {});
+
+            Synergy.event("discord-embed")
+                .setOption("channel", channelId)
+                .setOption("title", LocaleBuilder.of("you-are-muted")
+                    .placeholder("reason", Synergy.getBread(uuid).getMuteReason())
+                    .build())
+                .setOption("color", "#fab1a0")
+                .send();
+            return;
+        }
+
         Synergy.event("discord-chat")
 		       .setOption("player", user.getEffectiveName())
 		       .setOption("discord-channel-id", channelId)
@@ -150,5 +169,13 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
         }
         return;
         
+    }
+
+    private UUID resolveLinkedUUID(String discordUserId) {
+        try {
+            return Synergy.getDataManager().findUserUUID("discord", discordUserId);
+        } catch (SQLException e) {
+            return null;
+        }
     }
 }

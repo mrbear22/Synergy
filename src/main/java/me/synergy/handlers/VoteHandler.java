@@ -1,6 +1,10 @@
 package me.synergy.handlers;
 
+import java.sql.SQLException;
+import java.util.UUID;
+
 import me.synergy.brains.Synergy;
+import me.synergy.modules.DataManager;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.LocaleBuilder;
 
@@ -18,7 +22,14 @@ public class VoteHandler {
     	
         Synergy.getLogger().info("Player " + username + " voted on " + service);
 
-        BreadMaker bread = Synergy.getBread(Synergy.getOfflineUniqueId(username));
+        UUID uuid = null;
+		try {
+			uuid = new DataManager().findUuidByName(username);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+        
+        BreadMaker bread = Synergy.getBread(uuid);
         
         Synergy.event("votifier")
         	.setPlayerUniqueId(bread.getUniqueId())

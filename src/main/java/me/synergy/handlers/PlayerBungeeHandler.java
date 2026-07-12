@@ -58,10 +58,23 @@ public class PlayerBungeeHandler implements Listener {
 
     @EventHandler
     public void onPlayerLogin(PostLoginEvent event) {
-        BreadMaker bread = Synergy.getBread(event.getPlayer().getUniqueId());
-        bread.getCache().clear();
-        bread.setData("name", event.getPlayer().getName());
         ProxiedPlayer player = event.getPlayer();
+        UUID newUuid = player.getUniqueId();
+        String username = player.getName();
+
+        try {
+            UUID oldUuid = Synergy.getDataManager().findUuidByName(username);
+            if (oldUuid != null && !oldUuid.equals(newUuid)) {
+                Synergy.getDataManager().migrateUuid(oldUuid, newUuid);
+                Synergy.getLogger().info("Migrated UUID for " + username + ": " + oldUuid + " -> " + newUuid);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        BreadMaker bread = Synergy.getBread(newUuid);
+        bread.getCache().clear();
+        bread.setData("name", username);
 
         if (Config.getBoolean("twitch.enabled") && bread.getData("twitch-username").isSet()) {
         	try {

@@ -1,5 +1,6 @@
 package me.synergy.discord;
 
+import java.sql.SQLException;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -10,6 +11,7 @@ import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
 import me.synergy.modules.Config;
+import me.synergy.modules.DataManager;
 import me.synergy.modules.Locales;
 import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
@@ -234,8 +236,14 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
     }
     
     private void processLinking(User user, String username, ReplyHandler replyHandler) {
-        UUID uuid = Synergy.getOfflineUniqueId(username);
 
+        UUID uuid = null;
+		try {
+			uuid = new DataManager().findUuidByName(username);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+        
         if (uuid == null) {
             replyHandler.reply(
                 Synergy.translate("<lang>player-doesnt-exist</lang>", Translation.getDefaultLanguage())

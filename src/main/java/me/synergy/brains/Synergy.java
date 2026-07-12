@@ -102,9 +102,9 @@ public class Synergy {
 		return new DataManager();
 	}
 
-	public static UUID getOfflineUniqueId(String username) {
-	    return UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(StandardCharsets.UTF_8));
-	}
+	//public static UUID getOfflineUniqueId(String username) {
+	//    return UUID.nameUUIDFromBytes(("OfflinePlayer:" + username).getBytes(StandardCharsets.UTF_8));
+	//}
 
 	public static void debug(String string) {
         getLogger().info(string, true);
