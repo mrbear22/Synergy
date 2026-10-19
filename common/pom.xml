@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent><groupId>archi.quest</groupId><artifactId>synergy-parent</artifactId><version>1.5.4</version></parent>
+	<artifactId>synergy-common</artifactId>
+	<description>Platform-independent core: no Bukkit / Velocity / Bungee / Fabric APIs allowed here</description>
+
+	<properties>
+		<maven.deploy.skip>true</maven.deploy.skip>
+	</properties>
+
+	<dependencies>
+		<dependency><groupId>net.dv8tion</groupId><artifactId>JDA</artifactId><version>5.0.0-beta.20</version></dependency>
+		<dependency><groupId>com.google.code.gson</groupId><artifactId>gson</artifactId><version>2.10.1</version></dependency>
+		<dependency><groupId>org.jsoup</groupId><artifactId>jsoup</artifactId><version>1.18.1</version></dependency>
+		<dependency><groupId>com.github.twitch4j</groupId><artifactId>twitch4j</artifactId><version>1.25.0</version></dependency>
+		<dependency><groupId>com.github.ben-manes.caffeine</groupId><artifactId>caffeine</artifactId><version>3.1.8</version></dependency>
+		<dependency><groupId>net.kyori</groupId><artifactId>adventure-text-minimessage</artifactId><version>4.26.1</version></dependency>
+		<dependency><groupId>net.kyori</groupId><artifactId>adventure-text-serializer-gson</artifactId><version>4.26.1</version></dependency>
+		<dependency><groupId>net.kyori</groupId><artifactId>adventure-text-serializer-legacy</artifactId><version>4.26.1</version></dependency>
+		<dependency><groupId>net.kyori</groupId><artifactId>adventure-text-serializer-plain</artifactId><version>4.26.1</version></dependency>
+		<dependency><groupId>org.yaml</groupId><artifactId>snakeyaml</artifactId><version>2.2</version></dependency>
+		<dependency><groupId>com.github.jwdeveloper.TikTok-Live-Java</groupId><artifactId>Client</artifactId><version>1.11.9-Release</version></dependency>
+	</dependencies>
+</project>

@@ -1,0 +1,1 @@
+{"id":"synergy","name":"Synergy","version":"${project.version}","description":"${project.description}","url":"archi.quest","authors":["mrbear22"],"dependencies":[],"main":"me.synergy.brains.Velocity"}

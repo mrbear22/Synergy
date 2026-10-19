@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent><groupId>archi.quest</groupId><artifactId>synergy-parent</artifactId><version>1.5.4</version></parent>
+	<artifactId>synergy-minecraft</artifactId>
+	<packaging>pom</packaging>
+	<description>Fetches the unobfuscated Minecraft server jar from Mojang and exposes it to the build (never redistributed)</description>
+
+	<properties>
+		<minecraft.version>26.2</minecraft.version>
+		<minecraft.server.url>https://piston-data.mojang.com/v1/objects/823e2250d24b3ddac457a60c92a6a941943fcd6a/server.jar</minecraft.server.url>
+		<maven.deploy.skip>true</maven.deploy.skip>
+		<maven.install.skip>true</maven.install.skip>
+	</properties>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>com.googlecode.maven-download-plugin</groupId>
+				<artifactId>download-maven-plugin</artifactId>
+				<version>1.13.0</version>
+				<executions>
+					<execution>
+						<phase>generate-resources</phase>
+						<goals><goal>wget</goal></goals>
+						<configuration>
+							<uri>${minecraft.server.url}</uri>
+							<outputDirectory>${project.build.directory}/bundler</outputDirectory>
+							<outputFileName>server-bundler-${minecraft.version}.jar</outputFileName>
+							<unpack>true</unpack>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.6.1</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals><goal>attach-artifact</goal></goals>
+						<configuration>
+							<artifacts>
+								<artifact>
+									<file>${project.build.directory}/bundler/META-INF/versions/${minecraft.version}/server-${minecraft.version}.jar</file>
+									<type>jar</type>
+								</artifact>
+							</artifacts>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

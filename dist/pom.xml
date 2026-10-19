@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent><groupId>archi.quest</groupId><artifactId>synergy-parent</artifactId><version>1.5.4</version></parent>
+	<artifactId>synergy</artifactId>
+	<name>Synergy</name>
+	<description>Basic tools and server messaging plugin</description>
+
+	<dependencies>
+		<dependency><groupId>archi.quest</groupId><artifactId>synergy-paper</artifactId></dependency>
+		<dependency><groupId>archi.quest</groupId><artifactId>synergy-velocity</artifactId></dependency>
+		<dependency><groupId>archi.quest</groupId><artifactId>synergy-bungee</artifactId></dependency>
+		<dependency><groupId>archi.quest</groupId><artifactId>synergy-fabric-legacy</artifactId></dependency>
+	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>fabric</id>
+			<activation><jdk>[25,)</jdk></activation>
+			<dependencies>
+				<dependency><groupId>archi.quest</groupId><artifactId>synergy-fabric</artifactId></dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
+	<build>
+		<finalName>Synergy</finalName>
+		<resources>
+			<resource>
+				<filtering>true</filtering>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>plugin.yml</include>
+					<include>bungee.yml</include>
+					<include>velocity-plugin.json</include>
+				</includes>
+			</resource>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes><include>steve.png</include></includes>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<configuration>
+					<minimizeJar>false</minimizeJar>
+					<artifactSet>
+						<excludes>
+							<exclude>com.google.code.gson:gson</exclude>
+							<exclude>org.jspecify:jspecify</exclude>
+							<exclude>club.minnced:opus-java*</exclude>
+							<exclude>net.java.dev.jna:*</exclude>
+						</excludes>
+					</artifactSet>
+					<relocations>
+						<relocation><pattern>com.google.protobuf</pattern><shadedPattern>me.synergy.shaded.protobuf</shadedPattern></relocation>
+						<relocation><pattern>io.github.jwdeveloper.tiktok</pattern><shadedPattern>me.synergy.shaded.tiktok</shadedPattern></relocation>
+						<relocation><pattern>org.apache.commons</pattern><shadedPattern>me.synergy.shaded.commons</shadedPattern></relocation>
+					</relocations>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+							</excludes>
+						</filter>
+						<filter>
+							<artifact>archi.quest:synergy-fabric</artifact>
+							<excludes><exclude>fabric.mod.json</exclude></excludes>
+						</filter>
+					</filters>
+				</configuration>
+				<executions>
+					<execution><phase>package</phase><goals><goal>shade</goal></goals></execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

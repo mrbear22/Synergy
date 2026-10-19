@@ -4,7 +4,7 @@
   <groupId>archi.quest</groupId>
   <artifactId>synergy</artifactId>
   <name>Synergy</name>
-  <version>1.5.2</version>
+  <version>1.5.3</version>
   <description>Basic tools and server messaging plugin</description>
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
@@ -144,21 +144,15 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>net.dmulloy2</groupId>
-      <artifactId>ProtocolLib</artifactId>
-      <version>5.4.0</version>
+      <groupId>com.github.retrooper</groupId>
+      <artifactId>packetevents-spigot</artifactId>
+      <version>2.9.5</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>me.clip</groupId>
       <artifactId>placeholderapi</artifactId>
       <version>2.11.5</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.github.NuVotifier</groupId>
-      <artifactId>NuVotifier</artifactId>
-      <version>2.7.2</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -195,6 +189,12 @@
       <groupId>com.github.plan-player-analytics</groupId>
       <artifactId>Plan</artifactId>
       <version>5.6.2883</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>net.luckperms</groupId>
+      <artifactId>api</artifactId>
+      <version>5.5</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>

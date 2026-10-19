@@ -1,0 +1,7 @@
+name: Synergy
+main: me.synergy.brains.Spigot
+version: ${project.version}
+api-version: 1.16
+author: mrbear22
+softdepend: [AuthMe, PlaceholderAPI, packetevents, Votifier, Plan, LuckPerms, SkinsRestorer]
+description: ${project.description}
