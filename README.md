@@ -84,7 +84,7 @@ A file only gets the settings of modules that run on that server: in a network `
     <dependency>
         <groupId>archi.quest</groupId>
         <artifactId>synergy</artifactId>
-        <version>1.6.0</version>
+        <version>1.7.0</version>
         <scope>provided</scope>
     </dependency>
 </dependencies>
