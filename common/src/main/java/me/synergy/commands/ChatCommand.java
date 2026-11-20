@@ -81,7 +81,7 @@ public class ChatCommand extends Command {
                 });
                 Synergy.getLogger().discord("```[MOD] " + sender.name() + " cleared chat```");
             }
-            case "chat.slowmode.set" -> {
+            case "chat.slowmode" -> {
                 if (!args[0].matches("\\d+")) {
                     sender.send(LocaleBuilder.of("input.number.invalid").placeholder("input", args[0]));
                     return;

@@ -1,5 +1,7 @@
 package me.synergy.modules;
 
+import me.synergy.objects.BreadMaker;
+
 public interface Module {
 
     enum Side { ANY, HUB, BACKEND }
@@ -13,4 +15,7 @@ public interface Module {
     void start() throws Exception;
     default void stop() throws Exception {}
     default void refresh() throws Exception {}
+    /** Called by PlayerSessions on every running module when a player's session starts (after the kick checks) and ends. */
+    default void join(BreadMaker bread) throws Exception {}
+    default void quit(BreadMaker bread) throws Exception {}
 }

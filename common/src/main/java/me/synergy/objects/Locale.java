@@ -65,9 +65,12 @@ public class Locale {
 	}
 
 	public Locale setPlaceholders(BreadMaker bread) {
-		string = replacePlaceholderOutputs(bread.getUniqueId(), string);
-		string = Synergy.platform().placeholders(bread.getUniqueId(), string);
+		string = placeholders(bread.getUniqueId(), string);
 		return this;
+	}
+
+	public static String placeholders(UUID player, String text) {
+		return Synergy.platform().placeholders(player, replacePlaceholderOutputs(player, text));
 	}
 
 	public Component getColoredComponent(String theme) {

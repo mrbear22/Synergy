@@ -92,14 +92,14 @@ public class DiscordOAuth {
 
                 String existing = Discord.getDiscordIdByUniqueId(uuid);
                 if (existing != null) {
-                    respond(exchange, 200, render(LocaleBuilder.of("discord.link.exists").placeholder("account", Discord.name(existing)), bread));
+                    respond(exchange, 200, render(LocaleBuilder.of("discord.link.exists").placeholder("account", Discord.name(existing)).placeholder("command", "/discord unlink"), bread));
                     return;
                 }
 
                 UUID linkedTo = Discord.getUniqueIdByDiscordId(discordId);
                 if (linkedTo != null) {
                     respond(exchange, 200, render(LocaleBuilder.of("discord.link.exists")
-                            .placeholder("account", Synergy.getBread(linkedTo).getName()), bread));
+                            .placeholder("account", Synergy.getBread(linkedTo).getName()).placeholder("command", "/unlink"), bread));
                     return;
                 }
 

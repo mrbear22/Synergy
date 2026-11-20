@@ -34,6 +34,14 @@ public abstract class Command implements Module {
         return name.equals("player") ? Synergy.platform().playersByServer().values().stream().flatMap(List::stream).toList() : List.of();
     }
 
+    /** For link/unlink style commands: true when the account's link state is the one the command needs, otherwise tells the player how to fix it. */
+    protected boolean linkState(Sender sender, String service, boolean linked, boolean needed) {
+        if (linked == needed) return true;
+        String command = "/" + service.toLowerCase() + (linked ? " unlink" : " link");
+        sender.send(LocaleBuilder.of(linked ? "account.link.exists" : "account.link.missing").placeholder("service", service).placeholder("command", command));
+        return false;
+    }
+
     protected String permission(String path) {
         return path.startsWith("synergy.") ? path : "synergy." + path;
     }

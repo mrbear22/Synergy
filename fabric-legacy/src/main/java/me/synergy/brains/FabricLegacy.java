@@ -13,6 +13,7 @@ import com.mojang.brigadier.tree.CommandNode;
 import me.synergy.commands.Sender;
 import net.kyori.adventure.inventory.Book;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.minecraft.commands.execution.CustomCommandExecutor;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.component.DataComponents;
@@ -53,6 +54,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.resource.ResourcePackRequest;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
@@ -62,6 +64,8 @@ import net.minecraft.SharedConstants;
 import net.minecraft.core.Holder;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.protocol.common.ClientboundResourcePackPushPacket;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundSetSubtitleTextPacket;
@@ -120,6 +124,8 @@ public class FabricLegacy implements DedicatedServerModInitializer, Platform, Sy
             Tasks.async(() -> ChatHandler.handle(uuid, name, raw, new HashSet<>(online()), false));
             return false;
         });
+        ServerMessageEvents.ALLOW_GAME_MESSAGE.register((s, message, overlay) -> !(message.getContents() instanceof TranslatableContents t
+            && (t.getKey().startsWith("multiplayer.player.joined") || t.getKey().equals("multiplayer.player.left"))));
         ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> {
             ServerPlayer p = handler.getPlayer();
             PlayerSessions.joinAsync(p.getUUID(), p.getGameProfile().getName(), p.getIpAddress());
@@ -225,7 +231,7 @@ public class FabricLegacy implements DedicatedServerModInitializer, Platform, Sy
     private static void guardCommands(CommandNode<CommandSourceStack> node) {
         for (CommandNode<CommandSourceStack> child : node.getChildren()) {
             com.mojang.brigadier.Command<CommandSourceStack> original = child.getCommand();
-            if (original != null && !(original instanceof CommandGuard)) {
+            if (original != null && !(original instanceof CommandGuard) && !(original instanceof CustomCommandExecutor)) {
                 try {
                     Field field = CommandNode.class.getDeclaredField("command");
                     field.setAccessible(true);
@@ -336,6 +342,12 @@ public class FabricLegacy implements DedicatedServerModInitializer, Platform, Sy
         @Override
         public void sendMessage(Component message) {
             player.sendSystemMessage(INSTANCE.toVanilla(message));
+        }
+
+        @Override
+        public void sendResourcePacks(ResourcePackRequest request) {
+            Optional<net.minecraft.network.chat.Component> prompt = Optional.ofNullable(request.prompt()).map(INSTANCE::toVanilla);
+            request.packs().forEach(pack -> player.connection.send(new ClientboundResourcePackPushPacket(pack.id(), pack.uri().toString(), pack.hash(), request.required(), prompt)));
         }
 
         @Override

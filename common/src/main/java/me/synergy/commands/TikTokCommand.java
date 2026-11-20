@@ -32,28 +32,22 @@ public class TikTokCommand extends Command {
     protected void execute(Sender sender, String path, String[] args) {
         BreadMaker bread = sender.bread();
         String username = bread.getData("tiktok").getAsString();
-        if (path.equals("tiktok.link") && username != null) {
-            sender.send("<locale:account.link.exists service=TikTok command=\"/tiktok unlink\">");
-            return;
-        }
-        if ((path.equals("tiktok.unlink") || path.equals("tiktok.connect")) && username == null) {
-            sender.send("<locale:account.link.missing service=TikTok command=\"/tiktok link\">");
-            return;
-        }
-        SynergyEvent test = Synergy.event(path.replace("tiktok.testreward.", "tiktok-")).setPlayerUniqueId(sender.uuid()).setOption("player-name", sender.name());
+        boolean anyState = path.equals("tiktok.disconnect") || path.startsWith("tiktok.testreward");
+        if (!anyState && !linkState(sender, "TikTok", username != null, !path.equals("tiktok.link"))) return;
+        SynergyEvent test = Synergy.event(path.replace("tiktok.testreward.", "tiktok-")).toPlayer(sender.uuid());
         switch (path) {
             case "tiktok.link" -> {
                 bread.setData("tiktok", args[0].replace("@", ""));
                 sender.send("<locale:account.link.done service=TikTok>");
-                TikTokHandler.connect(sender.uuid(), args[0].replace("@", ""));
+                TikTokHandler.request(sender.uuid(), args[0].replace("@", ""));
             }
             case "tiktok.unlink" -> {
-                TikTokHandler.disconnect(sender.uuid());
+                TikTokHandler.request(sender.uuid(), null);
                 bread.setData("tiktok", null);
                 sender.send("<locale:account.unlink.done service=TikTok>");
             }
-            case "tiktok.connect" -> TikTokHandler.connect(sender.uuid(), username);
-            case "tiktok.disconnect" -> TikTokHandler.disconnect(sender.uuid());
+            case "tiktok.connect" -> TikTokHandler.request(sender.uuid(), username);
+            case "tiktok.disconnect" -> TikTokHandler.request(sender.uuid(), null);
             case "tiktok.testreward.gift" -> test.setOption("gift-name", args[0]).setOption("gift-id", "999").setOption("combo-count", "1").setOption("viewer-name", "TestDonater");
             case "tiktok.testreward.like" -> {
                 if (!args[0].matches("\\d+")) {

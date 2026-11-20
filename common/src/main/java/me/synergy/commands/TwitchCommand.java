@@ -31,22 +31,19 @@ public class TwitchCommand extends Command {
     @Override
     protected void execute(Sender sender, String path, String[] args) {
         String channel = sender.bread().getData("twitch-username").getAsString();
-        if (path.equals("twitch.link") ? channel != null : channel == null) {
-            sender.send(channel != null ? "<locale:account.link.exists service=Twitch command=\"/twitch unlink\">" : "<locale:account.link.missing service=Twitch command=\"/twitch link\">");
-            return;
-        }
+        if (!linkState(sender, "Twitch", channel != null, !path.equals("twitch.link"))) return;
         String reward = path.endsWith("reward") ? "twitch.rewards." + args[0] : null;
         switch (path) {
-            case "twitch.link" -> Synergy.event("make-twitch-link").setPlayerUniqueId(sender.uuid()).setOption("tag", args[0]).setOption("token", args[1]).send();
-            case "twitch.unlink" -> Synergy.event("remove-twitch-link").setPlayerUniqueId(sender.uuid()).send();
-            case "twitch.createreward" -> Synergy.event("create-twitch-reward").setPlayerUniqueId(sender.uuid())
+            case "twitch.link" -> Synergy.event("make-twitch-link").toProxy().setPlayerUniqueId(sender.uuid()).setOption("tag", args[0]).setOption("token", args[1]).send();
+            case "twitch.unlink" -> Synergy.event("remove-twitch-link").toProxy().setPlayerUniqueId(sender.uuid()).send();
+            case "twitch.createreward" -> Synergy.event("create-twitch-reward").toProxy().setPlayerUniqueId(sender.uuid())
                 .setOption("title", Config.getString(reward + ".title"))
                 .setOption("cost", String.valueOf(Config.getInt(reward + ".cost")))
                 .setOption("description", Config.getString(reward + ".description"))
                 .setOption("input-required", String.valueOf(Config.getBoolean(reward + ".input-required")))
                 .send();
-            case "twitch.removereward" -> Synergy.event("remove-twitch-reward").setPlayerUniqueId(sender.uuid()).setOption("title", Config.getString(reward + ".title")).send();
-            case "twitch.testreward" -> Synergy.event("twitch-reward-redeemed").setPlayerUniqueId(sender.uuid())
+            case "twitch.removereward" -> Synergy.event("remove-twitch-reward").toProxy().setPlayerUniqueId(sender.uuid()).setOption("title", Config.getString(reward + ".title")).send();
+            case "twitch.testreward" -> Synergy.event("twitch-reward-redeemed").toPlayer(sender.uuid())
                 .setOption("reward-title", Config.getString(reward + ".title"))
                 .setOption("viewer-name", "test")
                 .setOption("channel-name", channel)

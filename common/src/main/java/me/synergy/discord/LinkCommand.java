@@ -8,6 +8,7 @@ import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.handlers.PlayerSessions;
 import me.synergy.modules.Config;
 import me.synergy.modules.DataManager;
 import me.synergy.objects.BreadMaker;
@@ -152,8 +153,8 @@ public class LinkCommand extends ListenerAdapter implements SynergyListener {
     private static void unlink(UUID uuid) {
         Synergy.getBread(uuid).setData("discord", null);
         LocaleBuilder.of("discord.unlink.done").send(uuid);
+        PlayerSessions.discord(uuid);
         RolesHandler.sync(uuid);
-        if (Config.getBoolean("discord.kick-player.if-has-no-link.enabled")) Synergy.getBread(uuid).kick(Config.getString("discord.kick-player.if-has-no-link.message"));
     }
 
     private static void request(UUID uuid) {

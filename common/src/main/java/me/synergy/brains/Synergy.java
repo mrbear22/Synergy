@@ -15,7 +15,7 @@ import me.synergy.commands.LanguageCommand;
 import me.synergy.commands.MonobankCommand;
 import me.synergy.commands.PronounCommand;
 import me.synergy.commands.SynergyCommand;
-import me.synergy.commands.TempMuteCommand;
+import me.synergy.commands.PunishCommand;
 import me.synergy.commands.ThemeCommand;
 import me.synergy.commands.TikTokCommand;
 import me.synergy.commands.TwitchCommand;
@@ -23,23 +23,29 @@ import me.synergy.commands.VoteCommand;
 import me.synergy.handlers.ChatHandler;
 import me.synergy.events.SynergyEventManager;
 import me.synergy.handlers.MessageHandler;
+import me.synergy.handlers.Motd;
+import me.synergy.handlers.PlayerSessions;
+import me.synergy.handlers.ResourcePacks;
 import me.synergy.discord.RolesHandler;
 import me.synergy.integrations.LuckPermsAPI;
 import me.synergy.integrations.PlanAPI;
 import me.synergy.integrations.SkinRestorerAPI;
 import me.synergy.modules.Config;
-import me.synergy.modules.Messaging;
 import me.synergy.modules.DataManager;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.Locale;
 import me.synergy.twitch.Twitch;
 import me.synergy.modules.Locales;
 import me.synergy.modules.Logger;
+import me.synergy.modules.Messaging;
 import me.synergy.modules.Module;
+import me.synergy.modules.Punishments;
+import me.synergy.modules.CommandQueue;
 import me.synergy.modules.Tasks;
 import me.synergy.modules.UpdateChecker;
 import me.synergy.web.MonobankHandler;
 import me.synergy.web.TikTokHandler;
+import me.synergy.web.VoteRewards;
 import me.synergy.web.VotifierServer;
 import me.synergy.web.WebServer;
 import net.dv8tion.jda.api.JDA;
@@ -56,10 +62,11 @@ public class Synergy {
         Config.start();
         try {
             Messaging.start();
-            register(new Locales(), new DataManager(), new Discord(), new Twitch(), new MonobankHandler(), new WebServer(), new TikTokHandler(), new VotifierServer(),
+            register(new Locales(), new DataManager(), new Punishments(), new CommandQueue(), new Discord(), new Twitch(), new MonobankHandler(), new WebServer(), new TikTokHandler(), new VotifierServer(),
                 new MessageHandler(), new ChatHandler(), new SynergyCommand(), new ChatCommand(), new VoteCommand(), new PronounCommand(), new LanguageCommand(),
-                new DiscordCommand(), new TwitchCommand(), new MonobankCommand(), new ThemeCommand(), new TikTokCommand(), new DelayedCommand(), new TempMuteCommand(),
-                new DynamicCommands(), new LuckPermsAPI(), new SkinRestorerAPI(), new PlanAPI(), new RolesHandler());
+                new DiscordCommand(), new TwitchCommand(), new MonobankCommand(), new ThemeCommand(), new TikTokCommand(), new DelayedCommand(), new PunishCommand(),
+                new DynamicCommands(), new LuckPermsAPI(), new SkinRestorerAPI(), new PlanAPI(), new RolesHandler(), new PlayerSessions(),
+                new ResourcePacks(), new Motd(), new VoteRewards());
             register(platformModules);
             getLogger().info("Enabled: " + String.join(", ", MODULES.stream().map(Module::name).toList()));
             UpdateChecker.check("mrbear22", "Synergy");
@@ -125,6 +132,10 @@ public class Synergy {
         }
         MODULES.clear();
         Tasks.stop();
+    }
+
+    public static List<Module> modules() {
+        return MODULES;
     }
 
     public static Platform platform() {

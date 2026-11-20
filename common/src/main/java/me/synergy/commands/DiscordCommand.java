@@ -28,7 +28,7 @@ public class DiscordCommand extends Command {
     protected void execute(Sender sender, String path, String[] args) {
         switch (path) {
             case "discord.link" -> Synergy.event("discord-link").toProxy().setPlayerUniqueId(sender.uuid()).setOption("tag", args.length == 0 ? null : args[0]).send();
-            case "discord.link.confirm" -> Synergy.event("discord-confirm").toProxy().setPlayerUniqueId(sender.uuid()).send();
+            case "discord.confirm" -> Synergy.event("discord-confirm").toProxy().setPlayerUniqueId(sender.uuid()).send();
             case "discord.unlink" -> Synergy.event("discord-unlink").toProxy().setPlayerUniqueId(sender.uuid()).send();
         }
     }

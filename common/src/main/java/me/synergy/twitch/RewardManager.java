@@ -120,7 +120,7 @@ public class RewardManager {
         if (playerUuid == null) return;
 
         Synergy.event("twitch-reward-redeemed")
-                .setPlayerUniqueId(playerUuid)
+                .toPlayer(playerUuid)
                 .setOption("reward-title", rewardTitle)
                 .setOption("viewer-name", viewerName)
                 .setOption("channel-name", channelName)

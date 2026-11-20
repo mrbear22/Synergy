@@ -13,7 +13,10 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
+import com.velocitypowered.api.event.connection.PostLoginEvent;
+import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
@@ -24,7 +27,7 @@ import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 
 import me.synergy.commands.Command;
 import me.synergy.commands.Sender;
-import me.synergy.handlers.PlayerVelocityHandler;
+import me.synergy.handlers.PlayerSessions;
 import me.synergy.modules.Messaging;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -49,7 +52,7 @@ public class Velocity implements Platform {
     public void onProxyInitialization(ProxyInitializeEvent event) {
     	INSTANCE = this;
 	    server.getChannelRegistrar().register(IDENTIFIER);
-	    Synergy.start(this, new PlayerVelocityHandler());
+	    Synergy.start(this);
     }
 
     @Subscribe
@@ -67,6 +70,23 @@ public class Velocity implements Platform {
     @Subscribe
     public void onServerConnected(ServerPostConnectEvent event) {
         event.getPlayer().getCurrentServer().ifPresent(c -> server.getScheduler().buildTask(this, () -> Messaging.flush(c.getServerInfo().getName())).delay(1, TimeUnit.SECONDS).schedule());
+    }
+
+    @Subscribe
+    public void onLogin(PostLoginEvent event) {
+        Player player = event.getPlayer();
+        PlayerSessions.joinAsync(player.getUniqueId(), player.getUsername(), player.getRemoteAddress().getAddress().getHostAddress());
+    }
+
+    @Subscribe
+    public void onDisconnect(DisconnectEvent event) {
+        PlayerSessions.quitAsync(event.getPlayer().getUniqueId(), event.getPlayer().getUsername());
+    }
+
+    @Subscribe
+    public void onKick(KickedFromServerEvent event) {
+        Component reason = PlayerSessions.kicked(event.getPlayer().getUniqueId(), event.getPlayer().getUsername(), event.getServerKickReason().orElse(null));
+        if (reason != null) event.setResult(KickedFromServerEvent.DisconnectPlayer.create(reason));
     }
 
     public static Logger getLogger() {

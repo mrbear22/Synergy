@@ -223,7 +223,7 @@ public class ChatHandler implements SynergyListener, Module {
             Map<String, Object> template = new LinkedHashMap<>(Config.getConfigurationSection("chat-manager.discord-embed"));
             template.putAll(Config.getConfigurationSection("chat-manager.chats." + chat.getName() + ".discord.embed"));
             template.forEach((key, value) -> {
-                String text = Synergy.platform().placeholders(uuid, String.valueOf(value)
+                String text = Locale.placeholders(uuid, String.valueOf(value)
                     .replace("%PLAYER%", name)
                     .replace("%MESSAGE%", msg.getMessage())
                     .replace("%SERVER%", Synergy.getServerName())
@@ -345,18 +345,10 @@ public class ChatHandler implements SynergyListener, Module {
     }
     
     public static String formatMessage(MessageSource source, Message msg, UUID uuid, String name) {
-        var format = source.getFormat()
-            .replace("%CHAT%", source.getTag())
-            .replace("%COLOR%", source.getColor())
-            .replace("%DISPLAYNAME%", name)
-            .replace("%MESSAGE%", msg.getMessage());
-        
-        format = Synergy.platform().placeholders(uuid, Locale.replacePlaceholderOutputs(uuid, format));
-        if (uuid != null && !Synergy.getBread(uuid).hasPermission("synergy.colors")) {
-            format = format.replace(msg.getMessage(), Color.stripColorTags(msg.getMessage()));
-        }
-        
-        return format;
+        var format = source.getFormat().replace("%CHAT%", source.getTag()).replace("%COLOR%", source.getColor());
+        format = uuid == null ? format.replaceAll("%(?!DISPLAYNAME%|MESSAGE%)\\w+%", "") : Locale.placeholders(uuid, format);
+        var text = uuid == null || Synergy.getBread(uuid).hasPermission("synergy.colors") ? msg.getMessage() : Color.stripColorTags(msg.getMessage());
+        return format.replace("%DISPLAYNAME%", name).replace("%MESSAGE%", text);
     }
     
     private static Set<Chat> getChats() {
@@ -419,8 +411,7 @@ public class ChatHandler implements SynergyListener, Module {
     }
 
     private static List<String> words(String key) {
-        List<String> words = Config.getStringList(key);
-        return words == null ? new ArrayList<>() : new ArrayList<>(words);
+        return new ArrayList<>(Config.getStringList(key));
     }
 
     private static void editWords(String key, java.util.function.Consumer<List<String>> edit) {

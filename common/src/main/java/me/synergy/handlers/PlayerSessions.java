@@ -1,32 +1,123 @@
 package me.synergy.handlers;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import me.synergy.anotations.SynergyHandler;
 import me.synergy.brains.Synergy;
 import me.synergy.discord.Discord;
 import me.synergy.discord.RolesHandler;
 import me.synergy.events.SynergyEvent;
 import me.synergy.modules.Config;
-import me.synergy.modules.DataManager;
+import me.synergy.modules.Locales;
 import me.synergy.modules.Messaging;
+import me.synergy.modules.Module;
+import me.synergy.modules.Punishments;
+import me.synergy.objects.Punishment;
 import me.synergy.modules.Tasks;
 import me.synergy.objects.BreadMaker;
 import me.synergy.objects.LocaleBuilder;
-import me.synergy.twitch.Twitch;
-import me.synergy.web.MonobankHandler;
-import me.synergy.web.TikTokHandler;
+import net.kyori.adventure.text.Component;
 
-public final class PlayerSessions {
+public final class PlayerSessions implements Module {
 
-    private PlayerSessions() {}
+    private static final List<String> REASONS = List.of("has-no-link", "banned", "missing", "muted");
 
     private static final ExecutorService SESSIONS = Executors.newSingleThreadExecutor(Thread.ofPlatform().daemon().name("Synergy-Sessions").factory());
     private static final Set<UUID> kicked = ConcurrentHashMap.newKeySet();
+
+    @Override
+    public void defaults() {
+        Locales.addDefault("discord.kick.has-no-link", "Link your Discord to play on this server: /discord link");
+        Locales.addDefault("discord.kick.banned", "You are banned on our Discord server.");
+        Locales.addDefault("discord.kick.missing", "You are not on our Discord server.");
+        Locales.addDefault("discord.kick.muted", "You have an active timeout on our Discord server.");
+        for (String reason : REASONS) {
+            Config.addDefault("discord.kick-player.if-" + reason + ".enabled", false);
+            Config.addDefault("discord.kick-player.if-" + reason + ".message", "<locale:discord.kick." + reason + ">");
+        }
+    }
+
+    @Override
+    public void start() {
+        Synergy.getEventManager().registerEvents(PlayerSessions.class);
+    }
+
+    @SynergyHandler("discord-kick")
+    public static void onDiscordKick(SynergyEvent event) {
+        kick(event.getBread(), List.of(event.getOption("reason").getAsString()));
+    }
+
+    /** Kicks a player wherever they are: target the event at "@uuid" or send it to every server. Option: reason (MiniMessage/locale). */
+    @SynergyHandler("kick")
+    public static void onKick(SynergyEvent event) {
+        BreadMaker bread = event.getBread();
+        if (!bread.isOnline()) return;
+        bread.kick(event.getOption("reason").isSet() ? event.getOption("reason").getAsString() : "");
+        event.reply().setOption("ok", true).send();
+    }
+
+    /** Who is online and where, as the hub sees it: { servers: { name: [players] } }. */
+    @SynergyHandler("online")
+    public static void onOnline(SynergyEvent event) {
+        event.reply().setOption("servers", Synergy.platform().playersByServer()).send();
+    }
+
+    /** Called on the hub when the player's Discord membership changed: kicks them if their current state is punishable. */
+    public static void discord(UUID uuid) {
+        if (uuid == null) return;
+        Tasks.async(() -> {
+            BreadMaker bread = Synergy.getBread(uuid);
+            String reason = reason(reasons(bread));
+            if (reason == null) return;
+            kick(bread, List.of(reason));
+            Synergy.event("discord-kick").toPlayer(uuid).setOption("reason", reason).send();
+        });
+    }
+
+    private static String reason(Collection<String> reasons) {
+        return REASONS.stream().filter(reasons::contains).filter(r -> Config.getBoolean("discord.kick-player.if-" + r + ".enabled")).findFirst().orElse(null);
+    }
+
+    private static boolean kick(BreadMaker bread, Collection<String> reasons) {
+        String reason = reason(reasons);
+        if (reason != null) bread.kick(Config.getString("discord.kick-player.if-" + reason + ".message"));
+        return reason != null;
+    }
+
+    private static List<String> reasons(BreadMaker bread) {
+        if (!bread.getData("discord").isSet()) return List.of("has-no-link");
+        if (REASONS.stream().skip(1).noneMatch(r -> Config.getBoolean("discord.kick-player.if-" + r + ".enabled"))) return List.of();
+        if (Synergy.getDiscord() != null) return Discord.reasons(bread);
+        try {
+            String reasons = Synergy.event("discord-reasons").toProxy().setPlayerUniqueId(bread.getUniqueId()).request(Duration.ofSeconds(3)).join().getOption("reasons").getAsString();
+            return reasons == null || reasons.isEmpty() ? List.of() : List.of(reasons.split(","));
+        } catch (Exception e) {
+            Synergy.getLogger().warning("Discord check of " + bread.getName() + " failed: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    /** Warms the player's data before the session starts, for platforms that have a pre-login hook. */
+    public static void preload(UUID uuid) {
+        BreadMaker bread = Synergy.getBread(uuid);
+        for (String option : new String[] {"twitch-username", "twitch-token", "monobank", "discord", "confirm-discord", "last-voted", "gender", "chat", "theme", "name", "votes", "language"})
+            bread.getData(option);
+    }
+
+    /** Logs a kick and returns its reason translated for the player, or null when there is no reason to show. */
+    public static Component kicked(UUID uuid, String name, Component reason) {
+        BreadMaker bread = Synergy.getBread(uuid);
+        Synergy.getLogger().discord("```Player " + name + " has been kicked with the reason: "
+            + (reason == null ? "no reason" : Synergy.translate(reason, bread.getLanguage()).getStripped()) + "```");
+        return reason == null ? null : Synergy.translate(reason, bread.getLanguage()).getColoredComponent(bread.getTheme());
+    }
 
     public static void joinAsync(UUID uuid, String name, String address) {
         SESSIONS.execute(() -> {
@@ -38,8 +129,7 @@ public final class PlayerSessions {
         });
     }
 
-    public static boolean quitAsync(UUID uuid, String name) {
-        boolean wasKicked = kicked.contains(uuid);
+    public static void quitAsync(UUID uuid, String name) {
         SESSIONS.execute(() -> {
             try {
                 quit(uuid, name, kicked.remove(uuid));
@@ -47,15 +137,9 @@ public final class PlayerSessions {
                 Synergy.getLogger().error("Quit of " + name + " failed: " + e, e);
             }
         });
-        return wasKicked;
     }
 
     private static boolean join(UUID uuid, String name, String address) {
-        UUID old = DataManager.findUuidByName(name);
-        if (old != null && !old.equals(uuid)) {
-            DataManager.migrateUuid(old, uuid);
-            Synergy.getLogger().info("Migrated " + name + ": " + old + " -> " + uuid);
-        }
         BreadMaker bread = Synergy.getBread(uuid);
         bread.getCache().clear();
         bread.setData("name", name);
@@ -63,12 +147,14 @@ public final class PlayerSessions {
             Tasks.later(() -> Messaging.flush(null), Duration.ofSeconds(1));
             Synergy.getLogger().discord("```Player " + name + " has joined with IP " + address + " ```");
         }
-        streams(bread, true);
-        String kick = kickReason(bread);
-        if (kick != null) {
-            bread.kick(Config.getString(kick));
+        Punishments.refresh(uuid);
+        Punishment ban = Punishments.active(uuid, Punishment.Type.BAN);
+        if (ban != null) {
+            bread.kick(Punishments.screen(ban));
             return true;
         }
+        if (kick(bread, reasons(bread))) return true;
+        modules(bread, true);
         announce(bread, name, "player.server.join", "#81ecec");
         RolesHandler.sync(uuid);
         String confirm = bread.getData("confirm-discord").getAsString();
@@ -80,44 +166,30 @@ public final class PlayerSessions {
     private static void quit(UUID uuid, String name, boolean kicked) {
         BreadMaker bread = Synergy.getBread(uuid);
         bread.getCache().clear();
-        if (Config.getBoolean("tiktok.enabled")) TikTokHandler.disconnect(uuid);
+        modules(bread, false);
         if (kicked) return;
         if (!Synergy.isProxy()) Synergy.getLogger().discord("```Player " + name + " has left ```");
-        streams(bread, false);
         announce(bread, name, "player.server.quit", "#fab1a0");
     }
 
-    private static void streams(BreadMaker bread, boolean join) {
-        String twitch = bread.getData("twitch-username").getAsString(), monobank = bread.getData("monobank").getAsString(), tiktok = bread.getData("tiktok").getAsString();
-        try {
-            if (Config.getBoolean("twitch.enabled") && twitch != null) {
-                if (join) Twitch.getConnectionManager().connect(twitch, bread.getData("twitch-token").getAsString());
-                else Twitch.getConnectionManager().disconnect(twitch);
+    private static void modules(BreadMaker bread, boolean join) {
+        for (Module module : Synergy.modules()) {
+            try {
+                if (join) module.join(bread);
+                else module.quit(bread);
+            } catch (Exception e) {
+                Synergy.getLogger().warning(module.name() + " session " + (join ? "start" : "end") + " of " + bread.getName() + " failed: " + e.getMessage());
             }
-            if (Config.getBoolean("monobank.enabled") && monobank != null) {
-                if (join) MonobankHandler.connect(bread.getName(), monobank);
-                else MonobankHandler.disconnect(monobank);
-            }
-            if (join && Config.getBoolean("tiktok.enabled") && tiktok != null) TikTokHandler.connect(bread.getUniqueId(), tiktok);
-        } catch (Exception e) {
-            Synergy.getLogger().warning("Stream connection of " + bread.getName() + " failed: " + e.getMessage());
         }
     }
 
-    private static String kickReason(BreadMaker bread) {
-        boolean linked = bread.getData("discord").isSet();
-        if (Config.getBoolean("discord.kick-player.if-has-no-link.enabled") && !linked) return "discord.kick-player.if-has-no-link.message";
-        if (Synergy.getDiscord() == null || !linked) return null;
-        if (Config.getBoolean("discord.kick-player.if-banned.enabled") && Discord.isBanned(bread)) return "discord.kick-player.if-banned.message";
-        if (Config.getBoolean("discord.kick-player.if-missing.enabled") && Discord.isMissing(bread)) return "discord.kick-player.if-missing.message";
-        if (Config.getBoolean("discord.kick-player.if-muted.enabled") && Discord.isMuted(bread)) return "discord.kick-player.if-muted.message";
-        return null;
-    }
-
+    /** Join/leave announcement for every platform: in chat on the backend the player is on (platforms only mute the vanilla line), and as a Discord embed where the bot runs. */
     private static void announce(BreadMaker bread, String name, String key, String color) {
+        LocaleBuilder message = LocaleBuilder.of(key).placeholder("player", name).placeholder("gender", bread.getGender().name());
+        if (!Synergy.isProxy()) Synergy.platform().online().forEach(uuid -> MessageHandler.send(uuid, message.build(), false, false));
         if (Synergy.getDiscord() == null || !Config.getBoolean("discord.player-join-leave-messages")) return;
         SynergyEvent event = Synergy.event("discord-embed").toProxy().setPlayerUniqueId(bread.getUniqueId()).setOption("color", color)
-            .setOption("author", LocaleBuilder.of(key).placeholder("player", name).placeholder("gender", bread.getGender().name()).stripped());
+            .setOption("author", message.stripped());
         if (Config.isFilled("chat-manager.chats.global.discord.channel")) event.setOption("channel", Config.getString("chat-manager.chats.global.discord.channel"));
         event.send();
     }

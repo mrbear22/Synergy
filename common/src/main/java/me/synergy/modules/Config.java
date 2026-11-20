@@ -194,7 +194,8 @@ public final class Config {
 
     @SuppressWarnings("unchecked")
     public static List<String> getStringList(String key) {
-        return get(key) instanceof List<?> list ? (List<String>) list : null;
+        Object value = get(key);
+        return value instanceof List<?> list ? (List<String>) list : value instanceof String[] array ? List.of(array) : List.of();
     }
 
     public static boolean isSet(String key) {

@@ -3,17 +3,18 @@ package me.synergy.discord;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
+import me.synergy.anotations.SynergyHandler;
 import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
+import me.synergy.events.SynergyEvent;
+import me.synergy.handlers.PlayerSessions;
 import me.synergy.modules.Config;
-import me.synergy.objects.BreadMaker;
 import me.synergy.text.Translation;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
-import net.dv8tion.jda.api.events.guild.GuildUnbanEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent;
 import net.dv8tion.jda.api.events.guild.member.GuildMemberRemoveEvent;
 import net.dv8tion.jda.api.events.guild.member.update.GuildMemberUpdateTimeOutEvent;
@@ -130,40 +131,30 @@ public class MembersHandler extends ListenerAdapter implements SynergyListener {
 		});
 	}
 
+    @SynergyHandler("discord-reasons")
+    public void onReasons(SynergyEvent event) {
+        event.reply().setOption("reasons", String.join(",", Discord.reasons(event.getBread()))).send();
+    }
+
+    /** Any membership change on our guild re-checks the player's real Discord state, the same check as on join. */
+    private static void recheck(Guild guild, User user) {
+        Guild ours = Discord.getGuild();
+        if (ours == null || !ours.getId().equals(guild.getId())) return;
+        PlayerSessions.discord(Discord.getUniqueIdByDiscordId(user.getId()));
+    }
+
     @Override
     public void onGuildBan(@NotNull GuildBanEvent event) {
-        if (Config.getBoolean("discord.kick-player.if-banned.enabled")) {
-	        String userId = event.getUser().getId();
-	        UUID uniqueId = Discord.getUniqueIdByDiscordId(userId);
-	        BreadMaker bread = Synergy.getBread(uniqueId);
-        	bread.kick(Config.getString("discord.kick-player.if-banned.message"));
-        }
+        recheck(event.getGuild(), event.getUser());
     }
-    
-    @Override
-    public void onGuildUnban(@NotNull GuildUnbanEvent event) {
-    }
-    
+
     @Override
     public void onGuildMemberRemove(@NotNull GuildMemberRemoveEvent event) {
-        if (Config.getBoolean("discord.kick-player.if-missing.enabled")) {
-	        String userId = event.getUser().getId();
-	        UUID uniqueId = Discord.getUniqueIdByDiscordId(userId);
-	        BreadMaker bread = Synergy.getBread(uniqueId);
-        	bread.kick(Config.getString("discord.kick-player.if-missing.message"));
-        }
+        recheck(event.getGuild(), event.getUser());
     }
-    
+
     @Override
     public void onGuildMemberUpdateTimeOut(@NotNull GuildMemberUpdateTimeOutEvent event) {
-        if (Config.getBoolean("discord.kick-player.if-muted.enabled")) {
-	        String userId = event.getUser().getId();
-	        if (event.getNewTimeOutEnd() != null) {
-		        UUID uniqueId = Discord.getUniqueIdByDiscordId(userId);
-		        BreadMaker bread = Synergy.getBread(uniqueId);
-	        	bread.kick(Config.getString("discord.kick-player.if-muted.message"));
-	        } else {
-	        }
-        }
+        recheck(event.getGuild(), event.getUser());
     }
 }

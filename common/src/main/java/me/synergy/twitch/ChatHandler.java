@@ -14,7 +14,9 @@ public class ChatHandler {
         String message = event.getMessage();
         String username = event.getUser().getName();
         
-        Synergy.event("twitch-chat")
+        UUID uuid = DataManager.findUserUUID("twitch-username", channelName);
+        if (uuid == null) return;
+        Synergy.event("twitch-chat").toPlayer(uuid)
                .setOption("player", username)
                .setOption("message", message)
                .setOption("twitch-channel", channelName)

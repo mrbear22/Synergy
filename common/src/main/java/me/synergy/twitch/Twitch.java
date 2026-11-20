@@ -1,12 +1,11 @@
 package me.synergy.twitch;
 
-import java.util.Map.Entry;
 import java.util.UUID;
-import java.util.regex.PatternSyntaxException;
 
 import me.synergy.anotations.SynergyHandler;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.handlers.StreamRewards;
 import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.modules.Module;
@@ -31,7 +30,7 @@ public class Twitch implements Module {
         Locales.addDefault("twitch.reward.removed", "<success>Reward removed!");
         Locales.addDefault("twitch.reward.error.remove", "<danger>Failed to remove the reward!");
         Config.addDefault("twitch.enabled", false);
-        Config.addDefault("twitch.client-id", "client-id");
+        if (Synergy.isHub()) Config.addDefault("twitch.client-id", "client-id");
         if (!Synergy.isProxy() && Config.getConfigurationSection("twitch.rewards").isEmpty()) {
             Config.addDefault("twitch.rewards.wither.title", "Wither");
             Config.addDefault("twitch.rewards.wither.description", "Spawn a Wither");
@@ -48,6 +47,19 @@ public class Twitch implements Module {
         Synergy.getEventManager().registerEvents(Twitch.class);
     }
     
+    /** Stream connections live on the hub only: it joins and leaves them as the player enters or leaves the network. */
+    @Override
+    public void join(BreadMaker bread) throws Exception {
+        String channel = bread.getData("twitch-username").getAsString();
+        if (Synergy.isHub() && channel != null) getConnectionManager().connect(channel, bread.getData("twitch-token").getAsString());
+    }
+
+    @Override
+    public void quit(BreadMaker bread) throws Exception {
+        String channel = bread.getData("twitch-username").getAsString();
+        if (Synergy.isHub() && channel != null) getConnectionManager().disconnect(channel);
+    }
+
     public static ConnectionManager getConnectionManager() {
     	return new ConnectionManager();
     }
@@ -60,127 +72,45 @@ public class Twitch implements Module {
     	return new RewardManager(channelName, accessToken);
     }
     
-    @SynergyHandler({"*-twitch-*", "twitch-reward-redeemed"})
-    public static void onSynergyEvent(SynergyEvent event) {
-        if (!Config.getBoolean("twitch.enabled")) return;
-
+    @SynergyHandler({"make-twitch-link", "remove-twitch-link", "create-twitch-reward", "remove-twitch-reward", "send-twitch-message"})
+    public static void onControl(SynergyEvent event) {
         UUID uuid = event.getPlayerUniqueId();
-        
-        if (uuid == null) return;
-        
-        String eventId = event.getIdentifier();
-        String channelName = Synergy.getBread(uuid).getDataOrDefault("twitch-username", null).getAsString();
-        String accessToken = Synergy.getBread(uuid).getDataOrDefault("twitch-token", null).getAsString();
-        
-        switch (eventId) {
-            case "make-twitch-link":
-            	if (Config.getString("twitch.client-id").equals("client-id")) return;
-                String username = event.getOption("tag").getAsString();
-                String token = event.getOption("token").getAsString();
-                getLinksManager().linkAccount(uuid, username, token);
-                break;
-                
-            case "remove-twitch-link":
-            	if (Config.getString("twitch.client-id").equals("client-id")) return;
-            	getLinksManager().unlinkAccount(uuid);
-                break;
-                
-            case "create-twitch-reward":
-            	if (Config.getString("twitch.client-id").equals("client-id")) return;
-                if (channelName != null && accessToken != null) {
-                	try {
-						getRewardsManager(channelName, accessToken).create(
-						    event.getOption("title").getAsString(),
-						    event.getOption("cost").getAsInteger(),
-						    event.getOption("description").getAsString(),
-						    event.getOption("input-required").getAsBoolean());
-					} catch (Exception e) {
-						event.getBread().sendMessage(e.getMessage());
-					}
+        if (!Synergy.isHub() || uuid == null || Config.getString("twitch.client-id").equals("client-id")) return;
+        BreadMaker bread = event.getBread();
+        String channel = bread.getData("twitch-username").getAsString(), token = bread.getData("twitch-token").getAsString();
+        try {
+            switch (event.getIdentifier()) {
+                case "make-twitch-link" -> getLinksManager().linkAccount(uuid, event.getOption("tag").getAsString(), event.getOption("token").getAsString());
+                case "remove-twitch-link" -> getLinksManager().unlinkAccount(uuid);
+                case "create-twitch-reward" -> {
+                    if (channel != null && token != null) getRewardsManager(channel, token).create(event.getOption("title").getAsString(), event.getOption("cost").getAsInteger(),
+                        event.getOption("description").getAsString(), event.getOption("input-required").getAsBoolean());
                 }
-                break;
-                
-            case "remove-twitch-reward":
-            	if (Config.getString("twitch.client-id").equals("client-id")) return;
-                if (channelName != null && accessToken != null) {
-                	try {
-						getRewardsManager(channelName, accessToken).delete(event.getOption("title").getAsString());
-					} catch (Exception e) {
-						event.getBread().sendMessage(e.getMessage());
-					}
+                case "remove-twitch-reward" -> {
+                    if (channel != null && token != null) getRewardsManager(channel, token).delete(event.getOption("title").getAsString());
                 }
-                break;
-                
-            case "send-twitch-message":
-            	if (Config.getString("twitch.client-id").equals("client-id")) return;
-                if (channelName != null) {
-                    ChatHandler.sendMessage(channelName, event.getOption("message").getAsString());
+                case "send-twitch-message" -> {
+                    if (channel != null) ChatHandler.sendMessage(channel, event.getOption("message").getAsString());
                 }
-                break;
-                
-            case "twitch-reward-redeemed":
-            	BreadMaker bread = event.getBread();
-            	String rewardTitle = event.getOption("reward-title").getAsString();
-            	String viewerName = event.getOption("viewer-name").getAsString();
-            	String rewardId = event.getOption("reward-id").getAsString();
-            	String viewerInput = event.getOption("viewer-input").getAsString();
-
-            	Synergy.getLogger().info("[Twitch] ["+channelName+"] " + viewerName + " redeemed: " + rewardTitle);
-
-            	if (!Synergy.isProxy()) {
-
-            	    for (Entry<String, Object> reward : Config.getConfigurationSection("twitch.rewards").entrySet()) {
-            	        
-            	        if (Config.getString("twitch.rewards." + reward.getKey() + ".title").equalsIgnoreCase(rewardTitle)) {
-            	        	
-            	        	String inputRegex = Config.getString("twitch.rewards." + reward.getKey() + ".input-regex");
-
-                        	if (inputRegex != null && !inputRegex.isEmpty() && viewerInput != null && !viewerInput.isEmpty()) {
-                        	    try {
-                        	        if (!viewerInput.matches(inputRegex)) {
-                        	            Synergy.getLogger().warning("[Twitch] ["+channelName+"] Invalid input from " + viewerName + 
-                        	                ". Input: '" + viewerInput + "' doesn't match regex: '" + inputRegex + "'");
-                        	            
-                        	            Synergy.event("send-twitch-message")
-            								.setPlayerUniqueId(bread.getUniqueId())
-            								.setOption("message", "<locale:twitch.error.input>")
-            								.setOption("twitch-channel", channelName)
-            								.send();
-                        	            
-                        	            break;
-                        	        } else {
-                        	            Synergy.getLogger().info("[Twitch] ["+channelName+"] Input validation passed for " + viewerName);
-                        	        }
-                        	    } catch (PatternSyntaxException e) {
-                        	        Synergy.getLogger().error("[Twitch] ["+channelName+"] Invalid regex pattern: " + inputRegex +  ". Error: " + e.getMessage());
-                        	        break;
-                        	    }
-                        	}
-            	        	
-            	            for (String command : Config.getStringList("twitch.rewards."+reward.getKey()+".commands")) {
-
-            	                command = command.replace("%streamer_name%", bread.getName());
-            	                command = Synergy.platform().position(uuid).orElseThrow().apply(command, "streamer");
-
-            	                command = command.replace("%viewer_name%", viewerName);
-            	                command = command.replace("%reward_title%", rewardTitle);
-            	                command = command.replace("%viewer_input%", viewerInput);
-            	                command = command.replace("%reward_id%", rewardId);
-
-            	            	Synergy.getLogger().info("[Twitch] ["+channelName+"] " + "running command: " + command);
-            	                
-            	                Synergy.platform().console(command);
-            	            }
-            	            break;
-            	        }
-            	    }
-            	}
-                
-                break;
-
+            }
+        } catch (Exception e) {
+            bread.sendMessage(e.getMessage());
         }
     }
-    
+
+    @SynergyHandler("twitch-reward-redeemed")
+    public static void onRedeem(SynergyEvent event) {
+        BreadMaker bread = event.getBread();
+        if (Synergy.isProxy() || !bread.isOnline()) return;
+        String title = event.getOption("reward-title").getAsString(), viewer = event.getOption("viewer-name").getAsString(), input = event.getOption("viewer-input").getAsString();
+        String channel = event.getOption("channel-name").getAsString();
+        Synergy.getLogger().info("[Twitch] [" + channel + "] " + viewer + " redeemed: " + title);
+        StreamRewards.find("twitch", path -> title.equalsIgnoreCase(Config.getString(path + ".title"))).ifPresent(key -> {
+            if (!StreamRewards.run("twitch", key, bread, input, "%viewer_name%", viewer, "%reward_title%", title, "%viewer_input%", input, "%reward_id%", event.getOption("reward-id").getAsString()))
+                Synergy.event("send-twitch-message").toProxy().setPlayerUniqueId(bread.getUniqueId()).setOption("message", "<locale:twitch.error.input>").send();
+        });
+    }
+
     @Override
     public void stop() {
     	ConnectionManager.channelClients.forEach((channelName, client) -> {

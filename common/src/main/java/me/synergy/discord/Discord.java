@@ -2,6 +2,7 @@ package me.synergy.discord;
 
 import java.awt.Color;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -44,7 +45,7 @@ public class Discord implements Module {
     private static volatile long tagsUpdated;
     
     private static final GatewayIntent[] INTENTS = new GatewayIntent[] {
-        GatewayIntent.SCHEDULED_EVENTS, GatewayIntent.GUILD_MEMBERS, GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES
+        GatewayIntent.SCHEDULED_EVENTS, GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_MODERATION,GatewayIntent.MESSAGE_CONTENT, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES
     };
 
     @Override public Side side() { return Side.HUB; }
@@ -81,10 +82,6 @@ public class Discord implements Module {
         Locales.addDefault("discord.post.publish.done", "Published!");
         Locales.addDefault("discord.link.form.title", "Link your Minecraft account");
         Locales.addDefault("discord.unlink.form.title", "Unlink your Minecraft account");
-        Locales.addDefault("discord.kick.muted", "You have an active timeout on our Discord server.");
-        Locales.addDefault("discord.kick.banned", "You are banned on our Discord server.");
-        Locales.addDefault("discord.kick.missing", "You are not on our Discord server.");
-        Locales.addDefault("discord.kick.unlinked", "Link your Discord to play on this server: /discord link");
         Locales.addDefault("discord.member.welcome", "Welcome, %NAME%!");
         Locales.addDefault("discord.option.channel", "Channel");
         Locales.addDefault("discord.option.edit", "ID of a message to edit");
@@ -100,14 +97,6 @@ public class Discord implements Module {
         Config.addDefault("discord.guild-id", "00000000000000000");
         Config.addDefault("discord.oauth.client-id", "");
         Config.addDefault("discord.oauth.client-secret", "");
-        Config.addDefault("discord.kick-player.if-muted.enabled", false);
-        Config.addDefault("discord.kick-player.if-muted.message", "<locale:discord.kick.muted>");
-        Config.addDefault("discord.kick-player.if-banned.enabled", false);
-        Config.addDefault("discord.kick-player.if-banned.message", "<locale:discord.kick.banned>");
-        Config.addDefault("discord.kick-player.if-missing.enabled", false);
-        Config.addDefault("discord.kick-player.if-missing.message", "<locale:discord.kick.missing>");
-        Config.addDefault("discord.kick-player.if-has-no-link.enabled", false);
-        Config.addDefault("discord.kick-player.if-has-no-link.message", "<locale:discord.kick.unlinked>");
         Config.addDefault("discord.player-join-leave-messages", true);
         Config.addDefault("discord.invite-link", "https://discord.gg/example");
         Config.addDefault("discord.activities", new String[] {"Activity Example", "Another Activity Example"});
@@ -131,7 +120,7 @@ public class Discord implements Module {
 
     @Override
     public void start() {
-        JDA = botBuilder().addEventListeners(new ListCommand(), new LinkCommand(), new VoteCommand(), new ChatHandler(), new EmbedCommand(), new MembersHandler()).build();
+        JDA = botBuilder().addEventListeners(new ListCommand(), new LinkCommand(), new VoteCommand(), new ChatHandler(), new EmbedCommand(), new MembersHandler(), new PunishmentSync()).build();
         updateCommands();
         activityStatus();
         activity = Tasks.every(Discord::activityStatus, Duration.ofMinutes(1));
@@ -283,6 +272,14 @@ public class Discord implements Module {
     public static String name(String discordId) {
         User user = discordId == null || JDA == null ? null : JDA.getUserById(discordId);
         return user != null ? user.getEffectiveName() : LocaleBuilder.of("discord.user.unknown").stripped();
+    }
+
+    public static List<String> reasons(BreadMaker bread) {
+        List<String> reasons = new ArrayList<>();
+        if (isBanned(bread)) reasons.add("banned");
+        if (isMissing(bread)) reasons.add("missing");
+        if (isMuted(bread)) reasons.add("muted");
+        return reasons;
     }
 
     public static boolean isMissing(BreadMaker bread) {

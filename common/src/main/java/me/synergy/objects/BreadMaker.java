@@ -8,7 +8,7 @@ import java.util.UUID;
 import me.synergy.brains.Synergy;
 import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
-import me.synergy.modules.PunishmentsManager;
+import me.synergy.modules.Punishments;
 import me.synergy.text.Gendered.Gender;
 
 public class BreadMaker {
@@ -39,36 +39,37 @@ public class BreadMaker {
 		return uuid;
 	}
 
+	public Punishment getMute() {
+		return Punishments.active(uuid, Punishment.Type.MUTE);
+	}
+
 	public boolean isMuted() {
-		return PunishmentsManager.isMuted(this);
+		return getMute() != null;
 	}
 
 	public long getMuteExpires() {
-		return PunishmentsManager.getMuteExpires(this);
+		Punishment mute = getMute();
+		return mute == null ? 0 : mute.permanent() ? -1 : mute.expires();
 	}
 
 	public String getMuteReason() {
-		return PunishmentsManager.getMuteReason(this);
+		Punishment mute = getMute();
+		return mute == null ? null : mute.reason();
 	}
 
 	public String getMuteBy() {
-		return PunishmentsManager.getMuteBy(this);
+		Punishment mute = getMute();
+		return mute == null ? null : mute.staff();
 	}
 
+	/** Seconds left, -1 when permanent, 0 when not muted. */
 	public long getMuteRemainingSeconds() {
-		return PunishmentsManager.getMuteRemainingSeconds(this);
-	}
-
-	public void mute(long durationMillis, String reason, String staff) {
-		PunishmentsManager.mute(this, durationMillis, reason, staff);
-	}
-
-	public void unmute() {
-		PunishmentsManager.unmute(this);
+		Punishment mute = getMute();
+		return mute == null ? 0 : mute.remainingSeconds();
 	}
 
 	public void kick(String reason) {
-		PunishmentsManager.kick(getUniqueId(), reason);
+		Punishments.kick(getUniqueId(), reason);
 	}
 
 	public String getName() {

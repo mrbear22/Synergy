@@ -54,10 +54,21 @@ jobs:
           path: release
 
       - name: Get version from pom.xml
-        run: echo "VERSION=$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)" >> $GITHUB_ENV
+        run: echo "VERSION=$(grep -m1 -oP '(?<=<revision>)[^<]+' pom.xml)" >> $GITHUB_ENV
+
+      - name: Update version in README
+        run: |
+          sed -i "/<artifactId>synergy<\/artifactId>/{n;s#<version>[^<]*</version>#<version>${VERSION}</version>#}" README.md
+          if ! git diff --quiet README.md; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "README: version ${VERSION} [skip ci]"
+            git push
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
+        continue-on-error: true
         with:
           tag_name: ${{ env.VERSION }}
           name: Release ${{ env.VERSION }}

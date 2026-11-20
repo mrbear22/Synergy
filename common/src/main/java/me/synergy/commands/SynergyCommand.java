@@ -9,7 +9,6 @@ import me.synergy.modules.Config;
 import me.synergy.modules.Locales;
 import me.synergy.modules.Messaging;
 import me.synergy.modules.Tasks;
-import me.synergy.modules.Timings;
 import me.synergy.objects.LocaleBuilder;
 import me.synergy.text.Translation;
 
@@ -62,10 +61,6 @@ public class SynergyCommand extends Command {
                 sender.send("<locale:synergy.reload.done>");
             }
             case "synergy.trace" -> sender.send(Messaging.toggleTrace() ? "<locale:synergy.trace.on>" : "<locale:synergy.trace.off>");
-            case "synergy.timings" -> {
-                if (Timings.getAllAverages().isEmpty()) sender.send("<locale:synergy.timings.empty>");
-                Timings.getAllAverages().forEach((id, average) -> sender.send(LocaleBuilder.of("synergy.timings.entry").placeholder("id", id).placeholder("time", String.format("%.2f", average))));
-            }
             case "synergy.locale" -> {
                 String target = args[0].toLowerCase();
                 if (!DeepL.LANGUAGES.contains(target)) sender.send(LocaleBuilder.of("synergy.locale.unsupported").placeholder("language", target).placeholder("languages", String.join(", ", DeepL.LANGUAGES)));

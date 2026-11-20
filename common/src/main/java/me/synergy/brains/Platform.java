@@ -43,7 +43,10 @@ public interface Platform {
     default List<String> complete(UUID uuid, String input) { return List.of(); }
     default String placeholders(UUID uuid, String text) { return LuckPermsAPI.placeholders(uuid, text); }
     default boolean isAuthenticated(UUID uuid) { return true; }
+    /** Every punishment change on every server; platforms turn it into their native event. action: issue, revoke, expire. */
+    default void onPunishment(me.synergy.objects.Punishment punishment, String action, String origin) {}
     default void onMuteChange(UUID uuid, boolean muted, long expires, String reason, String staff) {}
+    default void onVote(UUID uuid, String service, String username) {}
     default Key sound(String name) { return Key.key(name); }
 
     record Position(String world, double x, double y, double z) {

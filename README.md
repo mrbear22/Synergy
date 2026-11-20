@@ -1,7 +1,7 @@
 # 🔗 Synergy
 *Velocity • BungeeCord • Paper • Fabric*
 
-[![Version](https://img.shields.io/badge/version-1.5.4-blue.svg)](https://github.com/mrbear22/Synergy/releases)
+[![Version](https://img.shields.io/github/v/release/mrbear22/Synergy?label=version&color=blue)](https://github.com/mrbear22/Synergy/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Minecraft](https://img.shields.io/badge/minecraft-Paper%201.21%2B%20%7C%20Fabric%201.21.1%20%2F%2026.2-orange.svg)](https://minecraft.net)
 [![Java](https://img.shields.io/badge/java-21+-red.svg)](https://adoptium.net)
@@ -84,7 +84,7 @@ A file only gets the settings of modules that run on that server: in a network `
     <dependency>
         <groupId>archi.quest</groupId>
         <artifactId>synergy</artifactId>
-        <version>1.5.4</version>
+        <version>1.6.0</version>
         <scope>provided</scope>
     </dependency>
 </dependencies>
@@ -180,6 +180,56 @@ if (bread.cooldown("gift", 30)) return;
 ```
 
 Values are cached, synced to every server and can expire on their own.
+
+### Punishments
+
+Warnings, mutes and bans live in one `punishments` table: it is the log and the source of active punishments. Discord timeouts and bans are kept in sync both ways, and timed punishments lift themselves.
+
+```java
+Punishment ban = Punishments.issue(uuid, Punishment.Type.BAN, Duration.ofDays(7).toMillis(), "Griefing", "MyPlugin", null, "auto");
+Punishments.revoke(uuid, Punishment.Type.MUTE, "MyPlugin", "Appeal accepted", "auto");
+
+Punishment mute = Punishments.active(uuid, Punishment.Type.MUTE); // null when not muted, cached
+long warnings = Punishments.warnings(uuid);
+List<Punishment> history = Punishments.history(uuid, 20);
+```
+
+Duration `-1` is permanent; for a warning `0` uses `punishments.warnings.expire-days`, and `punishments.warnings.escalation` (`"3 mute 1d"`) turns several active warnings into a mute or ban.
+
+Every change fires the `punishment` event on **every** server (options `action`: `issue` / `revoke` / `expire`, `origin`, `punishment` as JSON). Fabric, Velocity and Bungee mods listen to it as to any Synergy event; Paper plugins also get the async Bukkit `PunishmentEvent`:
+
+```java
+@SynergyHandler("punishment")
+public void onPunishment(SynergyEvent event) {
+    Punishment p = Punishment.fromJson(event.getOption("punishment").getAs(JsonObject.class));
+}
+
+@EventHandler
+public void onPunishment(PunishmentEvent event) { ... } // Paper
+```
+
+Without a Java dependency, punish through events: `punish` (`players`, `type`, `duration`, `reason`, `staff`, `source`) and `punish-revoke` (`ids`, or `players` + `type`) reply with the affected ids.
+
+Commands: `/warn`, `/mute`, `/ban` (several players: `name1,name2`), `/unwarn`, `/unmute`, `/unban`, `/punishments <player>`; permissions `synergy.<command>`.
+
+### Database bridge (websites, bots, scripts)
+
+External tools that share the MySQL database talk to the network through `synergy_queue`, no port or HTTP API needed. Insert a row; the hub claims it within `command-queue.poll-millis`, sends it as a Synergy event and writes the handler's reply into `result`:
+
+```sql
+INSERT INTO synergy_queue (event, uuid, options, target, created)
+VALUES ('punish', NULL, '{"players":["Steve"],"type":"mute","duration":"1h","reason":"Spam","staff":"Website"}', NULL, UNIX_TIMESTAMP() * 1000);
+-- then poll: SELECT status, result FROM synergy_queue WHERE id = ?   (0 pending, 1 running, 2 done, 3 failed)
+```
+
+| `target` | Goes to |
+| --- | --- |
+| `NULL` | the hub itself (punishments, data, online list) |
+| `*` | every server |
+| `@<uuid>` | the server that player is on |
+| `Survival` | a server by its `messaging.servername` |
+
+Any event works, including your own handlers; `command-queue.events` (wildcards allowed) narrows it. Built-in ones useful from outside: `punish`, `punish-revoke`, `data-set` (writes player data so every cache follows), `kick`, `online`, `broadcast`, `system-chat`, `dispatch-command`. A reply with an `error` option marks the row failed. Rows are claimed with a conditional update, so a restart or a second hub never runs one twice.
 
 ### Messages
 

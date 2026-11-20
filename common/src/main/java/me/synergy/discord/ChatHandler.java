@@ -3,7 +3,6 @@ package me.synergy.discord;
 import me.synergy.modules.DataManager;
 import java.awt.Color;
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,20 +14,15 @@ import me.synergy.anotations.SynergyListener;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
 import me.synergy.modules.Config;
-import me.synergy.modules.PunishmentsManager;
 import me.synergy.objects.Locale;
 import me.synergy.objects.LocaleBuilder;
 import me.synergy.text.Translation;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.audit.AuditLogChange;
-import net.dv8tion.jda.api.audit.AuditLogEntry;
-import net.dv8tion.jda.api.audit.AuditLogKey;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
-import net.dv8tion.jda.api.events.guild.GuildAuditLogEntryCreateEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -163,33 +157,6 @@ public class ChatHandler extends ListenerAdapter implements SynergyListener {
         
     }
     
-    @Override
-    public void onGuildAuditLogEntryCreate(GuildAuditLogEntryCreateEvent event) {
-        AuditLogEntry entry = event.getEntry();
-        AuditLogChange change = entry.getChangeByKey(AuditLogKey.MEMBER_TIME_OUT);
-        if (change == null) return;
-
-        UUID uuid = resolveLinkedUUID(entry.getTargetId());
-        if (uuid == null) return;
-
-        var bread = Synergy.getBread(uuid);
-        String until = change.getNewValue();
-        long durationMillis = until == null ? 0
-            : OffsetDateTime.parse(until).toInstant().toEpochMilli() - System.currentTimeMillis();
-
-        if (durationMillis <= 0) {
-            PunishmentsManager.unmute(bread);
-            return;
-        }
-
-        User actor = entry.getUser();
-        String reason = entry.getReason() == null || entry.getReason().isBlank()
-            ? "<locale:discord.timeout.reason>" : entry.getReason();
-
-        PunishmentsManager.mute(bread, durationMillis, reason,
-            actor != null ? "@" + actor.getEffectiveName() : "Discord");
-    }
-
     private UUID resolveLinkedUUID(String discordUserId) {
         return DataManager.findUserUUID("discord", discordUserId);
     }

@@ -5,13 +5,13 @@ import java.util.UUID;
 import java.util.Map.Entry;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.PatternSyntaxException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
 import me.synergy.anotations.SynergyHandler;
 import me.synergy.brains.Synergy;
 import me.synergy.events.SynergyEvent;
+import me.synergy.handlers.StreamRewards;
 import me.synergy.modules.Config;
 import me.synergy.modules.Http;
 import me.synergy.modules.Module;
@@ -51,14 +51,36 @@ public class MonobankHandler implements Module {
         Synergy.getEventManager().registerEvents(MonobankHandler.class);
     }
     
+    @Override
+    public void join(BreadMaker bread) {
+        String token = bread.getData("monobank").getAsString();
+        if (Synergy.isHub() && token != null) connect(bread.getName(), token);
+    }
+
+    @Override
+    public void quit(BreadMaker bread) {
+        String token = bread.getData("monobank").getAsString();
+        if (Synergy.isHub() && token != null) disconnect(token);
+    }
+
+    /** Asks the hub to register (link) or remove (unlink) the Monobank webhook for this token. */
+    public static void request(UUID uuid, String token, boolean link) {
+        Synergy.event(link ? "monobank-connect" : "monobank-disconnect").toProxy().setPlayerUniqueId(uuid).setOption("token", token).send();
+    }
+
+    @SynergyHandler({"monobank-connect", "monobank-disconnect"})
+    public static void onControl(SynergyEvent event) {
+        if (!Synergy.isHub()) return;
+        String token = event.getOption("token").getAsString();
+        if (event.getIdentifier().equals("monobank-connect")) connect(event.getBread().getName(), token);
+        else disconnect(token);
+    }
+
     @SynergyHandler("monobank-donation")
     public static void onSynergyEvent(SynergyEvent event) {
-        if (!Config.getBoolean("monobank.enabled") || Synergy.isProxy()) return;
-
         UUID uuid = event.getPlayerUniqueId();
-        if (uuid == null) return;
-
         BreadMaker bread = event.getBread();
+        if (Synergy.isProxy() || uuid == null || !bread.isOnline()) return;
         
         String amountStr = event.getOption("amount").getAsString();
         if (amountStr == null) {
@@ -97,43 +119,13 @@ public class MonobankHandler implements Module {
             }
         }
 
-        if (bestRewardKey != null) {
-            Synergy.getLogger().info("[Monobank] [" + bread.getName() + "] Selected reward: " + bestRewardKey + " (cost: " + bestRewardCost + ")");
-            
-        	String inputRegex = Config.getString("monobank.rewards." + bestRewardKey + ".input-regex");
-
-        	if (inputRegex != null && !inputRegex.isEmpty() && comment != null && !comment.isEmpty()) {
-        	    try {
-        	        if (!comment.matches(inputRegex)) {
-        	            Synergy.getLogger().warning("[Monobank] ["+counterName+"] Invalid input from " + counterName + 
-        	                ". Input: '" + counterName + "' doesn't match regex: '" + inputRegex + "'");
-        	            
-        	            return;
-        	        } else {
-        	            Synergy.getLogger().info("[Monobank] ["+bread.getName()+"] Input validation passed for " + counterName);
-        	        }
-        	    } catch (PatternSyntaxException e) {
-        	        Synergy.getLogger().error("[Monobank] ["+bread.getName()+"] Invalid regex pattern: " + inputRegex +  ". Error: " + e.getMessage());
-        	        return;
-        	    }
-        	}
-            
-            for (String command : Config.getStringList("monobank.rewards." + bestRewardKey + ".commands")) {
-                command = command.replace("%streamer_name%", bread.getName());
-                command = Synergy.platform().position(uuid).orElseThrow().apply(command, "target");
-                command = command.replace("%counter_name%", donaterName);
-                command = command.replace("%counter_input%", comment != null ? comment : "");
-                command = command.replace("%original_counter_name%", counterName != null ? counterName : "");
-                command = command.replace("%amount%", String.valueOf(amount));
-                command = command.replace("%description%", description != null ? description : "");
-                command = command.replace("%comment%", comment != null ? comment : "");
-
-                Synergy.getLogger().info("[Monobank] [" + bread.getName() + "] Running command: " + command);
-                Synergy.platform().console(command);
-            }
-        } else {
+        if (bestRewardKey == null) {
             Synergy.getLogger().info("[Monobank] [" + bread.getName() + "] No suitable reward found for amount: " + amount + " UAH");
+            return;
         }
+        Synergy.getLogger().info("[Monobank] [" + bread.getName() + "] Selected reward: " + bestRewardKey + " (cost: " + bestRewardCost + ")");
+        StreamRewards.run("monobank", bestRewardKey, bread, comment, "%counter_name%", donaterName, "%counter_input%", comment, "%original_counter_name%", counterName,
+            "%amount%", String.valueOf(amount), "%description%", description, "%comment%", comment);
     }
     
     public static void connect(String playerName, String token) {
@@ -237,7 +229,7 @@ public class MonobankHandler implements Module {
         Synergy.getLogger().info("[Monobank] Processing donation: " + playerName + " - " + amount + " UAH from " + counterName);
         
         Synergy.event("monobank-donation")
-            .setPlayerUniqueId(playerUuid)
+            .toPlayer(playerUuid)
             .setOption("player-name", playerName)
             .setOption("amount", String.valueOf(amount))
             .setOption("description", description != null ? description : "")

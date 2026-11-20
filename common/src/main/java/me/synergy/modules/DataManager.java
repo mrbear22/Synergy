@@ -6,6 +6,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,6 +22,10 @@ public class DataManager implements Module {
 
     private interface Query<T> {
         T run(Connection connection) throws SQLException;
+    }
+
+    public interface Row<T> {
+        T map(ResultSet row) throws SQLException;
     }
 
     private static final long CACHE_SECONDS = 600;
@@ -71,11 +77,12 @@ public class DataManager implements Module {
         tolerate(sqlite() ? "CREATE INDEX IF NOT EXISTS synergy_lookup ON synergy (option, value)" : "CREATE INDEX synergy_lookup ON synergy (option, value(191))");
     }
 
-    private static boolean sqlite() {
+    public static boolean sqlite() {
         return !"mysql".equalsIgnoreCase(Config.getString("storage.type"));
     }
 
-    private static void tolerate(String sql) {
+    /** Runs DDL that may already be applied (an index that exists, a column already added). */
+    public static void tolerate(String sql) {
         try (var statement = connection.createStatement()) {
             statement.executeUpdate(sql);
         } catch (SQLException ignored) {}
@@ -99,6 +106,44 @@ public class DataManager implements Module {
             }
         }
         return fallback;
+    }
+
+    /** INSERT/UPDATE/DELETE with positional parameters; returns the affected rows, or -1 when the database is unreachable. */
+    public static int update(String query, Object... params) {
+        return sql(-1, c -> {
+            try (PreparedStatement statement = c.prepareStatement(query)) {
+                bind(statement, params);
+                return statement.executeUpdate();
+            }
+        });
+    }
+
+    /** INSERT returning the generated key, or -1 on failure. */
+    public static long insert(String query, Object... params) {
+        return sql(-1L, c -> {
+            try (PreparedStatement statement = c.prepareStatement(query, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                bind(statement, params);
+                statement.executeUpdate();
+                ResultSet keys = statement.getGeneratedKeys();
+                return keys.next() ? keys.getLong(1) : -1L;
+            }
+        });
+    }
+
+    public static <T> List<T> select(String query, Row<T> mapper, Object... params) {
+        return sql(List.of(), c -> {
+            try (PreparedStatement statement = c.prepareStatement(query)) {
+                bind(statement, params);
+                ResultSet result = statement.executeQuery();
+                List<T> rows = new ArrayList<>();
+                while (result.next()) rows.add(mapper.map(result));
+                return rows;
+            }
+        });
+    }
+
+    private static void bind(PreparedStatement statement, Object[] params) throws SQLException {
+        for (int i = 0; i < params.length; i++) statement.setObject(i + 1, params[i]);
     }
 
     public static DataObject getData(UUID uuid, String option) {
@@ -154,6 +199,19 @@ public class DataManager implements Module {
         remember(event.getPlayerUniqueId(), event.getOption("option").getAsString(), event.getOption("value").getAsString(), ttl == null ? null : Duration.ofSeconds(ttl));
     }
 
+    /** Writes player data for outside tools (the website): unlike a direct UPDATE, every server's cache follows. Options: option, value (absent = delete), ttl seconds. */
+    @SynergyHandler("data-set")
+    public static void onDataSet(SynergyEvent event) {
+        String option = event.getOption("option").getAsString();
+        if (event.getPlayerUniqueId() == null || option == null || option.isBlank()) {
+            event.reply().setOption("error", "uuid and option are required").send();
+            return;
+        }
+        Long ttl = event.getOption("ttl").getAsLong();
+        setData(event.getPlayerUniqueId(), option, event.getOption("value").getAsString(), ttl == null ? null : Duration.ofSeconds(ttl));
+        event.reply().setOption("ok", true).send();
+    }
+
     private static void remember(UUID uuid, String option, String value, Duration ttl) {
         new Cache(uuid).add(option, value, ttl == null ? CACHE_SECONDS : Math.min(CACHE_SECONDS, ttl.getSeconds()));
         owners.entrySet().removeIf(e -> e.getKey().startsWith(option + ":") && (e.getValue().equals(uuid) || e.getKey().equals(option + ":" + value)));
@@ -179,30 +237,5 @@ public class DataManager implements Module {
 
     public static UUID findUuidByName(String name) {
         return findUserUUID("name", name);
-    }
-
-    public static void migrateUuid(UUID oldUuid, UUID newUuid) {
-        if (oldUuid.equals(newUuid)) return;
-        sql(null, c -> {
-            c.setAutoCommit(false);
-            try (PreparedStatement copy = c.prepareStatement("REPLACE INTO synergy (uuid, option, value, expires) SELECT ?, option, value, expires FROM synergy WHERE uuid = ?");
-                 PreparedStatement delete = c.prepareStatement("DELETE FROM synergy WHERE uuid = ?")) {
-                copy.setString(1, newUuid.toString());
-                copy.setString(2, oldUuid.toString());
-                copy.executeUpdate();
-                delete.setString(1, oldUuid.toString());
-                delete.executeUpdate();
-                c.commit();
-            } catch (SQLException e) {
-                c.rollback();
-                throw e;
-            } finally {
-                c.setAutoCommit(true);
-            }
-            return null;
-        });
-        new Cache(oldUuid).clear();
-        new Cache(newUuid).clear();
-        owners.values().removeIf(oldUuid::equals);
     }
 }

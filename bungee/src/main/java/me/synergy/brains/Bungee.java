@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import me.synergy.commands.Command;
 import me.synergy.commands.Sender;
-import me.synergy.handlers.PlayerBungeeHandler;
+import me.synergy.handlers.PlayerSessions;
 import me.synergy.modules.Messaging;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
@@ -19,7 +19,9 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.event.PlayerDisconnectEvent;
 import net.md_5.bungee.api.event.PluginMessageEvent;
+import net.md_5.bungee.api.event.PostLoginEvent;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -35,7 +37,7 @@ public class Bungee extends Plugin implements Listener, Platform {
     	INSTANCE = this;
 	    getProxy().getPluginManager().registerListener(this, this);
 	    getProxy().registerChannel("net:synergy");
-	    Synergy.start(this, new PlayerBungeeHandler());
+	    Synergy.start(this);
 	}
 
 	@Override
@@ -58,6 +60,17 @@ public class Bungee extends Plugin implements Listener, Platform {
 	public void onServerConnected(ServerConnectedEvent event) {
 		String name = event.getServer().getInfo().getName();
 		getProxy().getScheduler().schedule(this, () -> Messaging.flush(name), 1, TimeUnit.SECONDS);
+	}
+
+	@EventHandler
+	public void onLogin(PostLoginEvent event) {
+		ProxiedPlayer player = event.getPlayer();
+		PlayerSessions.joinAsync(player.getUniqueId(), player.getName(), player.getSocketAddress().toString());
+	}
+
+	@EventHandler
+	public void onDisconnect(PlayerDisconnectEvent event) {
+		PlayerSessions.quitAsync(event.getPlayer().getUniqueId(), event.getPlayer().getName());
 	}
 
 	@Override public String name() { return "bungee"; }

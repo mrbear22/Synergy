@@ -2,6 +2,8 @@ package me.synergy.brains;
 
 import java.lang.reflect.Constructor;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,6 +17,18 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageListener;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.bukkit.event.server.ServerListPingEvent;
+
+import io.papermc.paper.event.player.AsyncChatEvent;
 
 import com.google.common.collect.Iterables;
 
@@ -25,18 +39,20 @@ import me.synergy.bukkit.events.PlayerMuteStatusChangeEvent;
 import me.synergy.commands.Sender;
 import me.synergy.events.SynergyEvent;
 import me.synergy.handlers.LocalesHandler;
-import me.synergy.handlers.PlayerSpigotHandler;
-import me.synergy.handlers.ResourcePackHandler;
-import me.synergy.handlers.ServerListPingHandler;
+import me.synergy.handlers.ChatHandler;
+import me.synergy.handlers.Motd;
+import me.synergy.handlers.PlayerSessions;
+import me.synergy.handlers.ResourcePacks;
+import me.synergy.events.SynergyVotifierEvent;
 import me.synergy.integrations.AuthmeAPI;
 import me.synergy.integrations.PlaceholdersAPI;
 import me.synergy.modules.Messaging;
-import me.synergy.web.VoteRewards;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-public class Spigot extends JavaPlugin implements PluginMessageListener, SynergyListener, Platform {
+public class Spigot extends JavaPlugin implements Listener, PluginMessageListener, SynergyListener, Platform {
 
     private static Spigot INSTANCE;
     private LocalesHandler localesHandler;
@@ -48,7 +64,8 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
         getServer().getMessenger().registerIncomingPluginChannel(this, "net:synergy", this);
 
         Synergy.getEventManager().registerEvents(this);
-        Synergy.start(this, new ServerListPingHandler(), new PlayerSpigotHandler(), new ResourcePackHandler(), new VoteRewards(), new PlaceholdersAPI(), new AuthmeAPI());
+        Synergy.start(this, new PlaceholdersAPI(), new AuthmeAPI());
+        getServer().getPluginManager().registerEvents(this, this);
         hookPacketEvents();
         getServer().getScheduler().runTask(this, this::hookPacketEvents);
     }
@@ -60,6 +77,63 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
     @Override
     public void onPluginMessageReceived(String channel, Player p, byte[] message) {
         if (channel.equals("net:synergy")) Messaging.receive(message, null);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onChat(AsyncChatEvent event) {
+        if (!ChatHandler.isEnabled()) return;
+        Set<UUID> viewers = new HashSet<>();
+        event.viewers().forEach(a -> { if (a instanceof Player r) viewers.add(r.getUniqueId()); });
+        Player p = event.getPlayer();
+        String format = ChatHandler.handle(p.getUniqueId(), p.getName(), LegacyComponentSerializer.legacyAmpersand().serialize(event.message()), viewers, true);
+        if (format == null) {
+            event.setCancelled(true);
+            return;
+        }
+        event.viewers().removeIf(a -> a instanceof Player r && !viewers.contains(r.getUniqueId()));
+        event.renderer((s, n, m, v) -> v instanceof Player r ? ChatHandler.render(format, r.getUniqueId()) : m);
+    }
+
+    @EventHandler
+    public void onCommand(PlayerCommandPreprocessEvent event) {
+        if (ChatHandler.blockCommand(event.getPlayer().getUniqueId(), event.getPlayer().getName(), event.getMessage())) event.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onPreLogin(AsyncPlayerPreLoginEvent event) {
+        PlayerSessions.preload(event.getUniqueId());
+    }
+
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        event.joinMessage(null);
+        PlayerSessions.joinAsync(player.getUniqueId(), player.getName(), String.valueOf(player.getAddress()));
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        event.quitMessage(null);
+        PlayerSessions.quitAsync(event.getPlayer().getUniqueId(), event.getPlayer().getName());
+    }
+
+    @EventHandler
+    public void onKick(PlayerKickEvent event) {
+        Component reason = PlayerSessions.kicked(event.getPlayer().getUniqueId(), event.getPlayer().getName(), event.reason());
+        if (reason != null) event.reason(reason);
+    }
+
+    @EventHandler
+    public void onResourcePackStatus(PlayerResourcePackStatusEvent event) {
+        ResourcePacks.status(event.getPlayer().getUniqueId(), event.getStatus() == PlayerResourcePackStatusEvent.Status.SUCCESSFULLY_LOADED);
+    }
+
+    @EventHandler
+    public void onPing(ServerListPingEvent event) {
+        Component motd = Motd.message();
+        if (motd == null) return;
+        event.motd(motd);
+        event.setMaxPlayers(Motd.maxPlayers());
     }
 
     @Override
@@ -207,8 +281,19 @@ public class Spigot extends JavaPlugin implements PluginMessageListener, Synergy
 	}
 
 	@Override
+	public void onPunishment(me.synergy.objects.Punishment punishment, String action, String origin) {
+		Bukkit.getPluginManager().callEvent(new me.synergy.bukkit.events.PunishmentEvent(punishment,
+			me.synergy.bukkit.events.PunishmentEvent.Action.valueOf(action.toUpperCase()), origin));
+	}
+
+	@Override
 	public void onMuteChange(UUID uuid, boolean muted, long expires, String reason, String staff) {
 		fireMuteStatusChangeEvent(uuid, muted, expires, reason, staff);
+	}
+
+	@Override
+	public void onVote(UUID uuid, String service, String username) {
+		Bukkit.getScheduler().runTask(this, () -> Bukkit.getPluginManager().callEvent(new SynergyVotifierEvent(uuid, service, username)));
 	}
 
 	@Override
